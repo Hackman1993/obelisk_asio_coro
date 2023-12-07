@@ -1,0 +1,7 @@
+D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug/CMakeFiles/obelisk.dir
+D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug/CMakeFiles/obelisk_test.dir
+D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug/CMakeFiles/list_install_components.dir
+D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug/CMakeFiles/install.dir
+D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug/CMakeFiles/install/local.dir

@@ -1,0 +1,24 @@
+# ninja log v5
+56	126	7236221443444153	CMakeFiles/obelisk.dir/source/http/parser/http_parser.cpp.obj	a0ba054bda88d53e
+52	3515	7236221477213622	CMakeFiles/obelisk.dir/source/http/response/file_response.cpp.obj	72926e58b39901ba
+1801	6119	7236221503335173	CMakeFiles/obelisk.dir/source/http/validator/string_min_length_validator.cpp.obj	119a86cf60a8c807
+8	3574	7236221477803636	CMakeFiles/obelisk.dir/source/http/core/http_block_data.cpp.obj	7b57924ba9d5e62e
+32	1188	7236221454041245	CMakeFiles/obelisk.dir/source/http/core/mime_types.cpp.obj	caeab61f793ce277
+38	1711	7236221459247576	CMakeFiles/obelisk.dir/source/http/middleware/middleware.cpp.obj	dfa5b7bbfc13d379
+21	1801	7236221460147542	CMakeFiles/obelisk.dir/source/http/core/raw_http_response.cpp.obj	813f7360e8c06d38
+27	3731	7236221479309863	CMakeFiles/obelisk.dir/source/http/core/http_response.cpp.obj	6d6281ffb5eb4aa
+6895	7676	7236359955410645	obelisk.lib	5364b3dbd5f9b4d5
+1712	3883	7236221480944390	CMakeFiles/obelisk.dir/source/http/router/http_router.cpp.obj	54ab42c2fe7aaff8
+14	2469	7236229205252661	CMakeFiles/obelisk.dir/source/http/core/http_request.cpp.obj	d595441ae6016a80
+133	5303	7236221495066890	CMakeFiles/obelisk.dir/source/http/router/route_item.cpp.obj	dff67ca0908dbcf1
+3575	7386	7236221515996543	CMakeFiles/obelisk.dir/source/http/validator/required_validator.cpp.obj	86d012b98ba6c0c8
+3516	5775	7236221499858869	CMakeFiles/obelisk.dir/source/http/router/route_param.cpp.obj	7c020138fa10134e
+1189	5949	7236221501580752	CMakeFiles/obelisk.dir/source/http/response/json_response.cpp.obj	20b2a4ecda0b24eb
+1	6923	7236221511288471	CMakeFiles/obelisk.dir/source/core/acceptor.cpp.obj	10258401121967ef
+5	7743	7236221519484616	CMakeFiles/obelisk.dir/source/core/details/acceptor_base.cpp.obj	6b40ca5880b52ffb
+13	5673	7236322044250359	CMakeFiles/obelisk.dir/source/http/http_connection.cpp.obj	dcc7efa19a96d285
+12	9004	7236221532080390	CMakeFiles/obelisk.dir/source/core/details/socket_base.cpp.obj	c5acf560b3bda243
+12	6895	7236359954040750	CMakeFiles/obelisk.dir/source/http/http_server.cpp.obj	bfd86244df876b2c
+17	5050	7236359935673155	CMakeFiles/obelisk_test.dir/test/main.cpp.obj	171ed35db33f0c31
+17	6292	7236233965314539	CMakeFiles/obelisk.dir/source/http/parser/http_parser_v2.cpp.obj	fcd5f3a134136c6e
+7676	8543	7236359965682885	obelisk_test.exe	830d311d2153d705
