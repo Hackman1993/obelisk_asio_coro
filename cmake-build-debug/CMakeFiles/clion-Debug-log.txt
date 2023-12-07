@@ -1,6 +1,0 @@
-"C:\Users\Hackman.Lo\AppData\Local\Programs\CLion Nova\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Users/Hackman.Lo/AppData/Local/Programs/CLion Nova/bin/ninja/win/x64/ninja.exe" -DCMAKE_TOOLCHAIN_FILE=D:\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G Ninja -S D:\Workspace\Cpp\obelisk_asio_coroutine -B D:\Workspace\Cpp\obelisk_asio_coroutine\cmake-build-debug
--- Found Boost: D:/vcpkg/installed/x64-windows/include (found version "1.82.0") found components: url thread json fiber chrono atomic container context 
--- Found Boost: D:/vcpkg/installed/x64-windows/include (found version "1.82.0") found components: locale 
--- Configuring done (1.0s)
--- Generating done (0.1s)
--- Build files have been written to: D:/Workspace/Cpp/obelisk_asio_coroutine/cmake-build-debug
