@@ -8,6 +8,6 @@
 #include "http/middleware/middleware.h"
 #include "sahara/utils/uuid.h"
 #include <iostream>
-namespace obelisk::http {
+namespace obelisk::http::middleware {
     http_middleware_base::http_middleware_base() {}
 } // obelisk

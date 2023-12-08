@@ -21,8 +21,6 @@ namespace obelisk::http {
         }
         std::filesystem::path path_(path);
         std::string extension = path_.extension().string();
-        data_.header_.headers_["Content-Type"] = mime_types::lookup(extension);
-        data_.content_length_ = std::filesystem::file_size(path_);
-        data_.content_ = fs;
+        header_.headers_["Content-Type"] = mime_types::lookup(extension);
     }
 } // obelisk

@@ -4,6 +4,7 @@
 
 #ifndef OBELISK_HTTP_REQUEST_H
 #define OBELISK_HTTP_REQUEST_H
+#include <any>
 #include <string>
 #include <memory>
 #include <utility>
@@ -12,6 +13,8 @@
 #include <variant>
 #include <filesystem>
 #include <unordered_map>
+
+#include "http_block_data.h"
 
 namespace obelisk::http {
     class http_connection;
@@ -61,9 +64,28 @@ namespace obelisk::http {
         std::string_view content_type_;
         std::uint64_t content_length_ = 0;
         std::unordered_map<std::string, std::vector<std::string>> params_;
-
     };
 
+    class http_request_wrapper {
+    public:
+        http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body);
+        std::string_view header(const std::string &header);
+        void set_header(const std::string& header, const std::string &value);
+        std::string_view version() const;
+        void set_version(const std::string& version);
+        std::string_view path() const;
+        std::string_view method() const;
+
+        std::unordered_map<std::string, std::any>& registered_data();
+        std::unordered_map<std::string, std::vector<std::string>>& params();
+        std::unordered_map<std::string, std::shared_ptr<http_file>>& filebag();
+    protected:
+        http_header raw_header_;
+        std::unique_ptr<std::iostream> raw_body_;
+        std::unordered_map<std::string, std::any> registered_value_;
+        std::unordered_map<std::string, std::shared_ptr<http_file>> filebag_;
+        std::unordered_map<std::string, std::vector<std::string>> request_params_;
+    };
 } // core
 
 #endif //OBELISK_HTTP_REQUEST_H

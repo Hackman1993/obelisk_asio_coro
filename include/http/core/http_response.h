@@ -24,10 +24,11 @@ namespace obelisk::http {
         virtual std::uint64_t content_length();
         virtual bool has_header(const std::string& header);
 
-        std::shared_ptr<obelisk::http::raw_http_response> serialize();
+        std::shared_ptr<raw_http_response> serialize();
     protected:
+        http_header header_;
+        std::shared_ptr<std::iostream> body_;
         static std::unordered_map<EResponseCode, std::string> resp_status_map_;
-        http_block_data data_{};
     };
 
 } // obelisk

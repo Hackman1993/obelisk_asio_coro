@@ -10,6 +10,9 @@
 #include "../core/acceptor.h"
 #include <filesystem>
 #include "http_connection.h"
+#include "middleware/middleware.h"
+#include "router/route_item.h"
+
 namespace obelisk::http {
     struct http_header;
     class http_response;
@@ -24,10 +27,15 @@ namespace obelisk::http {
 //        std::shared_ptr<route_item>& route(const std::string& route, std::function<std::shared_ptr<http_response> (std::shared_ptr<http_request>&)> handler);
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
+        std::vector<std::unique_ptr<route_item>> routes_;
+        std::vector<std::unique_ptr<middleware::after_middleware>> middlewares_after_;
+        std::vector<std::unique_ptr<middleware::before_middleware>> middlewares_before_;
+
         boost::asio::awaitable<void> listen_();
         boost::asio::awaitable<void> handle_(boost::asio::ip::tcp::socket socket);
         boost::asio::awaitable<http::http_header> receive_header_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf &buffer);
         boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, http_header& header);
+
 //        std::filesystem::path webroot_;
 //        std::vector<std::string> index_files_= {"index.html", "index.htm"};
 //        obelisk::core::acceptor<http_connection> acceptor_;

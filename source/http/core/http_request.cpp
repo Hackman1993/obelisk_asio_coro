@@ -74,6 +74,45 @@ namespace obelisk::http {
         return content_type_;
     }
 
+    http_request_wrapper::http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body): raw_header_(std::move(header)), raw_body_(std::move(raw_body_)) {
+    }
+
+    std::string_view http_request_wrapper::header(const std::string& header) {
+        return raw_header_.headers_[header];
+    }
+
+    void http_request_wrapper::set_header(const std::string& header, const std::string& value) {
+        raw_header_.headers_.emplace(std::make_pair(header, value));
+    }
+
+    std::string_view http_request_wrapper::version() const {
+        return raw_header_.meta_.p3_;
+    }
+
+    void http_request_wrapper::set_version(const std::string& version) {
+        raw_header_.meta_.p3_ = version;
+    }
+
+    std::string_view http_request_wrapper::path() const {
+        return raw_header_.meta_.p2_;
+    }
+
+    std::string_view http_request_wrapper::method() const {
+        return raw_header_.meta_.p1_;
+    }
+
+    std::unordered_map<std::string, std::any>& http_request_wrapper::registered_data() {
+        return registered_value_;
+    }
+
+    std::unordered_map<std::string, std::vector<std::string>>& http_request_wrapper::params() {
+        return request_params_;
+    }
+
+    std::unordered_map<std::string, std::shared_ptr<http_file>>& http_request_wrapper::filebag() {
+        return filebag_;
+    }
+
     std::uint64_t http_request::content_length() const {
         return content_length_;
     }

@@ -45,20 +45,20 @@ namespace obelisk::http {
     };
 
     http_response::http_response(EResponseCode code) {
-        data_.header_.meta_.p1_ = "HTTP/1.1";
-        data_.header_.meta_.p2_ = std::to_string(code);
-        data_.header_.meta_.p3_ = resp_status_map_[code];
+        header_.meta_.p1_ = "HTTP/1.1";
+        header_.meta_.p2_ = std::to_string(code);
+        header_.meta_.p3_ = resp_status_map_[code];
     }
 
 
     void http_response::add_header(const std::string &name, const std::string &value) {
-        data_.header_.headers_.emplace(name, value);
+        header_.headers_.emplace(name, value);
     }
 
     std::string http_response::serialize_header() {
         std::ostringstream result;
-        result << data_.header_.meta_.p1_ << " " << data_.header_.meta_.p2_ << " " << data_.header_.meta_.p3_ << "\r\n";
-        for(auto &header: data_.header_.headers_){
+        result << header_.meta_.p1_ << " " << header_.meta_.p2_ << " " << header_.meta_.p3_ << "\r\n";
+        for(auto &header: header_.headers_){
             result << header.first << ": " << header.second << "\r\n";
         }
         result << "\r\n";
@@ -66,18 +66,18 @@ namespace obelisk::http {
     }
 
     std::shared_ptr<std::istream> http_response::content() const {
-        return data_.content_;
+        return body_;
     }
 
     std::uint64_t http_response::content_length() {
-        return data_.content_length_;
+        return 0;
     }
 
     bool http_response::has_header(const std::string &header) {
-        return data_.header_.headers_.contains(header);
+        return header_.headers_.contains(header);
     }
 
-    std::shared_ptr<obelisk::http::raw_http_response> http_response::serialize() {
-        return std::make_shared<obelisk::http::raw_http_response>(serialize_header(), std::dynamic_pointer_cast<std::istream>(data_.content_));
+    std::shared_ptr<raw_http_response> http_response::serialize() {
+        return std::make_shared<raw_http_response>(serialize_header(), std::dynamic_pointer_cast<std::istream>(body_));
     }
 } // obelisk
