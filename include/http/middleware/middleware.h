@@ -10,11 +10,10 @@
 #include <memory>
 
 #include "http/core/http_request.h"
+#include "http/core/http_response.h"
 
 namespace obelisk::http::middleware {
 
-    class http_response;
-    class http_request;
     class http_middleware_base{
     public:
         http_middleware_base();
@@ -22,12 +21,12 @@ namespace obelisk::http::middleware {
     };
     class before_middleware: public http_middleware_base {
     public:
-        virtual std::shared_ptr<http_response> pre_handle(std::shared_ptr<http_request_wrapper> request) = 0;
+        virtual std::shared_ptr<http_response> pre_handle(http_request_wrapper& request) = 0;
     };
 
     class after_middleware: public http_middleware_base {
     public:
-        virtual void after_handle(std::shared_ptr<http_request_wrapper> request, std::shared_ptr<http_response> response) = 0;
+        virtual void after_handle(http_request_wrapper& request, std::shared_ptr<http_response> response) = 0;
     };
 
 } // obelisk

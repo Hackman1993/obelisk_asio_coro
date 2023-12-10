@@ -10,7 +10,7 @@ namespace obelisk::http::middleware {
 
 class multipart_extract : public before_middleware{
 public:
-    std::shared_ptr<http_response> pre_handle(std::shared_ptr<http_request_wrapper> request) override;
+    std::shared_ptr<http_response> pre_handle(http_request_wrapper& request) override;
 };
 
 } // obelisk::http::middleware

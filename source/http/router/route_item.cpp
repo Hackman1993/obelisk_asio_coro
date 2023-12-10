@@ -12,6 +12,8 @@
 #include "http/router/route_param.h"
 #include <regex>
 #include <iostream>
+
+#include "http/core/http_request.h"
 BOOST_FUSION_ADAPT_STRUCT(obelisk::http::route_param, name_, static_);
 
 namespace obelisk::http {
@@ -19,7 +21,7 @@ namespace obelisk::http {
     auto route_param_parser = rule<class route_parser, route_param>{"RouteParamParser"} =
                                       (+~char_("*{}") >> attr(true) | '{' > +~char_("}") > '}' >> attr(false) | boost::spirit::x3::string("*") >> attr(false));
 
-    route_item::route_item(const std::string &path, const std::function<std::shared_ptr<http_response>(std::shared_ptr<http_request> &)> &handler): handler_(handler){
+    route_item::route_item(const std::string &path, const std::function<std::unique_ptr<http_response>(http_request_wrapper &)> &handler): handler_(handler){
         auto parse_result = boost::spirit::x3::parse(path.begin(), path.end(),*route_param_parser, pattern_);
         if(!parse_result)
             THROW(route_exception, "Invalid Route: " + path, "Obelisk");
@@ -47,6 +49,11 @@ namespace obelisk::http {
         return available_method_.contains(method);
     }
 
+    bool route_item::method_allowed(std::string_view method) {
+        return available_method_.contains(method.data());
+    }
+
+
     route_item &route_item::method(const std::vector<std::string>& methods) {
         for(const auto& method: methods){
             available_method_.emplace(method, true);
@@ -54,7 +61,7 @@ namespace obelisk::http {
         return *this;
     }
 
-    std::shared_ptr<http_response> route_item::handle(std::shared_ptr<http_request> &request) {
+    std::unique_ptr<http_response> route_item::handle(http_request_wrapper &request) {
         if(handler_)
             return handler_(request);
         return nullptr;

@@ -107,10 +107,27 @@ namespace obelisk::http {
         boost::asio::streambuf buffer;
         while (true) {
             uint32_t request_bytes = 0;
+            std::shared_ptr<http_response> response;
             try {
                 auto header = co_await receive_header_(socket, buffer);;
                 std::unique_ptr<std::iostream> body = co_await receive_body_(socket, buffer, header);
+                http_request_wrapper request(header, std::move(body));
+                for (auto &before_middleware: middlewares_before_) {
+                    response = before_middleware->pre_handle(request);
+                    if(response) break;
+                }
 
+                if(!response) {
+                    for(const auto&ptr : routes_){
+                        std::unordered_map<std::string,std::string> route_params;
+                        if(!ptr->match(std::string(request.path()), route_params))
+                            continue;
+                        if(!ptr->method_allowed(request.method()))
+                            THROW(http_exception, "Method Not Allowed!", "Obelisk", EResponseCode::EST_METHOD_NOT_ALLOWED);
+                        response = ptr->handle(request);
+                        if(response) break;
+                    }
+                }
             }
             catch (const boost::system::system_error&e) {
             }

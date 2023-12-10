@@ -13,27 +13,27 @@
 #include <memory>
 #include <functional>
 #include "route_param.h"
+#include "http/core/http_request.h"
+#include "http/core/http_response.h"
 
 namespace obelisk::http {
-    class http_response;
-
-    class http_request;
 
     class route_item {
     public:
-        route_item(const std::string &path, const std::function<std::shared_ptr<http_response>(std::shared_ptr<http_request> &)> &handler);
+        route_item(const std::string &path, const std::function<std::unique_ptr<http_response>(http_request_wrapper &)> &handler);
 
         bool match(const std::string &path, std::unordered_map<std::string, std::string> &route_params);
 
         bool method_allowed(const std::string &method);
+        bool method_allowed(std::string_view method);
         route_item &method(const std::vector<std::string>& methods);
-        std::shared_ptr<http_response> handle(std::shared_ptr<http_request> &request);
+        std::unique_ptr<http_response> handle(http_request_wrapper &request);
 
     protected:
         std::regex address_;
         std::vector<route_param> pattern_;
         std::unordered_map<std::string, bool> available_method_ = {{"OPTIONS", true}, {"HEAD", true}};
-        std::function<std::shared_ptr<http_response>(std::shared_ptr<http_request> &)> handler_;
+        std::function<std::unique_ptr<http_response>(http_request_wrapper &)> handler_;
     };
 
 } // obelisk
