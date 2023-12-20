@@ -1,32 +1,29 @@
-//
-// Created by Hackman.Lo on 2023/12/10.
-//
-
 #ifndef HTTP_IODATA_H
 #define HTTP_IODATA_H
 #include <cstdint>
-#include <fstream>
-
+#include <sstream>
+#include <vector>
 namespace obelisk::http::core {
-    class http_idata {
+    class http_iodata{
     public:
-        virtual ~http_idata() = default;
-
-        virtual std::streamsize read(unsigned char* buffer, uint32_t length) = 0;
-        virtual uint64_t size();
+        virtual ~http_iodata() = default;
 
         virtual bool eof() = 0;
-    };
-
-    class http_odata {
-    public:
-        virtual ~http_odata() = default;
+        virtual uint64_t size() = 0;
+        virtual std::streamsize read(unsigned char* buffer, uint32_t length) = 0;
         virtual std::streamsize write(unsigned char* buffer, uint32_t length) = 0;
     };
 
 
-    class http_file_data: public http_idata, public http_odata {
+
+    class http_multi_source_iodata: public http_iodata {
     public:
+        http_multi_source_iodata() = default;
+
+        void append(std::unique_ptr<http_iodata> stream);
+
+        ~http_multi_source_iodata() override;
+
         std::streamsize read(unsigned char* buffer, uint32_t length) override;
 
         uint64_t size() override;
@@ -36,7 +33,8 @@ namespace obelisk::http::core {
         std::streamsize write(unsigned char* buffer, uint32_t length) override;
 
     private:
-        std::fstream file_;
+        std::uint32_t offset_ = 0;
+        std::vector<std::unique_ptr<http_iodata>> datas_;
     };
 } // obelisk::http::core
 

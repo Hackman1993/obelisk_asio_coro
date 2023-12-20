@@ -5,6 +5,8 @@
 #include <sstream>
 #include "http/core/http_response.h"
 
+#include "http/core/http_iodata_stream_wrapper.h"
+
 namespace obelisk::http {
     std::unordered_map<EResponseCode, std::string> http_response::resp_status_map_{
             {EST_CONTINUE, "Continue"},
@@ -55,20 +57,6 @@ namespace obelisk::http {
         header_.headers_.emplace(name, value);
     }
 
-    std::string http_response::serialize_header() {
-        std::ostringstream result;
-        result << header_.meta_.p1_ << " " << header_.meta_.p2_ << " " << header_.meta_.p3_ << "\r\n";
-        for(auto &header: header_.headers_){
-            result << header.first << ": " << header.second << "\r\n";
-        }
-        result << "\r\n";
-        return result.str();
-    }
-
-    std::shared_ptr<std::istream> http_response::content() const {
-        return body_;
-    }
-
     std::uint64_t http_response::content_length() {
         return 0;
     }
@@ -77,7 +65,25 @@ namespace obelisk::http {
         return header_.headers_.contains(header);
     }
 
-    std::shared_ptr<raw_http_response> http_response::serialize() {
-        return std::make_shared<raw_http_response>(serialize_header(), std::dynamic_pointer_cast<std::istream>(body_));
+    std::unique_ptr<core::http_iodata> http_response::serialize_header() {
+        auto ss = std::make_unique<std::stringstream>();
+        *ss << header_.meta_.p1_ << " " << header_.meta_.p2_ << " " << header_.meta_.p3_ << "\r\n";
+        for(auto &header: header_.headers_){
+            *ss << header.first << ": " << header.second << "\r\n";
+        }
+        *ss << "\r\n";
+        return std::make_unique<core::http_data_istream_wrapper>(std::move(ss), ss->str().length());
+    }
+
+    std::unique_ptr<core::http_iodata> http_response::serialize() {
+        if(body_)
+            header_.headers_.emplace("Content-Length", std::to_string(body_->size()));
+        auto header = serialize_header();
+
+        auto result = std::make_unique<core::http_multi_source_iodata>();
+        result->append(std::move(header));
+        result->append(std::move(body_));
+
+        return result;
     }
 } // obelisk

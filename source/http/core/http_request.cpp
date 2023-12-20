@@ -1,11 +1,8 @@
-//
-// Created by hackman on 10/7/23.
-//
-
 #include "http/core/http_request.h"
 #include "http/parser/http_parser_v2.h"
 
 #include <utility>
+#include <iostream>
 #include <filesystem>
 #include <sahara/sahara.h>
 #include "http/exception/protocol_exception.h"
@@ -74,7 +71,12 @@ namespace obelisk::http {
         return content_type_;
     }
 
-    http_request_wrapper::http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body): raw_header_(std::move(header)), raw_body_(std::move(raw_body_)) {
+    http_request_wrapper::http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body) : raw_header_(std::move(header)), raw_body_(raw_body? std::move(raw_body_):nullptr) {
+        const auto pos = raw_header_.meta_.p2_.find('?');
+        target_ = std::string_view(raw_header_.meta_.p2_.data(),pos == -1? raw_header_.meta_.p2_.size(): pos);
+    }
+
+    http_request_wrapper::~http_request_wrapper() {
     }
 
     std::string_view http_request_wrapper::header(const std::string& header) {
@@ -95,6 +97,10 @@ namespace obelisk::http {
 
     std::string_view http_request_wrapper::path() const {
         return raw_header_.meta_.p2_;
+    }
+
+    std::string_view http_request_wrapper::target() const {
+        return target_;
     }
 
     std::string_view http_request_wrapper::method() const {

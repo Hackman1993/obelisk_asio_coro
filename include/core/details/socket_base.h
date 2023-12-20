@@ -1,7 +1,3 @@
-//
-// Created by Hackman.Lo on 10/12/2023.
-//
-
 #ifndef OBELISK_SOCKET_BASE_H
 #define OBELISK_SOCKET_BASE_H
 #include <memory>

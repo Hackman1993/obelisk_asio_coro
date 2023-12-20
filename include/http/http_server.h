@@ -24,7 +24,7 @@ namespace obelisk::http {
         http_server(boost::asio::io_context& ctx, const std::string& webroot);
 
         void listen(const std::string& address, unsigned short port);
-//        std::shared_ptr<route_item>& route(const std::string& route, std::function<std::shared_ptr<http_response> (std::shared_ptr<http_request>&)> handler);
+        std::unique_ptr<route_item>& route(const std::string& route, std::function<std::unique_ptr<http_response> (http_request_wrapper&)> handler);
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
         std::vector<std::unique_ptr<route_item>> routes_;
@@ -35,13 +35,10 @@ namespace obelisk::http {
         boost::asio::awaitable<void> handle_(boost::asio::ip::tcp::socket socket);
         boost::asio::awaitable<http::http_header> receive_header_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf &buffer);
         boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, http_header& header);
+        boost::asio::awaitable<void> write_response_(boost::asio::ip::tcp::socket& socket, std::unique_ptr<core::http_iodata>& response);
 
-//        std::filesystem::path webroot_;
-//        std::vector<std::string> index_files_= {"index.html", "index.htm"};
-//        obelisk::core::acceptor<http_connection> acceptor_;
-//        std::vector<std::shared_ptr<route_item>> routes_;
-//        std::vector<std::shared_ptr<http_middleware_base>> middlewares_;
-//        virtual std::shared_ptr<http_response> on_request_(std::shared_ptr<http_request>& request);
+        std::filesystem::path webroot_;
+        std::vector<std::string> index_files_= {"index.html", "index.htm"};
     };
 
 } // obelisk::http

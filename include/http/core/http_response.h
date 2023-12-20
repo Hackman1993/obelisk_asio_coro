@@ -1,7 +1,3 @@
-//
-// Created by hackman on 10/8/23.
-//
-
 #ifndef OBELISK_HTTP_RESPONSE_H
 #define OBELISK_HTTP_RESPONSE_H
 #include <string>
@@ -19,15 +15,14 @@ namespace obelisk::http {
 
         virtual ~http_response() = default;
         virtual void add_header(const std::string& name, const std::string& value);
-        virtual std::string serialize_header();
-        [[nodiscard]] std::shared_ptr<std::istream> content() const;
         virtual std::uint64_t content_length();
         virtual bool has_header(const std::string& header);
 
-        std::shared_ptr<raw_http_response> serialize();
+        virtual std::unique_ptr<core::http_iodata> serialize_header();
+        virtual std::unique_ptr<core::http_iodata> serialize();
     protected:
         http_header header_;
-        std::shared_ptr<std::iostream> body_;
+        std::unique_ptr<core::http_iodata> body_;
         static std::unordered_map<EResponseCode, std::string> resp_status_map_;
     };
 

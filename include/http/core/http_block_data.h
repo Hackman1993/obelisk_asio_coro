@@ -1,11 +1,8 @@
-//
-// Created by Hackman.Lo on 11/3/2023.
-//
-
 #ifndef OBELISK_HTTP_BLOCK_DATA_H
 #define OBELISK_HTTP_BLOCK_DATA_H
 #include <sahara/sahara.h>
 #include <memory>
+#include "http_iodata.h"
 namespace obelisk::http {
     struct request_meta {
         std::string p1_;
@@ -21,10 +18,10 @@ namespace obelisk::http {
 
     struct http_block_data {
     public:
-        std::shared_ptr<std::iostream>& prepare_content(std::uint64_t size);
+        std::shared_ptr<std::iostream> prepare_content(std::uint64_t size);
         http_header header_;
         std::uint64_t content_length_;
-        std::shared_ptr<std::iostream> content_;
+        std::shared_ptr<core::http_iodata> content_;
     };
 }
 

@@ -1,7 +1,3 @@
-//
-// Created by Hackman.Lo on 10/12/2023.
-//
-
 #include "core/details/socket_base.h"
 #include "core/details/acceptor_base.h"
 #include <iostream>

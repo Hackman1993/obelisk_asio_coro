@@ -13,7 +13,7 @@ namespace obelisk::http {
     class http_exception : public sahara::exception::exception_base {
     public:
         http_exception(const std::string& message, EResponseCode code) : sahara::exception::exception_base(message), code_(code){}
-        std::uint32_t code(){ return code_;};
+        EResponseCode code() const { return code_;};
     protected:
         EResponseCode code_;
     };

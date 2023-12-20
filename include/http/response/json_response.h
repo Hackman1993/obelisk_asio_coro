@@ -1,7 +1,3 @@
-//
-// Created by hackman on 10/9/23.
-//
-
 #ifndef OBELISK_JSON_RESPONSE_H
 #define OBELISK_JSON_RESPONSE_H
 #include "../core/http_response.h"

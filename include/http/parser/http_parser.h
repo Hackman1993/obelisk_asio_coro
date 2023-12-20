@@ -1,7 +1,3 @@
-//
-// Created by hackman on 10/7/23.
-//
-
 #ifndef OBELISK_HTTP_PARSER_H
 #define OBELISK_HTTP_PARSER_H
 #include <string>

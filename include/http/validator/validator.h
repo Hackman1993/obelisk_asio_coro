@@ -1,7 +1,3 @@
-//
-// Created by Hackman.Lo on 3/30/2023.
-//
-
 #ifndef OBELISK_VALIDATOR_H
 #define OBELISK_VALIDATOR_H
 #include "required_validator.h"

@@ -21,12 +21,12 @@ namespace obelisk::http::middleware {
     };
     class before_middleware: public http_middleware_base {
     public:
-        virtual std::shared_ptr<http_response> pre_handle(http_request_wrapper& request) = 0;
+        virtual std::unique_ptr<http_response> pre_handle(http_request_wrapper& request) = 0;
     };
 
     class after_middleware: public http_middleware_base {
     public:
-        virtual void after_handle(http_request_wrapper& request, std::shared_ptr<http_response> response) = 0;
+        virtual void after_handle(http_request_wrapper& request, http_response& response) = 0;
     };
 
 } // obelisk

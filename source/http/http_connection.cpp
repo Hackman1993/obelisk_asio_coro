@@ -66,20 +66,20 @@ namespace obelisk::http {
     }
 
     bool http_connection::handle_body_() {
-        std::string_view received_data(boost::asio::buffer_cast<const char *>(instream_.data()), instream_.size());
-        // Calculate data_ should be written, prevent buffer contains some part of content and a new request header
-        std::uint32_t bytes_write = std::min<std::uint64_t>(received_data.size(), body_reamains_);
-        if (bytes_write > 0) {
-            request_->content_->write(received_data.data(), bytes_write);
-            instream_.consume(bytes_write);
-            body_reamains_ -= bytes_write;
-        }
-        // if request has been fully received, flush data_
-        if (body_reamains_ == 0) {
-            expecting_body_ = false;
-            request_->content_->flush();
-            return true;
-        }
+        // std::string_view received_data(boost::asio::buffer_cast<const char *>(instream_.data()), instream_.size());
+        // // Calculate data_ should be written, prevent buffer contains some part of content and a new request header
+        // std::uint32_t bytes_write = std::min<std::uint64_t>(received_data.size(), body_reamains_);
+        // if (bytes_write > 0) {
+        //     request_->content_->write(received_data.data(), bytes_write);
+        //     instream_.consume(bytes_write);
+        //     body_reamains_ -= bytes_write;
+        // }
+        // // if request has been fully received, flush data_
+        // if (body_reamains_ == 0) {
+        //     expecting_body_ = false;
+        //     request_->content_->flush();
+        //     return true;
+        // }
         return false;
     }
 
@@ -92,8 +92,8 @@ namespace obelisk::http {
     }
 
     void http_connection::write_response(const std::shared_ptr<http_response> &resp) {
-        out_requests_.push(resp->serialize());
-        write_outgoing_request();
+        // out_requests_.push(resp->serialize());
+        // write_outgoing_request();
     }
 
     void http_connection::write_outgoing_request() {

@@ -11,7 +11,7 @@
 namespace obelisk::http {
     class file_response : public http_response{
     public:
-        file_response(const std::string &path, EResponseCode code);
+        file_response(const std::filesystem::path &path, EResponseCode code);
     protected:
 
     };

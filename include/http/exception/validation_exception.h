@@ -1,7 +1,3 @@
-//
-// Created by Hackman.Lo on 3/29/2023.
-//
-
 #ifndef OBELISK_VALIDATION_EXCEPTION_H
 #define OBELISK_VALIDATION_EXCEPTION_H
 #include "http_exception.h"

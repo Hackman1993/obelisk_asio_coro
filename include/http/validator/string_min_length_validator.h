@@ -1,7 +1,3 @@
-//
-// Created by Hackman.Lo on 3/29/2023.
-//
-
 #ifndef OBELISK_STRING_MIN_LENGTH_VALIDATOR_H
 #define OBELISK_STRING_MIN_LENGTH_VALIDATOR_H
 #include "validator_base.h"

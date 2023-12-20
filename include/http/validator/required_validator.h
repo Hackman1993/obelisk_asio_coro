@@ -1,7 +1,3 @@
-//
-// Created by Hackman.Lo on 3/29/2023.
-//
-
 #ifndef OBELISK_REQUIRED_VALIDATOR_H
 #define OBELISK_REQUIRED_VALIDATOR_H
 

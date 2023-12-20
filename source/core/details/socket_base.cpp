@@ -1,7 +1,3 @@
-//
-// Created by Hackman.Lo on 10/12/2023.
-//
-
 #include <iostream>
 #include "core/details/socket_base.h"
 #include <sahara/log/log.h>
@@ -33,8 +29,6 @@ namespace obelisk::core::details {
             return;
         }
         instream_.commit(bytes_transferred);
-
-        std::cout << "Readed Bytes : " << bytes_transferred << std::endl;
         if(e_data_received(bytes_transferred)) post_receive();
         else this->close();
     }
