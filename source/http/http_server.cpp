@@ -67,11 +67,6 @@ namespace obelisk::http {
                         if (!ptr->match(std::string(request->path()), route_params))
                             continue;
                         if (!ptr->method_allowed(request->method())) {
-                            const std::string& err = "Obelisk: Method Not Allowed!";
-                            char *message_ = new char [err.size() + 1];
-                            memset(message_, 0, err.size()+1);
-                            memcpy(message_, err.data(), err.size());
-                            std::cout << message_ << std::endl;
                             throw http_exception("Obelisk: Method Not Allowed!", EResponseCode::EST_METHOD_NOT_ALLOWED);
 
                         }
@@ -87,10 +82,10 @@ namespace obelisk::http {
                 co_return;
             }
             catch (const http::http_exception &e) {
-                std::cout << e.what() << std::endl;
                 response = std::make_unique<json_response>(boost::json::object{
                     {"message", std::string(e.what())}
                 }, EResponseCode(e.code()));
+
             }
 
             if (!response) {

@@ -13,7 +13,7 @@ int main() {
             return std::make_unique<obelisk::http::json_response>(boost::json::object{
                 {"data", nullptr}
             }, obelisk::http::EResponseCode::EST_OK);
-        });
+        })->method({"GET"});
         server.listen("127.0.0.1", 3308);
         ioctx.run();
     } catch (std::exception& err){
