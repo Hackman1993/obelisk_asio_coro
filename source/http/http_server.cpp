@@ -5,21 +5,22 @@
  * @created_at 2023-10-13
 ***********************************************************************************************************************/
 
-#include "http/http_server.h"
-#include "http/response/file_response.h"
-#include "http/exception/http_exception.h"
-#include "http/response/json_response.h"
-#include "http/core/http_request.h"
-#include "http/middleware/middleware.h"
-#include <boost/json.hpp>
-#include "http/parser/http_parser_v2.h"
 #include <iostream>
+#include <boost/json.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/classification.hpp>
 
-#include "http/exception/protocol_exception.h"
+#include "http/http_server.h"
 #include "http/router/route_item.h"
+#include "http/core/http_request.h"
+#include "http/parser/http_parser_v2.h"
+#include "http/middleware/middleware.h"
+#include "http/response/json_response.h"
+#include "http/response/file_response.h"
+#include "http/response/empty_response.h"
+#include "http/exception/http_exception.h"
+#include "http/exception/protocol_exception.h"
+#include "http/exception/validation_exception.h"
 #include "http/core/http_iodata_stream_wrapper.h"
 
 namespace obelisk::http {
@@ -28,7 +29,11 @@ namespace obelisk::http {
             throw std::logic_error("Root Dirctory Not Exists");
     }
 
-    std::unique_ptr<route_item>& http_server::route(const std::string& route, std::function<std::unique_ptr<http_response> (http_request_wrapper &)> handler){
+    std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
+        return routes_.emplace_back(std::make_unique<route_item>(route, handler));
+    }
+
+    std::unique_ptr<route_item>& http_server::route(const std::string& route, const request_handler& handler) {
         return routes_.emplace_back(std::make_unique<route_item>(route, handler));
     }
 
@@ -61,34 +66,40 @@ namespace obelisk::http {
                     if (response) break;
                 }
 
-                if (!response) {
+                if (!response) {   /// Matching Routes
                     for (const auto&ptr: routes_) {
                         std::unordered_map<std::string, std::string> route_params;
                         if (!ptr->match(std::string(request->path()), route_params))
                             continue;
                         if (!ptr->method_allowed(request->method())) {
                             throw http_exception("Obelisk: Method Not Allowed!", EResponseCode::EST_METHOD_NOT_ALLOWED);
-
                         }
 
-                        response = ptr->handle(*request);
+                        if(request->method() == "OPTIONS" || request->method() == "HEAD") {
+                            response = std::make_unique<empty_response>();
+                            if(const std::string method_allowed = ptr->allowed_methods(); !method_allowed.empty())
+                                response->add_header("Allow", method_allowed);
+                        }else {
+                            response = co_await ptr->handle(*request);
+                        }
+
                         if (response) break;
                     }
-                }
+                }  // -- End Matching Routes --
             }
             catch (const boost::system::system_error&e) {
-                response = nullptr;
-                socket.close();
-                co_return;
+                if(e.code().value() == 913) {
+                    response = nullptr;
+                    socket.close();
+                    co_return;
+                }
+                std::cout << e.what() << std::endl;
             }
             catch (const http::http_exception &e) {
-                response = std::make_unique<json_response>(boost::json::object{
-                    {"message", std::string(e.what())}
-                }, EResponseCode(e.code()));
-
+                response = std::make_unique<json_response>(boost::json::object{{"message", std::string(e.what())}}, e.code());
             }
 
-            if (!response) {
+            if (!response) {  // Matching Static Files
                 std::string target_path = webroot_.string() + "/" + std::string(request->target());
                 boost::algorithm::replace_all(target_path, "\\", "/");
                 boost::algorithm::replace_all(target_path, "..", "");
@@ -109,12 +120,12 @@ namespace obelisk::http {
                 }
             }
 
-            if (!response) {
-                response = std::make_unique<json_response>(boost::json::object{{"message", "null"}},
-                                                           EResponseCode::EST_NOT_FOUND);
+
+            if (!response) { // Generate 404 Response
+                response = std::make_unique<json_response>(boost::json::object{{"message", "null"}}, EResponseCode::EST_NOT_FOUND);
             }
 
-            if (response) {
+            if (response) {  // Matching Response
                 for (auto&middleware: middlewares_after_) {
                     middleware->after_handle(*request, *response);
                 }
@@ -163,28 +174,22 @@ namespace obelisk::http {
         uint32_t total_transferred = 0;
         do {
             const auto bytes_wanna_read = std::min<uint32_t>(content_length - total_transferred, 1024 * 10);
-            const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read),
-                                                                     boost::asio::use_awaitable);
+            const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read), boost::asio::use_awaitable);
             buffer.commit(transferred);
             total_transferred += transferred;
             ret->write(boost::asio::buffer_cast<const char *>(buffer.data()), transferred);
-        }
-        while (total_transferred < content_length);
+        }while (total_transferred < content_length);
 
         ret->flush();
         co_return ret;
     }
 
-    boost::asio::awaitable<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket,
-                                                              std::unique_ptr<core::http_iodata>&response) {
-        const auto data_length = response->size();
+    boost::asio::awaitable<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket, const std::unique_ptr<core::http_iodata>&response) {
         unsigned char buffer[1024 * 256] = {};
         while (!response->eof()) {
             const auto bytes_read = response->read(buffer, 1024 * 256);
-            auto bytes_transferred = co_await socket.async_write_some(boost::asio::const_buffer(buffer, bytes_read),
-                                                                      boost::asio::use_awaitable);
+            auto bytes_transferred = co_await socket.async_write_some(boost::asio::const_buffer(buffer, bytes_read), boost::asio::use_awaitable);
         }
-
         co_return;
     }
 } // http::obelisk

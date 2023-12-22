@@ -19,12 +19,16 @@ namespace obelisk::http {
     class http_request;
     class route_item;
     class http_middleware_base;
+
+    typedef boost::asio::awaitable<std::unique_ptr<http_response>>(*request_handler)(http_request_wrapper&);
+
     class http_server {
     public:
         http_server(boost::asio::io_context& ctx, const std::string& webroot);
 
         void listen(const std::string& address, unsigned short port);
-        std::unique_ptr<route_item>& route(const std::string& route, std::function<std::unique_ptr<http_response> (http_request_wrapper&)> handler);
+        std::unique_ptr<route_item>& route(const std::string& route, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>> (http_request_wrapper&)>& handler);
+        std::unique_ptr<route_item>& route(const std::string& route, const request_handler& handler);
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
         std::vector<std::unique_ptr<route_item>> routes_;
@@ -33,9 +37,9 @@ namespace obelisk::http {
 
         boost::asio::awaitable<void> listen_();
         boost::asio::awaitable<void> handle_(boost::asio::ip::tcp::socket socket);
-        boost::asio::awaitable<http::http_header> receive_header_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf &buffer);
-        boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, http_header& header);
-        boost::asio::awaitable<void> write_response_(boost::asio::ip::tcp::socket& socket, std::unique_ptr<core::http_iodata>& response);
+        static boost::asio::awaitable<http::http_header> receive_header_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf &buffer);
+        static boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, http_header& header);
+        static boost::asio::awaitable<void> write_response_(boost::asio::ip::tcp::socket& socket, const std::unique_ptr<core::http_iodata>& response);
 
         std::filesystem::path webroot_;
         std::vector<std::string> index_files_= {"index.html", "index.htm"};

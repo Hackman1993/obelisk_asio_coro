@@ -79,6 +79,14 @@ namespace obelisk::http {
     http_request_wrapper::~http_request_wrapper() {
     }
 
+    void http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
+        for (auto &[name, validator]: validators) {
+            for (auto &j: validator) {
+                j->validate(name, *this);
+            }
+        }
+    }
+
     std::string_view http_request_wrapper::header(const std::string& header) {
         return raw_header_.headers_[header];
     }
@@ -105,6 +113,11 @@ namespace obelisk::http {
 
     std::string_view http_request_wrapper::method() const {
         return raw_header_.meta_.p1_;
+    }
+
+    std::string_view http_request_wrapper::query_string() const {
+        const auto pos = raw_header_.meta_.p2_.find('?');
+        return std::string_view(raw_header_.meta_.p2_.data() + raw_header_.meta_.p2_.find('?'), raw_header_.meta_.p2_.size() - pos);
     }
 
     std::unordered_map<std::string, std::any>& http_request_wrapper::registered_data() {

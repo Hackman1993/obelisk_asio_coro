@@ -2,13 +2,19 @@
 #define OBELISK_VALIDATOR_BASE_H
 
 #include <memory>
-#include <sahara/string/string.h>
+#include <string>
+#include <vector>
 
 namespace obelisk::http {
+    class http_request_wrapper;
+}
+
+namespace obelisk::http::validator {
     class http_request;
         class validator_base {
         public:
-            virtual void validate(const std::string &name, http_request &request) = 0;
+            virtual ~validator_base() = default;
+            virtual void validate(const std::string &name, http_request_wrapper &request) = 0;
         };
 
         struct validator_group {

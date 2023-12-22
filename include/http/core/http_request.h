@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include "http_block_data.h"
+#include "http/validator/validator_base.h"
 
 namespace obelisk::http {
     class http_connection;
@@ -65,13 +66,16 @@ namespace obelisk::http {
     public:
         http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body = nullptr);
         ~http_request_wrapper();
+
+        void validate(const std::vector<validator::validator_group>& validators);
         std::string_view header(const std::string &header);
         void set_header(const std::string& header, const std::string &value);
-        std::string_view version() const;
+        [[nodiscard]] std::string_view version() const;
         void set_version(const std::string& version);
-        std::string_view path() const;
-        std::string_view target() const;
-        std::string_view method() const;
+        [[nodiscard]] std::string_view path() const;
+        [[nodiscard]] std::string_view target() const;
+        [[nodiscard]] std::string_view method() const;
+        [[nodiscard]] std::string_view query_string() const;
 
         std::unordered_map<std::string, std::any>& registered_data();
         std::unordered_map<std::string, std::vector<std::string>>& params();

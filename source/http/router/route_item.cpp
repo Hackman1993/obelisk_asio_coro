@@ -12,8 +12,10 @@
 #include "http/router/route_param.h"
 #include <regex>
 #include <iostream>
+#include <ranges>
 
 #include "http/core/http_request.h"
+#include "http/exception/validation_exception.h"
 BOOST_FUSION_ADAPT_STRUCT(obelisk::http::route_param, name_, static_);
 
 namespace obelisk::http {
@@ -21,7 +23,7 @@ namespace obelisk::http {
     auto route_param_parser = rule<class route_parser, route_param>{"RouteParamParser"} =
                                       (+~char_("*{}") >> attr(true) | '{' > +~char_("}") > '}' >> attr(false) | boost::spirit::x3::string("*") >> attr(false));
 
-    route_item::route_item(const std::string &path, const std::function<std::unique_ptr<http_response>(http_request_wrapper &)> &handler): handler_(handler){
+    route_item::route_item(const std::string &path, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>>(http_request_wrapper &)> &handler): handler_(handler){
         auto parse_result = boost::spirit::x3::parse(path.begin(), path.end(),*route_param_parser, pattern_);
         if(!parse_result)
             THROW(route_exception, "Invalid Route: " + path, "Obelisk");
@@ -61,9 +63,20 @@ namespace obelisk::http {
         return *this;
     }
 
-    std::unique_ptr<http_response> route_item::handle(http_request_wrapper &request) {
+    std::string route_item::allowed_methods() {
+        std::string allowed;
+        for(const auto &method : std::views::keys(available_method_)) {
+            if(!allowed.empty())
+                allowed.append(", ");
+            allowed.append(method);
+        }
+        return allowed;
+    }
+
+    boost::asio::awaitable<std::unique_ptr<http_response>> route_item::handle(http_request_wrapper &request) {
         if(handler_)
-            return handler_(request);
-        return nullptr;
+            co_return co_await handler_(request);
+
+        co_return nullptr;
     }
 } // obelisk

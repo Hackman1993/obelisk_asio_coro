@@ -82,7 +82,8 @@ namespace obelisk::http {
 
         auto result = std::make_unique<core::http_multi_source_iodata>();
         result->append(std::move(header));
-        result->append(std::move(body_));
+        if(body_)
+            result->append(std::move(body_));
 
         return result;
     }
