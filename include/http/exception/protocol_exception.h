@@ -11,9 +11,9 @@
 #include <sahara/exception/exception_base.h>
 
 namespace obelisk::http {
-    class protocol_exception : public sahara::exception::exception_base {
+    class protocol_exception : public std::logic_error {
     public:
-        protocol_exception(const std::string& message) : sahara::exception::exception_base(message){}
+        explicit protocol_exception(const std::string& message) : std::logic_error(message){}
     };
 
 } // obelisk

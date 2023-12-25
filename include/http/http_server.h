@@ -29,6 +29,12 @@ namespace obelisk::http {
         void listen(const std::string& address, unsigned short port);
         std::unique_ptr<route_item>& route(const std::string& route, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>> (http_request_wrapper&)>& handler);
         std::unique_ptr<route_item>& route(const std::string& route, const request_handler& handler);
+
+        const std::vector<std::unique_ptr<middleware::after_middleware>>& after_middlewares();
+        const std::vector<std::unique_ptr<middleware::before_middleware>>& before_middlewares();
+
+        void after_middlewares(std::unique_ptr<middleware::after_middleware>);
+        void before_middlewares(std::unique_ptr<middleware::before_middleware>);
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
         std::vector<std::unique_ptr<route_item>> routes_;

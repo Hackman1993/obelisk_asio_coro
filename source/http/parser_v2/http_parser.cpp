@@ -1,7 +1,7 @@
 #include "http/parser/http_parser_v2.h"
 #include <boost/spirit/home/x3.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/fusion/adapted/std_pair.hpp>
+
 #include <sahara/utils/uuid.h>
 #include "http/exception/protocol_exception.h"
 #include "http/core/http_block_data.h"
@@ -9,12 +9,16 @@
 #include <iostream>
 #include <filesystem>
 #include "http/core/http_request.h"
+#include <utility>
+#include <boost/fusion/support/config.hpp>
+#include <boost/fusion/adapted/struct/adapt_struct.hpp>
+BOOST_FUSION_ADAPT_TPL_STRUCT((T1)(T2),(std::pair)(T1)(T2),(T1, first)(T2, second))
 using namespace boost::spirit::x3;
 BOOST_FUSION_ADAPT_STRUCT(obelisk::http::request_meta, p1_, p2_, p3_, is_req_)
 BOOST_FUSION_ADAPT_STRUCT(obelisk::http::http_header, meta_, headers_)
 
 namespace obelisk::http {
-#define RULE(name, attr) const auto name = rule<class mat_parser, attr>{#name}
+    #define RULE(name, attr) const auto name = rule<class mat_parser, attr>{#name}
     RULE(ContentTypeParser, std::string) = no_case["Content-Type"] > ":" > lexeme[*~char_("\r\n")];
 
     using string_pair = std::pair<std::string, std::string>;
@@ -31,7 +35,6 @@ namespace obelisk::http {
     RULE(MultipartMeta, string_pair) = MultipartMetaName | MultipartMetaFilename | MultipartMetaFormData;
 
     RULE(UrlEncodedData, string_pair) = *~char_("=&") >> -lit("=") >> *~char_("&");
-
 
     bool parser::parse_http_header(std::string_view data, obelisk::http::http_header &header) {
         auto result = parse(data.begin(), data.end(), HttpPackageHeaderParser, header);
@@ -159,14 +162,15 @@ namespace obelisk::http {
         return true;
     }
 
-    bool parser::parse_urlencoded_param(obelisk::http::http_request &request, std::string_view data) {
+    bool parser::parse_urlencoded_param(http_request_wrapper &request, std::string_view data) {
 
         std::vector<std::pair<std::string, std::string>> params;
-        bool parse_result = parse(data.begin(), data.end(), UrlEncodedData % '&', params);
-        if (!parse_result)
-            THROW(protocol_exception, "UrlEncodedData Parse Failed!", "Obelisk");
-        for (auto &item: params) {
-            request.set_param(item.first, item.second);
+        if (!parse(data.begin(), data.end(), UrlEncodedData % '&', params))
+            throw protocol_exception("UrlEncodedData Parse Failed!");
+        for (auto &[key, val]: params) {
+            if(!request.request_params_.contains(key))
+                request.request_params_[key] = std::vector<std::string>();
+            request.request_params_[key].emplace_back(val);
         }
         return true;
     }

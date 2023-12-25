@@ -7,7 +7,7 @@
 namespace obelisk::core::details {
     class acceptor_base {
     public:
-        acceptor_base(boost::asio::io_context& ctx);
+        explicit acceptor_base(boost::asio::io_context& ctx);
         virtual ~acceptor_base();
         void listen (const std::string &addr, std::uint16_t port);
     protected:

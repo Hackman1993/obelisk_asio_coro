@@ -8,7 +8,7 @@ namespace obelisk::http::validator {
         return std::make_shared<required_validator>();
     }
 
-    void required_validator::validate(const std::string &name, http_request_wrapper &request) {
+    boost::asio::awaitable<void> required_validator::validate(const std::string &name, http_request_wrapper &request) {
         if (!request.params().contains(name)) {
             throw obelisk::http::validation_exception("Required param " + name + " not found");
         }

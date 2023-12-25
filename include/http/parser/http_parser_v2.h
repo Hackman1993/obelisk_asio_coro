@@ -7,6 +7,7 @@
 
 #include "../core/http_request.h"
 #include "http/core/http_block_data.h"
+#include "boost/spirit/home/x3.hpp"
 
 namespace obelisk::http {
     class http_block_data;
@@ -20,7 +21,7 @@ namespace obelisk::http {
 
         static bool parse_multipart_body(http_request &request, const std::string& boundary);
 
-        static bool parse_urlencoded_param(http_request &request, std::string_view data);
+        static bool parse_urlencoded_param(http_request_wrapper &request, std::string_view data);
     };
 
 } // obelisk

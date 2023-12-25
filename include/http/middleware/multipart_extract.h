@@ -10,7 +10,7 @@ namespace obelisk::http::middleware {
 
 class multipart_extract : public before_middleware{
 public:
-    std::unique_ptr<http_response> pre_handle(http_request_wrapper& request) override;
+    boost::asio::awaitable<std::unique_ptr<http_response>> pre_handle(http_request_wrapper& request) override;
 };
 
 } // obelisk::http::middleware

@@ -12,10 +12,10 @@ namespace obelisk::http {
         path_ = data_->header_.meta_.p2_;
         if (path_.contains("?")) {
             auto position = path_.find_first_of('?');
-
-            std::string_view url_params = path_.substr(position +1);
-            parser::parse_urlencoded_param(*this, url_params);
-            path_ = std::string_view(path_.data(), position);
+            //
+            // std::string_view url_params = path_.substr(position +1);
+            // parser::parse_urlencoded_param(*this, url_params);
+            // path_ = std::string_view(path_.data(), position);
         }
         if(!data_->header_.headers_.contains("Content-Type") || data_->content_length_ <= 0)
             return;
@@ -71,20 +71,20 @@ namespace obelisk::http {
         return content_type_;
     }
 
-    http_request_wrapper::http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body) : raw_header_(std::move(header)), raw_body_(raw_body? std::move(raw_body_):nullptr) {
+    http_request_wrapper::http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body) : raw_header_(std::move(header)), raw_body_(raw_body? std::move(raw_body):nullptr) {
         const auto pos = raw_header_.meta_.p2_.find('?');
         target_ = std::string_view(raw_header_.meta_.p2_.data(),pos == -1? raw_header_.meta_.p2_.size(): pos);
     }
 
-    http_request_wrapper::~http_request_wrapper() {
-    }
+    http_request_wrapper::~http_request_wrapper() = default;
 
-    void http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
+    boost::asio::awaitable<void> http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
         for (auto &[name, validator]: validators) {
             for (auto &j: validator) {
-                j->validate(name, *this);
+                co_await j->validate(name, *this);
             }
         }
+        co_return;
     }
 
     std::string_view http_request_wrapper::header(const std::string& header) {
@@ -117,7 +117,12 @@ namespace obelisk::http {
 
     std::string_view http_request_wrapper::query_string() const {
         const auto pos = raw_header_.meta_.p2_.find('?');
-        return std::string_view(raw_header_.meta_.p2_.data() + raw_header_.meta_.p2_.find('?'), raw_header_.meta_.p2_.size() - pos);
+
+        return (pos== -1? std::string_view{}:std::string_view{raw_header_.meta_.p2_.data() + pos +1, raw_header_.meta_.p2_.size() - pos});
+    }
+
+    std::unique_ptr<std::iostream>& http_request_wrapper::raw_body() {
+        return raw_body_;
     }
 
     std::unordered_map<std::string, std::any>& http_request_wrapper::registered_data() {
