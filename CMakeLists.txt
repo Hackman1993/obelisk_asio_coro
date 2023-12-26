@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 23)
 find_package(Boost REQUIRED COMPONENTS url thread json fiber)
 find_package(fmt CONFIG REQUIRED)
 find_package(sahara REQUIRED)
-
+find_package(OpenSSL REQUIRED)
 
 add_library(${PROJECT_NAME} STATIC ${CPP_HEADERS} ${CPP_SOURCES} )
 target_include_directories(${PROJECT_NAME} PRIVATE include)
@@ -49,3 +49,4 @@ add_executable(${PROJECT_NAME}_test ${TEST_SOURCES} )
 find_package(sahara REQUIRED)
 target_include_directories(${PROJECT_NAME}_test PRIVATE include)
 target_link_libraries(${PROJECT_NAME}_test PRIVATE $<$<BOOL:${WIN32}>:ws2_32> $<$<BOOL:${WIN32}>:Mswsock> obelisk Boost::json Boost::locale sahara::sahara)
+target_link_libraries(${PROJECT_NAME}_test PRIVATE OpenSSL::SSL OpenSSL::Crypto)

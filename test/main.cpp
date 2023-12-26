@@ -4,12 +4,19 @@
 
 #include "http/response/json_response.h"
 #include "controllers/auth_controller.h"
+#include "database/database.h"
+#include "database/mysql/mysql_connection.h"
 #include "http/parser/http_parser_v2.h"
 
 int main() {
     try {
         obelisk::http::parser parser;
         boost::asio::io_context ioctx;
+        obelisk::database::connection_manager manager(ioctx);
+        manager.initialize<obelisk::database::mysql::mysql_connection>("mysql");
+
+
+        boost::mysql::tcp_connection connection(ioctx);
         obelisk::http::http_server server(ioctx, R"(C:\Users\Hackman.Lo\Desktop\BBC)");
         server.route("/bac", login)->method({"GET"});
         server.listen("0.0.0.0", 3308);
