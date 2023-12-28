@@ -12,8 +12,8 @@ int main() {
     try {
         obelisk::http::parser parser;
         boost::asio::io_context ioctx;
-        obelisk::database::connection_manager manager(ioctx);
-        manager.initialize<obelisk::database::mysql::mysql_connection>("mysql");
+        obelisk::database::connection_manager::make_pool<obelisk::database::mysql::mysql_connection>(ioctx, "mysql", "root", "", "");
+
 
 
         boost::mysql::tcp_connection connection(ioctx);

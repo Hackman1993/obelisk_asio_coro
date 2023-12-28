@@ -88,7 +88,7 @@ namespace obelisk::http {
 
     class http_request_wrapper {
     public:
-        explicit http_request_wrapper(http_header&header, std::unique_ptr<std::iostream> raw_body = nullptr);
+        http_request_wrapper(boost::asio::io_context& ioctx, http_header&header, std::unique_ptr<std::iostream> raw_body = nullptr);
 
         ~http_request_wrapper();
 
@@ -118,9 +118,15 @@ namespace obelisk::http {
 
         std::unordered_map<std::string, std::shared_ptr<http_file>>& filebag();
 
+        boost::asio::io_context& io_context() {
+            return ioctx_;
+        }
+
     protected:
+
         std::string_view target_;
         http_header raw_header_;
+        boost::asio::io_context& ioctx_;
         std::unique_ptr<std::iostream> raw_body_;
         std::unordered_map<std::string, std::any> registered_value_;
         std::unordered_map<std::string, std::shared_ptr<http_file>> filebag_;

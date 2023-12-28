@@ -47,6 +47,7 @@ namespace obelisk::http {
         static boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, http_header& header);
         static boost::asio::awaitable<void> write_response_(boost::asio::ip::tcp::socket& socket, const std::unique_ptr<core::http_iodata>& response);
 
+        boost::asio::io_context& ioctx_;
         std::filesystem::path webroot_;
         std::vector<std::string> index_files_= {"index.html", "index.htm"};
     };

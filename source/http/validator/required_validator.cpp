@@ -12,5 +12,6 @@ namespace obelisk::http::validator {
         if (!request.params().contains(name)) {
             throw obelisk::http::validation_exception("Required param " + name + " not found");
         }
+        co_return;
     }
 }

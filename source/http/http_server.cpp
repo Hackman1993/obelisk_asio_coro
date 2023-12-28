@@ -24,7 +24,7 @@
 #include "http/core/http_iodata_stream_wrapper.h"
 
 namespace obelisk::http {
-    http_server::http_server(boost::asio::io_context&ctx, const std::string&webroot) : acceptor_(ctx), webroot_(webroot) {
+    http_server::http_server(boost::asio::io_context&ctx, const std::string&webroot) : acceptor_(ctx), webroot_(webroot), ioctx_(ctx) {
         if (!(std::filesystem::exists(webroot_) && std::filesystem::is_directory(webroot_)))
             throw std::logic_error("Root Dirctory Not Exists");
         before_middlewares(std::make_unique<middleware::url_params_extract>());
@@ -77,7 +77,7 @@ namespace obelisk::http {
             try {
                 auto header = co_await receive_header_(socket, buffer);;
                 std::unique_ptr<std::iostream> body = co_await receive_body_(socket, buffer, header);
-                request = std::make_unique<http_request_wrapper>(header, std::move(body));
+                request = std::make_unique<http_request_wrapper>(ioctx_, header, std::move(body));
                 for (auto&before_middleware: middlewares_before_) {
                     response = co_await before_middleware->pre_handle(*request);
                     if (response) break;
@@ -105,7 +105,7 @@ namespace obelisk::http {
                 }  // -- End Matching Routes --
             }
             catch (const boost::system::system_error&e) {
-                if(e.code().value() == 2) {
+                if(e.code().value() == 2 || e.code().value() == 10053) {
                     response = nullptr;
                     socket.close();
                     co_return;
@@ -116,7 +116,7 @@ namespace obelisk::http {
                 response = std::make_unique<json_response>(boost::json::object{{"message", std::string(e.what())}}, e.code());
             }
 
-            if (!response) {  // Matching Static Files
+            if (!response && request) {  // Matching Static Files
                 std::string target_path = webroot_.string() + "/" + std::string(request->target());
                 boost::algorithm::replace_all(target_path, "\\", "/");
                 boost::algorithm::replace_all(target_path, "..", "");

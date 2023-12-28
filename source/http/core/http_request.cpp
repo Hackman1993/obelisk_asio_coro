@@ -71,7 +71,7 @@ namespace obelisk::http {
         return content_type_;
     }
 
-    http_request_wrapper::http_request_wrapper(http_header& header, std::unique_ptr<std::iostream> raw_body) : raw_header_(std::move(header)), raw_body_(raw_body? std::move(raw_body):nullptr) {
+    http_request_wrapper::http_request_wrapper(boost::asio::io_context& ioctx, http_header& header, std::unique_ptr<std::iostream> raw_body) : raw_header_(std::move(header)), raw_body_(raw_body? std::move(raw_body):nullptr), ioctx_(ioctx) {
         const auto pos = raw_header_.meta_.p2_.find('?');
         target_ = std::string_view(raw_header_.meta_.p2_.data(),pos == -1? raw_header_.meta_.p2_.size(): pos);
     }
