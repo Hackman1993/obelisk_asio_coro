@@ -8,29 +8,33 @@
 #include <string>
 #include <iostream>
 #include <unordered_map>
+#include <boost/asio/co_spawn.hpp>
+#include <boost/asio/detached.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include "mysql/mysql_connection.h"
 #include "db_connection_base.h"
 #include "core/coroutine/async_mutex.h"
+#include "core/coroutine/async_mutex2.h"
+
 namespace obelisk::database {
     class connection_pool_base {
     public:
         template<typename Connection>
-        std::shared_ptr<Connection> get_connection() {
-            const auto conn =  this->get_connection_();
+        boost::asio::awaitable<std::shared_ptr<Connection>> get_connection() {
+            const auto conn =  co_await this->get_connection_();
             if (!conn)
                 throw std::logic_error("Get connection failed");
             auto result = std::dynamic_pointer_cast<Connection>(conn);
             if (!result)
                 throw std::logic_error("Connection type not match");
-            return result;
+            co_return result;
         }
 
         virtual ~connection_pool_base() = default;
 
     protected:
-        virtual std::shared_ptr<db_connection_base> get_connection_() = 0;
+        virtual boost::asio::awaitable<std::shared_ptr<db_connection_base>> get_connection_() = 0;
     };
 
     template<typename Connection>
@@ -56,16 +60,16 @@ namespace obelisk::database {
         }
 
     protected:
-        std::shared_ptr<db_connection_base> get_connection_() override {
+        boost::asio::awaitable<std::shared_ptr<db_connection_base>> get_connection_() override {
             if (!connections_.empty()) {
-                std::unique_lock lock(mutex_);
+                //auto lock = co_await core::coroutine::async_lock(mutex_, boost::asio::use_awaitable);
                 auto conn = connections_.back();
                 connections_.pop_back();
-                return conn;
+                co_return conn;
             }
 
-            if (auto conn = connection_maker_(); conn) return conn;
-            return nullptr;
+            if (auto conn = connection_maker_(); conn) co_return conn;
+            co_return nullptr;
         }
 
         void connection_reset_(Connection* connection) {
@@ -100,10 +104,10 @@ namespace obelisk::database {
         }
 
         template<typename Connection>
-        static std::shared_ptr<Connection> get_connection(const std::string&key) {
-            auto mgr = self();
-            if (!mgr->connections_.contains(key)) return nullptr;
-            return mgr->connections_[key]->get_connection<Connection>();
+        static boost::asio::awaitable<std::shared_ptr<Connection>> get_connection(const std::string&key) {
+            const auto mgr = self();
+            if (!mgr->connections_.contains(key)) co_return nullptr;
+            co_return co_await mgr->connections_[key]->get_connection<Connection>();
         }
 
         ~connection_manager() {

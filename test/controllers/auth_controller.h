@@ -15,6 +15,8 @@
 
 #include "core/coroutine/async_mutex2.h"
 
+#include <boost/cobalt.hpp>
+
 boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>>
 login(obelisk::http::http_request_wrapper&request) {
 
@@ -23,13 +25,10 @@ login(obelisk::http::http_request_wrapper&request) {
         {"username", {required()}},
         {"password", {required()}}
     });
-    auto conn = obelisk::database::connection_manager::get_connection<obelisk::database::mysql::mysql_connection>("mysql");
-    obelisk::core::coroutine::async_mutex2 mutex;
-    std::mutex mutex_;
-    obelisk::core::coroutine::async_lock([](auto t) {
-        std::cout << "OK" << std::endl;
-    }, mutex_);
-    //  boost::asio::deadline_timer timer(request.io_context());
+
+
+
+    //auto conn = co_await obelisk::database::connection_manager::get_connection<obelisk::database::mysql::mysql_connection>("mysql");
     // timer.async_wait( [](const boost::system::error_code& e) {
     //
     // })
