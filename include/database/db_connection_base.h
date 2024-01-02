@@ -10,6 +10,8 @@
 namespace obelisk::database {
     class db_connection_base {
     public:
+
+        explicit db_connection_base(boost::asio::io_context& ctx) : ctx_(ctx){};
         /**
          * @brief Use to refresh connection when holding a long time connection
          */
@@ -23,8 +25,11 @@ namespace obelisk::database {
 
         [[nodiscard]] bool reuse() const { return reuse_; }
         void reuse(bool r) { reuse_ = r; }
+
+        [[nodiscard]] boost::asio::io_context& executor() const { return ctx_; }
     protected:
         bool reuse_ = false;
+        boost::asio::io_context& ctx_;
     };
 } // obelisk::database
 

@@ -26,6 +26,11 @@ login(obelisk::http::http_request_wrapper&request) {
         {"password", {required()}}
     });
 
+     std::mutex mutex;
+     async_scoped_lock lock(mutex);
+    co_await lock.async_lock(boost::asio::use_awaitable);
+    //co_await f2(boost::asio::use_awaitable, mutex);
+
 
 
     //auto conn = co_await obelisk::database::connection_manager::get_connection<obelisk::database::mysql::mysql_connection>("mysql");
