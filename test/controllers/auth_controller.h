@@ -13,7 +13,6 @@
 #include <database/database.h>
 #include <database/mysql/mysql_connection.h>
 
-#include "core/coroutine/async_mutex2.h"
 
 #include <boost/cobalt.hpp>
 
@@ -26,9 +25,7 @@ login(obelisk::http::http_request_wrapper&request) {
         {"password", {required()}}
     });
 
-     std::mutex mutex;
-     async_scoped_lock lock(mutex);
-    co_await lock.async_lock(boost::asio::use_awaitable);
+    auto conn = co_await obelisk::database::connection_manager::get_connection<obelisk::database::mysql::mysql_connection>("mysql");
     //co_await f2(boost::asio::use_awaitable, mutex);
 
 
