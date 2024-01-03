@@ -62,10 +62,10 @@ namespace obelisk::database {
         boost::asio::awaitable<std::shared_ptr<db_connection_base>> get_connection_() override {
             if (!connections_.empty()) {
                 core::coroutine::async_scoped_lock lock(mutex_);
-                auto locked = co_await lock.async_lock_for(std::chrono::seconds(10), boost::asio::use_awaitable);
-                if(locked)
-                    throw std::logic_error("Time Out!");
-                // lock.async_lock(boost::asio::use_awaitable);
+                // auto locked = co_await lock.async_lock_for(std::chrono::seconds(10), boost::asio::use_awaitable);
+                // if(locked)
+                //     throw std::logic_error("Time Out!");
+                lock.async_lock(boost::asio::use_awaitable);
                 auto conn = connections_.back();
                 connections_.pop_back();
                 co_return conn;

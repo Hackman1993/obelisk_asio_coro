@@ -7,6 +7,24 @@
 #include <boost/asio.hpp>
 namespace obelisk::core::coroutine {
 
+    struct lock_operation {
+        lock_operation(std::timed_mutex& mutex, std::atomic_bool& operated):mutex_(mutex), operated_(operated){};
+        template <typename Self>
+        void operator()(Self& self) {
+            //impl(self, mutex_, operated_);
+            std::thread t(&lock_operation::impl,this, std::ref(self), std::ref(mutex_), std::ref(operated_));
+        }
+    protected:
+        template <typename T>
+        void impl(T& self, std::timed_mutex& mutex, std::atomic_bool& operated)  {
+            mutex.lock();
+            operated = true;
+            self.complete();
+        }
+        std::timed_mutex& mutex_;
+        std::atomic_bool& operated_;
+    };
+
     class async_scoped_lock {
     public:
         explicit async_scoped_lock(std::timed_mutex& mutex): mutex_(mutex){};
@@ -24,13 +42,7 @@ namespace obelisk::core::coroutine {
 
         template <typename CompletionToken>
         auto async_lock(CompletionToken&& token) {
-            return boost::asio::async_compose<CompletionToken, void()>([&lock = this->mutex_, &operated = this->operated_](auto&& self) {
-               std::thread([self = std::move(self), &lock, &operated]() mutable {
-                   lock.lock();
-                   operated = true;
-                   self.complete();
-               }).detach();
-           }, token);
+            return boost::asio::async_compose<CompletionToken, void()>(lock_operation{this->mutex_, this->operated_}, token);
         }
 
         ~async_scoped_lock() {
@@ -41,8 +53,8 @@ namespace obelisk::core::coroutine {
         static boost::asio::awaitable<void> async_lock_(auto self, std::atomic_bool& operated, std::timed_mutex& mutex) {
 
         }
-        std::atomic_bool operated_ = false;
         std::timed_mutex& mutex_;
+        std::atomic_bool operated_;
     };
 } // obelisk::core::coroutine
 
