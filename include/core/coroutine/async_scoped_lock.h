@@ -7,12 +7,15 @@
 #include <boost/asio.hpp>
 namespace obelisk::core::coroutine {
 
+    template
+    struct operation_worker
+
     struct lock_operation {
         lock_operation(std::timed_mutex& mutex, std::atomic_bool& operated):mutex_(mutex), operated_(operated){};
         template <typename Self>
         void operator()(Self& self) {
             //impl(self, mutex_, operated_);
-            std::thread t(&lock_operation::impl,this, std::ref(self), std::ref(mutex_), std::ref(operated_));
+            std::thread t(&lock_operation::impl,this, self, mutex_, operated_);
         }
     protected:
         template <typename T>
