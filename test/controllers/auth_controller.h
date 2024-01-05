@@ -25,7 +25,8 @@ login(obelisk::http::http_request_wrapper&request) {
         {"password", {required()}}
     });
 
-    auto conn = co_await obelisk::database::connection_manager::get_connection<obelisk::database::mysql::mysql_connection>("mysql");
+    auto conn = obelisk::database::connection_manager::get_connection<obelisk::database::mysql::mysql_connection>("mysql");
+
     //co_await f2(boost::asio::use_awaitable, mutex);
 
 
@@ -38,9 +39,9 @@ login(obelisk::http::http_request_wrapper&request) {
 
 
 
-    co_return std::move(std::make_unique<obelisk::http::json_response>(boost::json::object{
+    co_return std::make_unique<obelisk::http::json_response>(boost::json::object{
                                                                            {"data", nullptr}
-                                                                       }, obelisk::http::EResponseCode::EST_OK));
+                                                                       }, obelisk::http::EResponseCode::EST_OK);
 }
 
 

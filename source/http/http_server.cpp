@@ -112,7 +112,7 @@ namespace obelisk::http {
                 }
                 std::cout << e.what() << std::endl;
             }
-            catch (const http::http_exception &e) {
+            catch (const http_exception &e) {
                 response = std::make_unique<json_response>(boost::json::object{{"message", std::string(e.what())}}, e.code());
             }
 

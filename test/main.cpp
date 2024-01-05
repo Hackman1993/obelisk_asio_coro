@@ -10,7 +10,6 @@
 
 int main() {
     try {
-        obelisk::http::parser parser;
         boost::asio::io_context ioctx;
         obelisk::database::connection_manager::make_pool<obelisk::database::mysql::mysql_connection>(ioctx, "mysql", "root", "hl97005497--", "umami", "localhost");
 

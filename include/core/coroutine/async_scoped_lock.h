@@ -7,22 +7,39 @@
 #include <boost/asio.hpp>
 namespace obelisk::core::coroutine {
 
-    template
-    struct operation_worker
+    template<typename Self>
+    struct operation_worker {
+        operation_worker(Self& self, std::timed_mutex& mutex, std::atomic_bool& operated):
+            self_(self), mutex_(mutex), operated_(operated){}
+        void operator()() {
+            if(mutex_.try_lock_for(std::chrono::seconds(5))) {
+                operated_ = true;
+                self_.complete();
+            }
+            self_.complete();
+        }
+        Self& self_;
+        std::timed_mutex& mutex_;
+        std::atomic_bool& operated_;
+    };
 
     struct lock_operation {
         lock_operation(std::timed_mutex& mutex, std::atomic_bool& operated):mutex_(mutex), operated_(operated){};
         template <typename Self>
         void operator()(Self& self) {
             //impl(self, mutex_, operated_);
-            std::thread t(&lock_operation::impl,this, self, mutex_, operated_);
+            // if(mutex_.try_lock_for(std::chrono::seconds(5))) {
+            //     operated_ = true;
+            //     self.complete();
+            // }
+
+            self.complete();
+            // std::async(operation_worker{self, mutex_, operated_});
         }
     protected:
         template <typename T>
         void impl(T& self, std::timed_mutex& mutex, std::atomic_bool& operated)  {
-            mutex.lock();
-            operated = true;
-            self.complete();
+
         }
         std::timed_mutex& mutex_;
         std::atomic_bool& operated_;
@@ -53,9 +70,6 @@ namespace obelisk::core::coroutine {
                 mutex_.unlock();
         }
     protected:
-        static boost::asio::awaitable<void> async_lock_(auto self, std::atomic_bool& operated, std::timed_mutex& mutex) {
-
-        }
         std::timed_mutex& mutex_;
         std::atomic_bool operated_;
     };
