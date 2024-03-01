@@ -11,6 +11,10 @@
 #include <boost/algorithm/string.hpp>
 
 #include "http/http_server.h"
+
+#include <boost/cobalt/config.hpp>
+#include <boost/cobalt/spawn.hpp>
+
 #include "http/router/route_item.h"
 #include "http/core/http_request.h"
 #include "http/parser/http_parser_v2.h"
@@ -22,15 +26,17 @@
 #include "http/exception/protocol_exception.h"
 #include "http/middleware/url_params_extract.h"
 #include "http/core/http_iodata_stream_wrapper.h"
+#include "http/middleware/multipart_extract.h"
 
 namespace obelisk::http {
     http_server::http_server(boost::asio::io_context&ctx, const std::string&webroot) : acceptor_(ctx), webroot_(webroot), ioctx_(ctx) {
         if (!(std::filesystem::exists(webroot_) && std::filesystem::is_directory(webroot_)))
             throw std::logic_error("Root Dirctory Not Exists");
         before_middlewares(std::make_unique<middleware::url_params_extract>());
+        before_middlewares(std::make_unique<middleware::multipart_extract>());
     }
 
-    std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
+    std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<boost::cobalt::task<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
         return routes_.emplace_back(std::make_unique<route_item>(route, handler));
     }
 
@@ -59,17 +65,17 @@ namespace obelisk::http {
         acceptor_.open(endpoint.protocol());
         acceptor_.bind(endpoint);
         acceptor_.listen();
-        co_spawn(acceptor_.get_executor(), listen_(), boost::asio::detached);
+        boost::cobalt::spawn(acceptor_.get_executor(), listen_(), boost::asio::detached);
     }
 
-    boost::asio::awaitable<void> http_server::listen_() {
+    boost::cobalt::task<void> http_server::listen_() {
         while (true) {
-            auto socket = co_await acceptor_.async_accept(boost::asio::use_awaitable);
-            co_spawn(this->acceptor_.get_executor(), handle_(std::move(socket)), boost::asio::detached);
+            auto socket = co_await acceptor_.async_accept(boost::cobalt::use_op);
+            boost::cobalt::spawn(this->acceptor_.get_executor(), handle_(std::move(socket)), boost::asio::detached);
         }
     }
 
-    boost::asio::awaitable<void> http_server::handle_(boost::asio::ip::tcp::socket socket) {
+    boost::cobalt::task<void> http_server::handle_(boost::asio::ip::tcp::socket socket) {
         boost::asio::streambuf buffer;
         while (true) {
             std::unique_ptr<http_response> response;
@@ -82,21 +88,26 @@ namespace obelisk::http {
                     response = co_await before_middleware->pre_handle(*request);
                     if (response) break;
                 }
-
-                if (!response) {   /// Matching Routes
+                // Matching Routes
+                if (!response) {
                     for (const auto&ptr: routes_) {
                         std::unordered_map<std::string, std::string> route_params;
+                        // If Route Not Match
                         if (!ptr->match(std::string(request->target()), route_params))
                             continue;
+                        // If Method is Not Allowed
                         if (!ptr->method_allowed(request->method())) {
                             throw http_exception("Obelisk: Method Not Allowed!", EResponseCode::EST_METHOD_NOT_ALLOWED);
                         }
 
+                        // If Method is OPTIONS OR HEAD
                         if(request->method() == "OPTIONS" || request->method() == "HEAD") {
                             response = std::make_unique<empty_response>();
                             if(const std::string method_allowed = ptr->allowed_methods(); !method_allowed.empty())
                                 response->add_header("Allow", method_allowed);
-                        }else {
+                        }
+                        // Calling Handler
+                        else {
                             response = co_await ptr->handle(*request);
                         }
 
@@ -104,7 +115,9 @@ namespace obelisk::http {
                     }
                 }  // -- End Matching Routes --
             }
+            // Catch System IO Error
             catch (const boost::system::system_error&e) {
+                // If Error is EOF or Timeout
                 if(e.code().value() == 2 || e.code().value() == 10053) {
                     response = nullptr;
                     socket.close();
@@ -112,11 +125,16 @@ namespace obelisk::http {
                 }
                 std::cout << e.what() << std::endl;
             }
+            // Catch Http Exception
             catch (const http_exception &e) {
                 response = std::make_unique<json_response>(boost::json::object{{"message", std::string(e.what())}}, e.code());
+            }catch (const std::exception&e) {
+                std::cout << e.what() << std::endl;
             }
 
-            if (!response && request) {  // Matching Static Files
+            // Matching Static Files
+            if (!response && request) {
+                // Pretreatment Path, Prevent RCE Attach
                 std::string target_path = webroot_.string() + "/" + std::string(request->target());
                 boost::algorithm::replace_all(target_path, "\\", "/");
                 boost::algorithm::replace_all(target_path, "..", "");
@@ -125,25 +143,28 @@ namespace obelisk::http {
                 }while (target_path.contains("//"));
 
                 std::filesystem::path file_path(target_path);
+                // Test If the file Exists
                 if (std::filesystem::is_regular_file(file_path)) {
                     response = std::make_unique<file_response>(file_path, EResponseCode::EST_OK);
                 }
+                // Hittest Index Files
                 for (auto&hittest: index_files_) {
-                    if (std::filesystem::path index_path = file_path.string() + hittest; std::filesystem::is_regular_file(index_path)) {
+                    if (std::filesystem::path index_path = file_path.string()+ "/" + hittest; std::filesystem::is_regular_file(index_path)) {
                         response = std::make_unique<file_response>(index_path, EResponseCode::EST_OK);
                         break;
                     }
                 }
             }
 
-
-            if (!response) { // Generate 404 Response
+            // Generate 404 Response
+            if (!response) {
                 response = std::make_unique<json_response>(boost::json::object{{"message", "null"}}, EResponseCode::EST_NOT_FOUND);
             }
 
-            if (response) {  // Matching Response
+            // Matching Response
+            if (response) {
                 for (auto&middleware: middlewares_after_) {
-                    middleware->after_handle(*request, *response);
+                    co_await middleware->after_handle(*request, *response);
                 }
                 std::unique_ptr<core::http_iodata> response_data = response->serialize();
                 co_await write_response_(socket, response_data);
@@ -151,13 +172,13 @@ namespace obelisk::http {
         }
     }
 
-    boost::asio::awaitable<http::http_header> http_server::receive_header_(
+    boost::cobalt::task<http::http_header> http_server::receive_header_(
         boost::asio::ip::tcp::socket&socket, boost::asio::streambuf&buffer) {
         http_header header{};
         std::string_view bytes_view;
         do {
             const auto bytes_transferred = co_await socket.async_read_some(
-                buffer.prepare(1024 * 10), boost::asio::use_awaitable);
+                buffer.prepare(1024 * 10), boost::cobalt::use_op);
             buffer.commit(bytes_transferred);
             bytes_view = std::string_view(boost::asio::buffer_cast<const char *>(buffer.data()), buffer.size());
         }
@@ -173,7 +194,7 @@ namespace obelisk::http {
         co_return header;
     }
 
-    boost::asio::awaitable<std::unique_ptr<std::iostream>> http_server::receive_body_(
+    boost::cobalt::task<std::unique_ptr<std::iostream>> http_server::receive_body_(
         boost::asio::ip::tcp::socket&socket, boost::asio::streambuf&buffer, http_header&header) {
         if (!header.headers_.contains("Content-Length")) {
             co_return nullptr;
@@ -195,7 +216,7 @@ namespace obelisk::http {
         }
         while (total_transferred < content_length) {
             const auto bytes_wanna_read = std::min<uint32_t>(content_length - total_transferred, 1024 * 10);
-            const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read), boost::asio::use_awaitable);
+            const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read), boost::cobalt::use_op);
             buffer.commit(transferred);
             total_transferred += transferred;
             ret->write(boost::asio::buffer_cast<const char *>(buffer.data()), transferred);
@@ -206,11 +227,11 @@ namespace obelisk::http {
         co_return ret;
     }
 
-    boost::asio::awaitable<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket, const std::unique_ptr<core::http_iodata>&response) {
+    boost::cobalt::task<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket, const std::unique_ptr<core::http_iodata>&response) {
         unsigned char buffer[1024 * 256] = {};
         while (!response->eof()) {
             const auto bytes_read = response->read(buffer, 1024 * 256);
-            auto bytes_transferred = co_await socket.async_write_some(boost::asio::const_buffer(buffer, bytes_read), boost::asio::use_awaitable);
+            auto bytes_transferred = co_await socket.async_write_some(boost::asio::const_buffer(buffer, bytes_read), boost::cobalt::use_op);
         }
         co_return;
     }

@@ -24,7 +24,7 @@ namespace obelisk::database {
         virtual ~db_connection_base() = default;
 
         [[nodiscard]] bool reuse() const { return reuse_; }
-        void reuse(bool r) { reuse_ = r; }
+        void reuse(const bool r) { reuse_ = r; }
 
         [[nodiscard]] boost::asio::io_context& executor() const { return ctx_; }
     protected:

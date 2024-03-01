@@ -74,91 +74,91 @@ namespace obelisk::http {
         return true;
     }
 
-    bool parser::parse_multipart_body(obelisk::http::http_request &request, const std::string& boundary) {
-        // std::string boundary_end_data = "--" + boundary + "--\r";
-        // std::string boundary_split_data = "--" + boundary;
-        // auto data = request.raw();
-        // data->content_->seekg(std::ios::beg);
-        // while (!data->content_->eof()) {
-        //     // Read Boundary
-        //     std::string line_data;
-        //     std::getline(*data->content_, line_data);
-        //     if (line_data == boundary_end_data) return true;
-        //     if (line_data.empty()) {
-        //         THROW(protocol_exception, "Invalid Multipart form data_", "Obelisk");
-        //     }
-        //
-        //     // Read Meta Data
-        //     bool is_file = false;
-        //     std::string content_type, temp_file_path;
-        //     std::unique_ptr<std::ofstream> fstream;
-        //
-        //     std::getline(*data->content_, line_data);
-        //     std::unordered_map<std::string, std::string> meta_data;
-        //     bool parse_result = phrase_parse(line_data.begin(), line_data.end(), lit("Content-Disposition") > ':' > (MultipartMeta % ';'), space, meta_data);
-        //     if (!parse_result)
-        //         THROW(protocol_exception, "Multipart form data_ meta parse failed!", "Obelisk");
-        //     if (meta_data.contains("filename")) {
-        //         is_file = true;
-        //         temp_file_path = "./" + sahara::utils::uuid::generate() + std::filesystem::path(meta_data["filename"]).extension().string();
-        //         fstream = std::make_unique<std::ofstream>(temp_file_path, std::ios::binary);
-        //     }
-        //
-        //     // If content is a file, should read content type
-        //     if (is_file) {
-        //         std::getline(*data->content_, line_data);
-        //         if (line_data.empty() || line_data == "\r")
-        //             THROW(protocol_exception, "Form data was a file but no content type was specified", "Obelisk");
-        //         parse_result = parse(line_data.begin(), line_data.end(), ContentTypeParser, content_type);
-        //         if (!parse_result) {
-        //             THROW(protocol_exception, "Multipart form data_ Content-Type parse failed!", "Obelisk");
-        //         }
-        //     }
-        //     std::getline(*data->content_, line_data);
-        //     if (line_data != "\r") {
-        //         THROW(protocol_exception, "Unexpected Line Data", "Obelisk");
-        //     }
-        //
-        //     // If not a file, read data_
-        //     if (!is_file) {
-        //         std::getline(*data->content_, line_data);
-        //         if (line_data.empty()) {
-        //             THROW(protocol_exception, "Invalid Multipart Form Data", "Obelisk");
-        //         }
-        //         line_data.resize(line_data.length() - 1);
-        //     } else {
-        //         char data_[10240] = {0};
-        //         boost::asio::streambuf sbuf_;
-        //         sbuf_.prepare(10240);
-        //         std::string_view file_buffer;
-        //
-        //         do {
-        //             memset(data_, 0, 10240);
-        //             data->content_->read(data_, 10240);
-        //             auto bytes_read = data->content_->gcount();
-        //             sbuf_.sputn(data_, bytes_read);
-        //             file_buffer = std::string_view(boost::asio::buffer_cast<const char *>(sbuf_.data()), sbuf_.size());
-        //             if (!file_buffer.contains(boundary_split_data)) {
-        //                 fstream->write(file_buffer.data(), file_buffer.size() - boundary.size() - 5);
-        //                 sbuf_.consume(file_buffer.size() - boundary.size() - 5);
-        //             } else {
-        //                 auto range = boost::algorithm::find_first(file_buffer, "\r\n--" + boundary);
-        //                 std::string_view file_content_part = std::string_view(file_buffer.data(), range.begin() - file_buffer.begin());
-        //                 fstream->write(file_content_part.data(), static_cast<std::streamsize>(file_content_part.size()));
-        //                 sbuf_.consume(file_content_part.size() + 2);
-        //             }
-        //         } while (!file_buffer.contains(boundary_split_data));
-        //         fstream->flush();
-        //         fstream->close();
-        //     }
-        //     if (!meta_data.contains("name"))
-        //         continue;
-        //     if (is_file && meta_data.contains("filename")) {
-        //         request.filebag_[meta_data["name"]] = std::make_shared<http_file>(temp_file_path, meta_data["filename"]);
-        //     } else {
-        //         request.set_param(meta_data["name"], line_data);
-        //     }
-        // }
+    bool parser::parse_multipart_body(obelisk::http::http_request_wrapper &request, const std::string& boundary) {
+        std::string boundary_end_data = "--" + boundary + "--\r";
+        std::string boundary_split_data = "--" + boundary;
+        auto data = request.raw_body();
+        data->seekg(std::ios::beg);
+        while (!data->eof()) {
+            // Read Boundary
+            std::string line_data;
+            std::getline(*data, line_data);
+            if (line_data == boundary_end_data) return true;
+            if (line_data.empty()) {
+                THROW(protocol_exception, "Invalid Multipart form data_", "Obelisk");
+            }
+
+            // Read Meta Data
+            bool is_file = false;
+            std::string content_type, temp_file_path;
+            std::unique_ptr<std::ofstream> fstream;
+
+            std::getline(*data, line_data);
+            std::unordered_map<std::string, std::string> meta_data;
+            bool parse_result = phrase_parse(line_data.begin(), line_data.end(), lit("Content-Disposition") > ':' > (MultipartMeta % ';'), space, meta_data);
+            if (!parse_result)
+                THROW(protocol_exception, "Multipart form data_ meta parse failed!", "Obelisk");
+            if (meta_data.contains("filename")) {
+                is_file = true;
+                temp_file_path = "./" + sahara::utils::uuid::generate() + std::filesystem::path(meta_data["filename"]).extension().string();
+                fstream = std::make_unique<std::ofstream>(temp_file_path, std::ios::binary);
+            }
+
+            // If content is a file, should read content type
+            if (is_file) {
+                std::getline(*data, line_data);
+                if (line_data.empty() || line_data == "\r")
+                    THROW(protocol_exception, "Form data was a file but no content type was specified", "Obelisk");
+                parse_result = parse(line_data.begin(), line_data.end(), ContentTypeParser, content_type);
+                if (!parse_result) {
+                    THROW(protocol_exception, "Multipart form data_ Content-Type parse failed!", "Obelisk");
+                }
+            }
+            std::getline(*data, line_data);
+            if (line_data != "\r") {
+                THROW(protocol_exception, "Unexpected Line Data", "Obelisk");
+            }
+
+            // If not a file, read data_
+            if (!is_file) {
+                std::getline(*data, line_data);
+                if (line_data.empty()) {
+                    THROW(protocol_exception, "Invalid Multipart Form Data", "Obelisk");
+                }
+                line_data.resize(line_data.length() - 1);
+            } else {
+                char data_[10240] = {0};
+                boost::asio::streambuf sbuf_;
+                sbuf_.prepare(10240);
+                std::string_view file_buffer;
+
+                do {
+                    memset(data_, 0, 10240);
+                    data->read(data_, 10240);
+                    auto bytes_read = data->gcount();
+                    sbuf_.sputn(data_, bytes_read);
+                    file_buffer = std::string_view(boost::asio::buffer_cast<const char *>(sbuf_.data()), sbuf_.size());
+                    if (!file_buffer.contains(boundary_split_data)) {
+                        fstream->write(file_buffer.data(), file_buffer.size() - boundary.size() - 5);
+                        sbuf_.consume(file_buffer.size() - boundary.size() - 5);
+                    } else {
+                        auto range = boost::algorithm::find_first(file_buffer, "\r\n--" + boundary);
+                        std::string_view file_content_part = std::string_view(file_buffer.data(), range.begin() - file_buffer.begin());
+                        fstream->write(file_content_part.data(), static_cast<std::streamsize>(file_content_part.size()));
+                        sbuf_.consume(file_content_part.size() + 2);
+                    }
+                } while (!file_buffer.contains(boundary_split_data));
+                fstream->flush();
+                fstream->close();
+            }
+            if (!meta_data.contains("name"))
+                continue;
+            if (is_file && meta_data.contains("filename")) {
+                request.filebag_[meta_data["name"]] = std::make_shared<http_file>(temp_file_path, meta_data["filename"]);
+            } else {
+                request.params()[meta_data["name"]].push_back(line_data);
+            }
+        }
         return true;
     }
 

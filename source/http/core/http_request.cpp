@@ -78,7 +78,7 @@ namespace obelisk::http {
 
     http_request_wrapper::~http_request_wrapper() = default;
 
-    boost::asio::awaitable<void> http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
+    boost::cobalt::task<void> http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
         for (auto &[name, validator]: validators) {
             for (auto &j: validator) {
                 co_await j->validate(name, *this);
@@ -87,12 +87,8 @@ namespace obelisk::http {
         co_return;
     }
 
-    std::string_view http_request_wrapper::header(const std::string& header) {
-        return raw_header_.headers_[header];
-    }
-
-    void http_request_wrapper::set_header(const std::string& header, const std::string& value) {
-        raw_header_.headers_.emplace(std::make_pair(header, value));
+    sahara::container::unordered_smap_u<std::string>& http_request_wrapper::headers() {
+        return raw_header_.headers_;
     }
 
     std::string_view http_request_wrapper::version() const {
@@ -121,7 +117,7 @@ namespace obelisk::http {
         return (pos== -1? std::string_view{}:std::string_view{raw_header_.meta_.p2_.data() + pos +1, raw_header_.meta_.p2_.size() - pos});
     }
 
-    std::unique_ptr<std::iostream>& http_request_wrapper::raw_body() {
+    std::shared_ptr<std::iostream>& http_request_wrapper::raw_body() {
         return raw_body_;
     }
 

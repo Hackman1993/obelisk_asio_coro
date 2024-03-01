@@ -10,18 +10,7 @@
 namespace obelisk::database::mysql {
     class mysql_connection : public db_connection_base, public boost::mysql::tcp_connection{
     public:
-        mysql_connection(boost::asio::io_context&ctx, const std::string&username, const std::string&password, const std::string&database, const std::string&host = "localhost", const std::string&port = "3306"): db_connection_base(ctx), boost::mysql::tcp_connection(ctx) {
-            try{
-            boost::asio::ip::tcp::resolver resolver(ctx_);
-            const auto endpoints = resolver.resolve(host, port);
-            const boost::mysql::handshake_params params(username, password, database,
-                                                        boost::mysql::handshake_params::default_collation,
-                                                        boost::mysql::ssl_mode::require);
-            connect(*endpoints.begin(), params);
-            } catch (std::exception&e) {
-                std::cout << e.what() << std::endl;
-            }
-        };
+        mysql_connection(boost::asio::io_context&ctx, const std::string&username, const std::string&password, const std::string&database, const std::string&host = "localhost", const std::string&port = "3306");
 
         bool reset() override { return true; };
 
@@ -33,9 +22,6 @@ namespace obelisk::database::mysql {
 
         void refresh() override;
     };
-
-    inline void mysql_connection::refresh() {
-    }
 } // obelisk::database::mysql
 
 #endif //MYSQL_CONNECTION_H

@@ -4,7 +4,7 @@
 #include "http/core/http_request.h"
 namespace obelisk::http::validator {
 
-    boost::asio::awaitable<void> string_min_length_validator::validate(const std::string &name, http_request_wrapper &request){
+    boost::cobalt::task<void> string_min_length_validator::validate(const std::string &name, http_request_wrapper &request){
         if (request.params().contains(name)) {
             if(const auto &value = request.params()[std::string(name)];value.size() == 1 && value[0].length() < length_){
                 throw obelisk::http::validation_exception("Param " + name + " length must be greater than " + std::to_string(length_));

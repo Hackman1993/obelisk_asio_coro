@@ -6,7 +6,7 @@ namespace obelisk::http::validator {
 
     class required_validator : public validator_base {
     public:
-        boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) override;
+        boost::cobalt::task<void> validate(const std::string &name, http_request_wrapper &request) override;
     };
 
     std::shared_ptr<required_validator> required();

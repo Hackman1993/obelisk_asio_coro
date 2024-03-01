@@ -8,15 +8,12 @@
 #include <string>
 #include <iostream>
 #include <unordered_map>
-#include <boost/asio/co_spawn.hpp>
-#include <boost/asio/detached.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/json/system_error.hpp>
-#include <boost/lockfree/spsc_queue.hpp>
-#include "mysql/mysql_connection.h"
-#include "db_connection_base.h"
-#include "core/coroutine/async_scoped_lock.h"
 #include "boost/thread.hpp"
+#include "db_connection_base.h"
+#include <boost/asio/io_context.hpp>
+#include <boost/lockfree/spsc_queue.hpp>
+#include "core/coroutine/async_scoped_lock.h"
+
 namespace obelisk::database {
     class connection_pool_base {
     public:
@@ -67,9 +64,7 @@ namespace obelisk::database {
     protected:
         std::shared_ptr<db_connection_base> get_connection_() override {
             if (!connections_.empty()) {
-                boost::unique_lock lock2(this->mutex_, boost::defer_lock);
-                if(lock2.try_lock_for(boost::chrono::seconds(10)))
-                    throw std::logic_error("Time Out!");
+                std::scoped_lock lock(mutex_);
                 auto conn = connections_.back();
                 connections_.pop_back();
                 return conn;
@@ -116,8 +111,7 @@ namespace obelisk::database {
             return mgr->connections_[key]->get_connection<Connection>();
         }
 
-        ~connection_manager() {
-        }
+        ~connection_manager() = default;
 
     protected:
         static std::shared_ptr<connection_manager> self() {

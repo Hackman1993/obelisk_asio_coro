@@ -19,7 +19,7 @@ namespace obelisk::http {
 
         static bool parse_body(http_request &request);
 
-        static bool parse_multipart_body(http_request &request, const std::string& boundary);
+        static bool parse_multipart_body(http_request_wrapper &request, const std::string& boundary);
 
         static bool parse_urlencoded_param(http_request_wrapper &request, std::string_view data);
     };

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <filesystem>
 #include <unordered_map>
+#include <boost/cobalt/task.hpp>
 
 #include "http_block_data.h"
 #include "http/validator/validator_base.h"
@@ -30,12 +31,14 @@ namespace obelisk::http {
     };
 
     struct http_file {
-        http_file(std::string tmp_path, std::string filename): temp_path_(std::move(tmp_path)),
-                                                               filename_(std::move(filename)) {
+        http_file(std::string tmp_path, std::string filename): temp_path_(std::move(tmp_path)), filename_(std::move(filename)) {
+            if(const std::filesystem::path file(filename_); file.has_extension())
+                extension_ = file.extension().string();
         }
 
         std::string temp_path_;
         std::string filename_;
+        std::optional<std::string> extension_;
 
         ~http_file() {
             if (std::filesystem::exists(temp_path_))
@@ -92,11 +95,9 @@ namespace obelisk::http {
 
         ~http_request_wrapper();
 
-        boost::asio::awaitable<void> validate(const std::vector<validator::validator_group>&validators);
+        boost::cobalt::task<void> validate(const std::vector<validator::validator_group>&validators);
 
-        std::string_view header(const std::string&header);
-
-        void set_header(const std::string&header, const std::string&value);
+        sahara::container::unordered_smap_u<std::string>& headers();
 
         [[nodiscard]] std::string_view version() const;
 
@@ -110,7 +111,7 @@ namespace obelisk::http {
 
         [[nodiscard]] std::string_view query_string() const;
 
-        std::unique_ptr<std::iostream>& raw_body();
+        std::shared_ptr<std::iostream>& raw_body();
 
         std::unordered_map<std::string, std::any>& registered_data();
 
@@ -122,15 +123,18 @@ namespace obelisk::http {
             return ioctx_;
         }
 
+        std::unordered_map<std::string, std::any>& additional_data() { return additional_data_; };
+
     protected:
 
         std::string_view target_;
         http_header raw_header_;
         boost::asio::io_context& ioctx_;
-        std::unique_ptr<std::iostream> raw_body_;
+        std::shared_ptr<std::iostream> raw_body_;
         std::unordered_map<std::string, std::any> registered_value_;
         std::unordered_map<std::string, std::shared_ptr<http_file>> filebag_;
         std::unordered_map<std::string, std::vector<std::string>> request_params_;
+        std::unordered_map<std::string, std::any> additional_data_;
 
         friend class obelisk::http::parser;
     };

@@ -25,7 +25,7 @@ namespace obelisk::http::validator {
                                                         except_value_(
                                                                 boost::lexical_cast<std::string>(except_value_)) {}
 
-        boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) override;
+        boost::cobalt::task<void> validate(const std::string &name, http_request_wrapper &request) override;
 
     protected:
         std::string table_;
