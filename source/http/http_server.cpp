@@ -26,6 +26,7 @@
 #include "http/exception/protocol_exception.h"
 #include "http/middleware/url_params_extract.h"
 #include "http/core/http_iodata_stream_wrapper.h"
+#include "http/middleware/json_extract.h"
 #include "http/middleware/multipart_extract.h"
 
 namespace obelisk::http {
@@ -34,6 +35,7 @@ namespace obelisk::http {
             throw std::logic_error("Root Dirctory Not Exists");
         before_middlewares(std::make_unique<middleware::url_params_extract>());
         before_middlewares(std::make_unique<middleware::multipart_extract>());
+        before_middlewares(std::make_unique<middleware::json_extract>());
     }
 
     std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<boost::cobalt::task<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
@@ -103,8 +105,10 @@ namespace obelisk::http {
                         // If Method is OPTIONS OR HEAD
                         if(request->method() == "OPTIONS" || request->method() == "HEAD") {
                             response = std::make_unique<empty_response>();
-                            if(const std::string method_allowed = ptr->allowed_methods(); !method_allowed.empty())
-                                response->add_header("Allow", method_allowed);
+                            if(const std::string method_allowed = ptr->allowed_methods(); !method_allowed.empty()){
+                                response->headers().emplace("Allow", method_allowed);
+                                response->headers().emplace("Access-Control-Allow-Methods", method_allowed);
+                            }
                         }
                         // Calling Handler
                         else {

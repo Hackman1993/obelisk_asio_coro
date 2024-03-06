@@ -28,4 +28,11 @@ namespace obelisk::http {
         auto data = std::make_unique<std::stringstream>(data_str);
         body_ = std::make_unique<core::http_data_istream_wrapper>(std::move(data), data_str.length());
     }
+
+    json_response::json_response(const bsoncxx::document::value& object, EResponseCode code): http_response(code) {
+        header_.headers_["Content-Type"] = "application/json";
+        auto data_str = bsoncxx::to_json(object.view());
+        auto data = std::make_unique<std::stringstream>(data_str);
+        body_ = std::make_unique<core::http_data_istream_wrapper>(std::move(data), data_str.length());
+    }
 } // obelisk

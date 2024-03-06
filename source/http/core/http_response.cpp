@@ -53,16 +53,12 @@ namespace obelisk::http {
     }
 
 
-    void http_response::add_header(const std::string &name, const std::string &value) {
-        header_.headers_.emplace(name, value);
-    }
-
     std::uint64_t http_response::content_length() {
         return 0;
     }
 
-    bool http_response::has_header(const std::string &header) {
-        return header_.headers_.contains(header);
+    sahara::container::unordered_smap_u<std::string>& http_response::headers() {
+        return header_.headers_;
     }
 
     std::unique_ptr<core::http_iodata> http_response::serialize_header() {

@@ -39,7 +39,7 @@ boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> login(obelisk
     const auto password = document.find("password")->get_string();
     const auto &[oid] = document.find("_id")->get_oid();
 
-    if (!sahara::hash::bcrypt::validatePassword(request.params()["password"][0], password.value))
+    if (!sahara::hash::bcrypt::validatePassword(request.params()["password"].as_string(), password.value))
         throw obelisk::http::http_exception("auth.invalid_credentials", obelisk::http::EResponseCode::EST_UNAUTHORIZED);
 
     std::string access_token = sahara::utils::uuid::generate();

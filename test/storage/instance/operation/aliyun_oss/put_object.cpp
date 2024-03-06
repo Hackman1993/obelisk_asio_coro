@@ -24,6 +24,7 @@ namespace obelisk::storage::impl::alioss {
             if (!result.isSuccess())
                 result_.error_ = std::make_shared<storage_error>(result.error().Message());
             result_.success_ = result.isSuccess();
+            result_.result_ = "${OSS_URL}/" + path_;
             coro.resume();
         }).detach();
     }

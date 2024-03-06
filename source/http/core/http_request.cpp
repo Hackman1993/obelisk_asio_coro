@@ -125,7 +125,7 @@ namespace obelisk::http {
         return registered_value_;
     }
 
-    std::unordered_map<std::string, std::vector<std::string>>& http_request_wrapper::params() {
+    std::unordered_map<std::string, boost::json::value>& http_request_wrapper::params() {
         return request_params_;
     }
 

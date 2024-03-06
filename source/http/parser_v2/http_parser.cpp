@@ -49,7 +49,7 @@ namespace obelisk::http {
         return result;
     }
 
-    bool parser::parse_body(obelisk::http::http_request &request) {
+    bool parser::parse_body(http_request &request) {
         // auto content_type = request.content_type();
         // auto content_length = request.content_length();
         // if (boost::algorithm::icontains(content_type, "multipart/form-data")) {
@@ -156,7 +156,16 @@ namespace obelisk::http {
             if (is_file && meta_data.contains("filename")) {
                 request.filebag_[meta_data["name"]] = std::make_shared<http_file>(temp_file_path, meta_data["filename"]);
             } else {
-                request.params()[meta_data["name"]].push_back(line_data);
+                auto item_key = meta_data["name"].substr(0, meta_data["name"].rfind("[]"));
+                bool is_array = meta_data["name"].ends_with("[]");
+                if(is_array && !request.request_params_.contains(meta_data["name"])) {
+                    request.request_params_[meta_data["name"]] = boost::json::array{};
+                }
+                if(is_array) {
+                    request.request_params_[meta_data["name"]].as_array().emplace_back(line_data);
+                } else {
+                    request.params()[meta_data["name"]] = boost::json::value(line_data);
+                }
             }
         }
         return true;
@@ -167,10 +176,18 @@ namespace obelisk::http {
         std::vector<std::pair<std::string, std::string>> params;
         if (!parse(data.begin(), data.end(), UrlEncodedData % '&', params))
             throw protocol_exception("UrlEncodedData Parse Failed!");
+
         for (auto &[key, val]: params) {
-            if(!request.request_params_.contains(key))
-                request.request_params_[key] = std::vector<std::string>();
-            request.request_params_[key].emplace_back(val);
+            auto item_key = key.substr(0, key.rfind("[]"));
+            bool is_array = key.ends_with("[]");
+            if(is_array && !request.request_params_.contains(key)) {
+                request.request_params_[key] = boost::json::array{};
+            }
+            if(is_array) {
+                request.request_params_[key].as_array().emplace_back(val);
+            } else {
+                request.request_params_[key] = boost::json::value(val);
+            }
         }
         return true;
     }

@@ -10,6 +10,7 @@ namespace obelisk::http {
         json_response(const boost::json::object& object, EResponseCode code = EST_OK);
         json_response(const boost::json::array& object, EResponseCode  code = EST_OK);
         json_response(const bsoncxx::builder::basic::document& object, EResponseCode  code = EST_OK);
+        json_response(const bsoncxx::document::value& object, EResponseCode  code = EST_OK);
     };
 
 } // obelisk

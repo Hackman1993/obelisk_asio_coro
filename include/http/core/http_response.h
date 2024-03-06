@@ -14,10 +14,8 @@ namespace obelisk::http {
         explicit http_response(EResponseCode code);
 
         virtual ~http_response() = default;
-        virtual void add_header(const std::string& name, const std::string& value);
         virtual std::uint64_t content_length();
-        virtual bool has_header(const std::string& header);
-
+        virtual sahara::container::unordered_smap_u<std::string>& headers();
         virtual std::unique_ptr<core::http_iodata> serialize_header();
         virtual std::unique_ptr<core::http_iodata> serialize();
     protected:

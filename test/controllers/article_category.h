@@ -11,6 +11,7 @@ namespace obelisk::http {
     class http_response;
 }
 
+boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> get_article_list(obelisk::http::http_request_wrapper&request);
 boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> create_article(obelisk::http::http_request_wrapper&request);
 
 
