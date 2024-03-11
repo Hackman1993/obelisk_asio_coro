@@ -19,7 +19,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> authorization::pre_handle(ht
     if(boost::algorithm::iequals(request.method(), "OPTIONS") | boost::algorithm::iequals(request.method(), "HEAD"))
         co_return nullptr;
     std::unordered_map<std::string, std::string> params;
-    const std::regex regex("^/api/[.]*");
+    const std::regex regex("^/api/backend/[.]*");
 
     const std::string_view pth = request.target();
     if(const std::string_view path = request.target();!std::regex_search(path.begin(),path.end(),regex))

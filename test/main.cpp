@@ -8,7 +8,7 @@
 #include "http/parser/http_parser_v2.h"
 #include <boost/cobalt.hpp>
 
-#include "controllers/article_category.h"
+#include "controllers/article.h"
 #include "database/mongo/mongo_connection.h"
 #include "database/redis/redis_connection.h"
 #include "middleware/authorization.h"
@@ -20,7 +20,6 @@ boost::cobalt::main co_main(int argc, char* argv[]) {
     try {
         sw::redis::ConnectionOptions options;
         boost::asio::io_context ioctx;
-        // connection_manager::make_pool<mysql::mysql_connection>(ioctx, "mysql", "root", "hl97005497--", "umami", "localhost");
         connection_manager::make_pool<redis::redis_connection>(ioctx, "redis", options);
         connection_manager::make_pool<mongo::mongo_connection>(ioctx, "mongo", "mongodb://root:hl97005497--@localhost:27017");
 
@@ -28,10 +27,13 @@ boost::cobalt::main co_main(int argc, char* argv[]) {
         server.before_middlewares(std::make_unique<authorization>());
         server.after_middlewares(std::make_unique<cors>());
         server.route("/auth/login", login)->method({"POST"});
-        server.route("/api/attachment/upload", upload)->method({"POST"});
-        server.route("/api/logout", logout)->method({"GET"});
-        server.route("/api/article", get_article_list)->method({"GET"});
-        server.route("/api/article/create", create_article)->method({"POST"});
+        server.route("/api/backend/attachment/upload", upload)->method({"POST"});
+        server.route("/api/backend/logout", logout)->method({"GET"});
+        server.route("/api/backend/article", article_controller::get_article_list)->method({"GET"});
+        server.route("/api/backend/article/create", article_controller::create_article)->method({"POST"});
+        server.route("/api/backend/article/update/{article_id}", article_controller::update_article)->method({"PUT"});
+        server.route("/api/backend/article/detail/{article_id}", article_controller::get_article_detail)->method({"GET"});
+        server.route("/api/backend/article/delete/{article_id}", article_controller::delete_article)->method({"DELETE"});
         server.listen("0.0.0.0", 3308);
         ioctx.run();
     }

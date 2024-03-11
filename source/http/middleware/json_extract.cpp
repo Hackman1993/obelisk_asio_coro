@@ -15,6 +15,9 @@ namespace obelisk::http::middleware {
     boost::cobalt::task<std::unique_ptr<http_response>> json_extract::pre_handle(http_request_wrapper& request) {
         if(!request.headers().contains("content-type") || !boost::algorithm::icontains(request.headers()["content-type"], "application/json"))
             co_return nullptr;
+        if(!request.raw_body()) {
+            co_return nullptr;
+        }
         boost::json::error_code err;
         boost::json::value json_data = boost::json::parse(*request.raw_body(), err);
         if(err) {

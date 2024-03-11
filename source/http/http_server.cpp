@@ -101,6 +101,9 @@ namespace obelisk::http {
                         if (!ptr->method_allowed(request->method())) {
                             throw http_exception("Obelisk: Method Not Allowed!", EResponseCode::EST_METHOD_NOT_ALLOWED);
                         }
+                        for(auto const &[key, val]: route_params) {
+                            request->params().emplace(key, val);
+                        }
 
                         // If Method is OPTIONS OR HEAD
                         if(request->method() == "OPTIONS" || request->method() == "HEAD") {

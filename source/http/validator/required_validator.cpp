@@ -13,12 +13,6 @@ namespace obelisk::http::validator {
         if (request.params().contains(name) || request.filebag().contains(name)) {
             co_return;
         }
-        if(request.additional_data().contains("__json_body")) {
-            const auto& json_data = std::any_cast<boost::json::object>(request.additional_data()["__json_body"]);
-            if(json_data.contains(name)) {
-                co_return;
-            }
-        }
         throw validation_exception("validation.error." + name + "_required");
     }
 }
