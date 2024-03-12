@@ -27,6 +27,7 @@ boost::cobalt::main co_main(int argc, char* argv[]) {
         server.before_middlewares(std::make_unique<authorization>());
         server.after_middlewares(std::make_unique<cors>());
         server.route("/auth/login", login)->method({"POST"});
+        server.route("/api/backend/check_auth", check_auth)->method({"GET"});
         server.route("/api/backend/attachment/upload", upload)->method({"POST"});
         server.route("/api/backend/logout", logout)->method({"GET"});
         server.route("/api/backend/article", article_controller::get_article_list)->method({"GET"});

@@ -70,3 +70,9 @@ boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> logout(obelis
     }, obelisk::http::EST_OK);
 
 }
+
+boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> check_auth(obelisk::http::http_request_wrapper&request) {
+    co_return std::make_unique<obelisk::http::json_response>(boost::json::object{
+        {"data", nullptr}
+    }, obelisk::http::EST_OK);
+}
