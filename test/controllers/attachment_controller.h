@@ -4,11 +4,14 @@
 
 #ifndef ATTACHMENT_CONTROLLER_H
 #define ATTACHMENT_CONTROLLER_H
+#include <bsoncxx/oid.hpp>
+
 #include "http/core/http_request.h"
 
 namespace obelisk::http {
     class http_response;
 }
 
+boost::cobalt::task<std::string> save_attachment(const std::shared_ptr<obelisk::http::http_file>& file, bsoncxx::oid uploader);
 boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> upload(obelisk::http::http_request_wrapper&request);
 #endif //ATTACHMENT_CONTROLLER_H

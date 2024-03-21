@@ -3,6 +3,9 @@
 #include "../core/http_response.h"
 #include <boost/json.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
+#include <mongocxx/cursor.hpp>
+
+
 namespace obelisk::http {
 
     class json_response : public http_response{

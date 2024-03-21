@@ -2,6 +2,7 @@
 #include "http/core/http_iodata_stream_wrapper.h"
 #include <sstream>
 #include <bsoncxx/json.hpp>
+#include <bsoncxx/builder/basic/array.hpp>
 
 namespace obelisk::http {
     json_response::json_response(const boost::json::object& object, EResponseCode code) : http_response(code) {
@@ -35,4 +36,5 @@ namespace obelisk::http {
         auto data = std::make_unique<std::stringstream>(data_str);
         body_ = std::make_unique<core::http_data_istream_wrapper>(std::move(data), data_str.length());
     }
+
 } // obelisk

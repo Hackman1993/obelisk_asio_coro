@@ -70,7 +70,8 @@ boost::cobalt::task<bsoncxx::document::value> controller_base::paginate(mongocxx
         limit = request.params()["limit"].as_int64();
         limit = std::clamp<std::int64_t>(limit, 1, 100);
     }
-    const auto maxium_page = total % limit > 0 ? total / limit + 1 : total / limit;
+    auto maxium_page = total % limit > 0 ? total / limit + 1 : total / limit;
+    maxium_page = maxium_page<=0? 1: maxium_page;
     if (request.params().contains("page")) {
         const auto request_page = request.params()["page"].as_int64();
         page = std::clamp<std::int64_t>(request_page, 1, maxium_page);
@@ -79,8 +80,8 @@ boost::cobalt::task<bsoncxx::document::value> controller_base::paginate(mongocxx
     using namespace bsoncxx::builder::basic;
     mongocxx::pipeline pipeline;
     pipeline.append_stage(make_document(kvp("$addFields", make_document(kvp("id", make_document(kvp("$toString", "$_id")))))));
-    pipeline.append_stages(lookup.view());
     pipeline.append_stage(make_document(kvp("$match", filter.view())));
+    pipeline.append_stages(lookup.view());
     pipeline.append_stage(make_document(kvp("$skip", (page - 1) * limit)));
     pipeline.append_stage(make_document(kvp("$limit", limit)));
 

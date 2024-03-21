@@ -20,42 +20,56 @@ using namespace obelisk::http;
 using namespace obelisk::database;
 using namespace obelisk::http::validator;
 using namespace bsoncxx::builder::basic;
-using namespace boost::spirit::x3;
 
 boost::cobalt::task<std::unique_ptr<http_response>> article_controller::get_article_list(http_request_wrapper&request) {
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     auto filter = make_document(kvp("$or", make_array(
-        make_document(kvp("deleted_at", bsoncxx::types::b_null{})),
-        make_document(kvp("deleted_at", make_document(kvp("$gt", bsoncxx::types::b_date(std::chrono::system_clock::now())))))
-    )));
+                                        make_document(kvp("deleted_at", bsoncxx::types::b_null{})),
+                                        make_document(kvp("deleted_at",
+                                                          make_document(kvp(
+                                                              "$gt", bsoncxx::types::b_date(
+                                                                  std::chrono::system_clock::now())))))
+                                    )));
 
     auto result = co_await paginate(collection, request, filter, make_array(
-        make_document(kvp("$lookup", make_document(
-            kvp("from", "c_sys_admin"),
-            kvp("localField", "author"),
-            kvp("foreignField", "_id"),
-            kvp("as", "author"),
-            kvp("pipeline", make_array(make_document(kvp("$project", make_document(
-                kvp("_id",0),
-                kvp("password", 0)
-            )))))
-        ))),
-        make_document(kvp("$project", make_document(
-            kvp("updated_at", make_document(kvp("$dateToString", make_document(kvp("format", "%Y-%m-%d %H:%M:%S"), kvp("date", "$updated_at"))))),
-            kvp("_id", false),
-            kvp("abstract", true),
-            kvp("title", true)
-        ))),
-        make_document(kvp("$sort", make_document(
-            kvp("updated_at", -1)
-        )))
-    ));
+                                        make_document(kvp("$addFields",
+                                                          make_document(
+                                                              kvp("id", make_document(kvp("$toString", "$_id")))))),
+                                        make_document(kvp("$lookup", make_document(
+                                                              kvp("from", "c_sys_admin"),
+                                                              kvp("localField", "author"),
+                                                              kvp("foreignField", "_id"),
+                                                              kvp("as", "author"),
+                                                              kvp("pipeline", make_array(make_document(kvp(
+                                                                      "$project", make_document(
+                                                                          kvp("_id", 0),
+                                                                          kvp("password", 0)
+                                                                      )))))
+                                                          ))),
+                                        make_document(kvp("$project", make_document(
+                                                              kvp("updated_at",
+                                                                  make_document(kvp(
+                                                                      "$dateToString",
+                                                                      make_document(
+                                                                          kvp("format", "%Y-%m-%d %H:%M:%S"),
+                                                                          kvp("date", "$updated_at"))))),
+                                                              kvp("_id", false),
+                                                              kvp("id", true),
+                                                              kvp("abstract", true),
+                                                              kvp("title", true),
+                                                              kvp("categories", true)
+                                                          ))),
+                                        make_document(kvp("$sort", make_document(
+                                                              kvp("updated_at", -1)
+                                                          )))
+                                    ));
 
     co_return std::make_unique<json_response>(result, EST_OK);
 }
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_controller::get_article_detail(http_request_wrapper&request) {
+boost::cobalt::task<std::unique_ptr<http_response>>
+article_controller::get_article_detail(http_request_wrapper&request) {
     co_await request.validate({{"article_id", {required()}}});
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
@@ -71,7 +85,9 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::get_arti
                                                 kvp("id", true),
                                                 kvp("title", true),
                                                 kvp("content", true),
+                                                kvp("categories", true),
                                                 kvp("abstract", true)
+
                                             ))));
     auto data = collection.aggregate(pipeline);
     if (data.begin() == data.end())
@@ -93,7 +109,6 @@ std::vector<std::string> get_oss_attachment_keys(const std::string&html_data) {
         else if (match[4].matched)
             data = match[4];
         attachment_keys.emplace_back(data);
-        //obelisk::storage::storage_manager::get("alioss").delete_tag(data);
         content = match.suffix();
     }
     return attachment_keys;
@@ -156,23 +171,31 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
     co_await request.validate({
         {"title", {required()}},
         {"content", {required()}},
-        {"abstract", {required()}},
+        {"abstract", {required()}}
     });
     const auto&udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     std::string content(request.params()["content"].as_string());
     const auto attachments = get_oss_attachment_keys(content);
-    for (const auto&attachment: attachments) {
-        obelisk::storage::storage_manager::get("alioss").delete_tag(attachment);
-    }
 
     bsoncxx::oid oid(udata.user_id);
     auto collection = (*conn)["hl_blog_database"]["c_article"];
+    array categories;
+    if (request.params().contains("categories") && request.params()["categories"].is_array()) {
+        for (const auto&item: request.params()["categories"].as_array()) {
+            categories.append(item.as_string());
+        }
+    }
+
+    if(request.filebag().contains("cover")) {
+
+    }
     const auto result = collection.insert_one(make_document(
         kvp("title", request.params()["title"].as_string()),
         kvp("content", request.params()["content"].as_string()),
         kvp("abstract", request.params()["abstract"].as_string()),
         kvp("author", oid),
+        kvp("categories", categories),
         kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now())),
         kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))
     ));
@@ -214,6 +237,14 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
         document.append(kvp("abstract", request.params()["abstract"].as_string()));
     }
 
+    array categories;
+    if (request.params().contains("categories") && request.params()["categories"].is_array()) {
+        for (const auto&item: request.params()["categories"].as_array()) {
+            categories.append(item.as_string());
+        }
+    }
+
+    document.append(kvp("categories", categories));
     document.append(kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now())));
     collection.update_one(make_document(kvp("_id", oid)), make_document(kvp("$set", document)));
 
@@ -231,7 +262,9 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::delete_a
     auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     collection.update_one(make_document(kvp("_id", bsoncxx::oid(request.params()["article_id"].as_string()))),
-    make_document(kvp("$set", make_document(kvp("deleted_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))))));
+                          make_document(kvp("$set", make_document(
+                                                kvp("deleted_at",
+                                                    bsoncxx::types::b_date(std::chrono::system_clock::now()))))));
     co_return std::make_unique<json_response>(boost::json::object{
         {
             "data", {
