@@ -5,6 +5,8 @@
 #include "article.h"
 
 #include <regex>
+#include <boost/algorithm/string/erase.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "controller_base.h"
 #include "database/database.h"
@@ -13,6 +15,7 @@
 #include "http/validator/required_validator.h"
 #include <boost/spirit/home/x3.hpp>
 
+#include "attachment_controller.h"
 #include "../common/user_data.h"
 #include "../storage/storage.h"
 #include "http/exception/http_exception.h"
@@ -58,7 +61,8 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::get_arti
                                                               kvp("id", true),
                                                               kvp("abstract", true),
                                                               kvp("title", true),
-                                                              kvp("categories", true)
+                                                              kvp("categories", true),
+                                                              kvp("cover", true)
                                                           ))),
                                         make_document(kvp("$sort", make_document(
                                                               kvp("updated_at", -1)
@@ -86,7 +90,8 @@ article_controller::get_article_detail(http_request_wrapper&request) {
                                                 kvp("title", true),
                                                 kvp("content", true),
                                                 kvp("categories", true),
-                                                kvp("abstract", true)
+                                                kvp("abstract", true),
+                                                kvp("cover", true)
 
                                             ))));
     auto data = collection.aggregate(pipeline);
@@ -176,8 +181,14 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
     const auto&udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     std::string content(request.params()["content"].as_string());
-    const auto attachments = get_oss_attachment_keys(content);
+    auto attachments = get_oss_attachment_keys(content);
 
+    std::optional<std::string> cover_url;
+    if(request.filebag().contains("cover")) {
+        auto cover = request.filebag()["cover"];
+        cover_url = co_await save_attachment(cover, bsoncxx::oid(udata.user_id));
+        attachments.push_back(boost::algorithm::replace_first_copy(cover_url.value(), "${OSS_URL}/", ""));
+    }
     bsoncxx::oid oid(udata.user_id);
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     array categories;
@@ -187,18 +198,18 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
         }
     }
 
-    if(request.filebag().contains("cover")) {
+    document document;
+    document.append(kvp("title", request.params()["title"].as_string()));
+    document.append(kvp("content", request.params()["content"].as_string()));
+    document.append(kvp("abstract", request.params()["abstract"].as_string()));
+    document.append(kvp("author", oid));
+    document.append( kvp("categories", categories));
+    document.append(kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now())));
+    document.append(kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now())));
+    if (cover_url.has_value())
+        document.append(kvp("cover", "${OSS_URL}/" + cover_url.value()));
 
-    }
-    const auto result = collection.insert_one(make_document(
-        kvp("title", request.params()["title"].as_string()),
-        kvp("content", request.params()["content"].as_string()),
-        kvp("abstract", request.params()["abstract"].as_string()),
-        kvp("author", oid),
-        kvp("categories", categories),
-        kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now())),
-        kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))
-    ));
+    const auto result = collection.insert_one(document.view());
     if (!result.has_value())
         throw http_exception("error.database.mongo.execution_error", EST_INTERNAL_SERVER_ERROR);
     co_await sync_attachment_data(attachments, result.value().inserted_id().get_oid().value);
@@ -220,21 +231,32 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     co_await request.validate({{"article_id", {required()}}});
 
-
     bsoncxx::oid oid(request.params()["article_id"].as_string());
+    auto origin_data = collection.find_one(make_document(kvp("_id", oid))).value();
+    std::string content_data(origin_data["content"].get_string());
+
+    const auto&udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
+
     document document{};
     if (request.params().contains("content")) {
-        const std::string content(request.params()["content"].as_string());
-        document.append(kvp("content", request.params()["content"].as_string()));
-        std::vector<std::string> attachments = get_oss_attachment_keys(request.params()["content"].as_string().c_str());
-        co_await sync_attachment_data(attachments, oid);
+        content_data = request.params()["content"].as_string();
+        document.append(kvp("content", content_data));
     }
+    std::vector<std::string> attachments = get_oss_attachment_keys(content_data);
 
     if (request.params().contains("title")) {
         document.append(kvp("title", request.params()["title"].as_string()));
     }
     if (request.params().contains("abstract")) {
         document.append(kvp("abstract", request.params()["abstract"].as_string()));
+    }
+    if(request.filebag().contains("cover")) {
+        auto cover_url = co_await save_attachment(request.filebag()["cover"], bsoncxx::oid(udata.user_id));
+        attachments.push_back(boost::algorithm::replace_first_copy(cover_url, "${OSS_URL}/", ""));
+        document.append(kvp("cover", "${OSS_URL}/" + cover_url));
+
+    }else if(!request.params().contains("cover")) {
+        document.append(kvp("cover", bsoncxx::types::b_null{}));
     }
 
     array categories;
@@ -247,6 +269,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
     document.append(kvp("categories", categories));
     document.append(kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now())));
     collection.update_one(make_document(kvp("_id", oid)), make_document(kvp("$set", document)));
+    co_await sync_attachment_data(attachments, oid);
 
     co_return std::make_unique<json_response>(boost::json::object{
         {

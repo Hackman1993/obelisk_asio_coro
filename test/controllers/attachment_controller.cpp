@@ -35,7 +35,7 @@ boost::cobalt::task<std::string> save_attachment(const std::shared_ptr<obelisk::
         kvp("origin_name", file->filename_)
     ));
 
-    co_return result.result_;
+    co_return storage_path;
 
 }
 boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> upload(obelisk::http::http_request_wrapper&request) {
