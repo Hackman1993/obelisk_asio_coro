@@ -33,6 +33,8 @@ boost::cobalt::main co_main(int argc, char* argv[]) {
         server.route("/api/backend/logout", logout)->method({"GET"});
 
         server.route("/api/backend/article", article_controller::get_article_list)->method({"GET"});
+        server.route("/api/article", article_controller::get_article_list)->method({"GET"});
+        server.route("/api/article/{article_id}", article_controller::get_article_detail)->method({"GET"});
         server.route("/api/backend/article/create", article_controller::create_article)->method({"POST"});
         server.route("/api/backend/article/update/{article_id}", article_controller::update_article)->method({"PUT"});
         server.route("/api/backend/article/detail/{article_id}", article_controller::get_article_detail)->method({"GET"});

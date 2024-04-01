@@ -192,8 +192,8 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
     bsoncxx::oid oid(udata.user_id);
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     array categories;
-    if (request.params().contains("categories") && request.params()["categories"].is_array()) {
-        for (const auto&item: request.params()["categories"].as_array()) {
+    if (request.params().contains("categories[]") && request.params()["categories[]"].is_array()) {
+        for (const auto&item: request.params()["categories[]"].as_array()) {
             categories.append(item.as_string());
         }
     }
@@ -254,14 +254,17 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
         auto cover_url = co_await save_attachment(request.filebag()["cover"], bsoncxx::oid(udata.user_id));
         attachments.push_back(boost::algorithm::replace_first_copy(cover_url, "${OSS_URL}/", ""));
         document.append(kvp("cover", "${OSS_URL}/" + cover_url));
-
-    }else if(!request.params().contains("cover")) {
+    } else if(request.params().contains("cover")){
+        std::string cover_url(request.params()["cover"].as_string().c_str());
+        attachments.push_back(boost::algorithm::replace_first_copy(cover_url, "${OSS_URL}/", ""));
+    }
+    else if(!request.params().contains("cover")) {
         document.append(kvp("cover", bsoncxx::types::b_null{}));
     }
 
     array categories;
-    if (request.params().contains("categories") && request.params()["categories"].is_array()) {
-        for (const auto&item: request.params()["categories"].as_array()) {
+    if (request.params().contains("categories[]") && request.params()["categories[]"].is_array()) {
+        for (const auto&item: request.params()["categories[]"].as_array()) {
             categories.append(item.as_string());
         }
     }

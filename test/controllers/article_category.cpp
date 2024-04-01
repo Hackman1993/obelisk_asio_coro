@@ -29,7 +29,8 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::get_articl
             kvp("_id", false),
             kvp("id", true),
             kvp("name", true),
-            kvp("group", true)
+            kvp("group", true),
+            kvp("filter_key", true)
         ))),
         make_document(kvp("$sort", make_document(
             kvp("updated_at", -1)
@@ -55,7 +56,8 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::get_articl
            kvp("updated_at", make_document(kvp("$dateToString", make_document(kvp("format", "%Y-%m-%d %H:%M:%S"), kvp("date", "$updated_at"))))),
            kvp("_id", false),
            kvp("name", true),
-           kvp("group", true)
+           kvp("group", true),
+           kvp("filter_key", true)
        )))
     );
     mongocxx::pipeline pipeline;
@@ -83,6 +85,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::create_art
     const auto result = collection.insert_one(make_document(
         kvp("name", request.params()["name"].as_string()),
         kvp("group", request.params()["group"].as_string()),
+        kvp("filter_key", request.params()["filter_key"].as_string()),
         kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now())),
         kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))
     ));
@@ -114,6 +117,11 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::update_art
     if (request.params().contains("group")) {
         document.append(kvp("group", request.params()["group"].as_string()));
     }
+
+    if (request.params().contains("filter_key")) {
+        document.append(kvp("filter_key", request.params()["filter_key"].as_string()));
+    }
+
 
     document.append(kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now())));
     collection.update_one(make_document(kvp("_id", oid)), make_document(kvp("$set", document)));
