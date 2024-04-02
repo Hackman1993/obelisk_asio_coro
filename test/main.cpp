@@ -42,6 +42,7 @@ boost::cobalt::main co_main(int argc, char* argv[]) {
 
         server.route("/api/backend/content/article_category", article_category::get_article_category_list)->method({"GET"});
         server.route("/api/backend/content/article_category/all", article_category::get_article_category_full)->method({"GET"});
+        server.route("/api/article_category/all", article_category::get_article_category_full)->method({"GET"});
         server.route("/api/backend/content/article_category/create", article_category::create_article_category)->method({"POST"});
         server.route("/api/backend/content/article_category/update/{category_id}", article_category::update_article_category)->method({"PUT"});
         server.route("/api/backend/content/article_category/delete/{category_id}", article_category::delete_article_category)->method({"DELETE"});

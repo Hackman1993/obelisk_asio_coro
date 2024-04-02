@@ -181,6 +181,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
     const auto&udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     std::string content(request.params()["content"].as_string());
+    boost::algorithm::replace_all(content, std::string("<p></p>"), "<br>");
     auto attachments = get_oss_attachment_keys(content);
 
     std::optional<std::string> cover_url;
@@ -240,6 +241,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
     document document{};
     if (request.params().contains("content")) {
         content_data = request.params()["content"].as_string();
+        boost::algorithm::replace_all(content_data, std::string("<p></p>"), "<br>");
         document.append(kvp("content", content_data));
     }
     std::vector<std::string> attachments = get_oss_attachment_keys(content_data);
