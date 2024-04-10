@@ -24,16 +24,50 @@ using namespace obelisk::database;
 using namespace obelisk::http::validator;
 using namespace bsoncxx::builder::basic;
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_controller::get_article_list(http_request_wrapper&request) {
+boost::cobalt::task<std::unique_ptr<http_response> >
+article_controller::get_article_list(http_request_wrapper &request) {
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
-    auto filter = make_document(kvp("$or", make_array(
-                                        make_document(kvp("deleted_at", bsoncxx::types::b_null{})),
-                                        make_document(kvp("deleted_at",
-                                                          make_document(kvp(
-                                                              "$gt", bsoncxx::types::b_date(
-                                                                  std::chrono::system_clock::now())))))
-                                    )));
+
+    array filter_options;
+    filter_options.append(
+        make_document(
+            kvp("$or",
+                make_array(
+                    make_document(kvp("deleted_at", bsoncxx::types::b_null{})),
+                    make_document(kvp("deleted_at",
+                                      make_document(
+                                          kvp("$gt", bsoncxx::types::b_date(std::chrono::system_clock::now())))))
+                )
+            )
+        )
+    );
+    if (request.params().contains("search")) {
+        std::string search(request.params()["search"].as_string());
+        search.erase(std::find(search.begin(), search.end(), '\0'), search.end());
+        filter_options.append(make_document(
+            kvp("$or", make_array(
+                    make_document(kvp("title", make_document(kvp("$regex", search)))),
+                    make_document(kvp("content", make_document(kvp("$regex", search))))
+            )))
+        );
+    }
+    if (request.params().contains("filter[]") && request.params()["filter[]"].is_array()) {
+        array categories;
+        for(auto &item : request.params()["filter[]"].as_array()) {
+            std::string cate(item.as_string());
+            cate.erase(std::find(cate.begin(), cate.end(), '\0'), cate.end());
+            categories.append(cate);
+        }
+        filter_options.append(make_document(
+            kvp("categories", make_document(kvp("$all", categories))))
+        );
+    }
+
+    auto filter = make_document(
+        kvp("$and", filter_options)
+    );
+    std::cout <<bsoncxx::to_json(filter) << std::endl;
 
     auto result = co_await paginate(collection, request, filter, make_array(
                                         make_document(kvp("$addFields",
@@ -69,11 +103,12 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::get_arti
                                                           )))
                                     ));
 
+    std::cout << bsoncxx::to_json(result) << std::endl;
     co_return std::make_unique<json_response>(result, EST_OK);
 }
 
-boost::cobalt::task<std::unique_ptr<http_response>>
-article_controller::get_article_detail(http_request_wrapper&request) {
+boost::cobalt::task<std::unique_ptr<http_response> >
+article_controller::get_article_detail(http_request_wrapper &request) {
     co_await request.validate({{"article_id", {required()}}});
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
@@ -101,7 +136,7 @@ article_controller::get_article_detail(http_request_wrapper&request) {
     co_return std::make_unique<json_response>(make_document(kvp("data", *data.begin())), EST_OK);
 }
 
-std::vector<std::string> get_oss_attachment_keys(const std::string&html_data) {
+std::vector<std::string> get_oss_attachment_keys(const std::string &html_data) {
     std::string content = html_data;
     std::vector<std::string> attachment_keys;
     const std::string oss_url = "https://hl-blog-bucket.oss-cn-chengdu.aliyuncs.com/";
@@ -119,12 +154,12 @@ std::vector<std::string> get_oss_attachment_keys(const std::string&html_data) {
     return attachment_keys;
 }
 
-boost::cobalt::task<void> sync_attachment_data(const std::vector<std::string>&attachments, const bsoncxx::oid&oid) {
+boost::cobalt::task<void> sync_attachment_data(const std::vector<std::string> &attachments, const bsoncxx::oid &oid) {
     auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_attachment"];
     sahara::container::unordered_smap_u<bool> attachment_urls;
     array attachment_url_array;
-    for (const auto&item_key: attachments) {
+    for (const auto &item_key: attachments) {
         attachment_url_array.append(item_key);
         attachment_urls.emplace(item_key, true);
     }
@@ -141,11 +176,10 @@ boost::cobalt::task<void> sync_attachment_data(const std::vector<std::string>&at
                     make_document(kvp("reference", make_document(kvp("$eq", oid))))
                 ))
         ), find_option);
-    for (auto&item: result) {
+    for (auto &item: result) {
         if (attachment_urls.contains(std::string(item["url"].get_string().value))) {
             oid_needs_to_update.append(item["_id"].get_oid());
-        }
-        else {
+        } else {
             oid_needs_to_delete.append(item["_id"].get_oid());
         }
     }
@@ -161,31 +195,35 @@ boost::cobalt::task<void> sync_attachment_data(const std::vector<std::string>&at
         make_document(kvp("_id", make_document(kvp("$in", oid_needs_to_delete)))),
         make_document(kvp("$pull", make_document(kvp("reference", oid)))), update_option);
 
+    for (auto &item: attachments) {
+        co_await *obelisk::storage::storage_manager::get("alioss").delete_tag(item);
+    }
+
 
     auto object_to_delete = collection.find(make_document(kvp("reference", make_document(kvp("$eq", make_array())))));
     array deleted_object_ids;
-    for (const auto&item: object_to_delete) {
+    for (const auto &item: object_to_delete) {
         deleted_object_ids.append(item["_id"].get_oid());
-        obelisk::storage::storage_manager::get("alioss").delete_tag(std::string(item["url"].get_string().value));
+        co_await *obelisk::storage::storage_manager::get("alioss").remove(std::string(item["url"].get_string().value));
     }
     collection.delete_many(make_document(kvp("_id", make_document(kvp("$in", deleted_object_ids)))));
     co_return;
 }
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_article(http_request_wrapper&request) {
+boost::cobalt::task<std::unique_ptr<http_response> > article_controller::create_article(http_request_wrapper &request) {
     co_await request.validate({
         {"title", {required()}},
         {"content", {required()}},
         {"abstract", {required()}}
     });
-    const auto&udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
+    const auto &udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     std::string content(request.params()["content"].as_string());
     boost::algorithm::replace_all(content, std::string("<p></p>"), "<br>");
     auto attachments = get_oss_attachment_keys(content);
 
     std::optional<std::string> cover_url;
-    if(request.filebag().contains("cover")) {
+    if (request.filebag().contains("cover")) {
         auto cover = request.filebag()["cover"];
         cover_url = co_await save_attachment(cover, bsoncxx::oid(udata.user_id));
         attachments.push_back(boost::algorithm::replace_first_copy(cover_url.value(), "${OSS_URL}/", ""));
@@ -194,7 +232,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     array categories;
     if (request.params().contains("categories[]") && request.params()["categories[]"].is_array()) {
-        for (const auto&item: request.params()["categories[]"].as_array()) {
+        for (const auto &item: request.params()["categories[]"].as_array()) {
             categories.append(item.as_string());
         }
     }
@@ -204,7 +242,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
     document.append(kvp("content", request.params()["content"].as_string()));
     document.append(kvp("abstract", request.params()["abstract"].as_string()));
     document.append(kvp("author", oid));
-    document.append( kvp("categories", categories));
+    document.append(kvp("categories", categories));
     document.append(kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now())));
     document.append(kvp("updated_at", bsoncxx::types::b_date(std::chrono::system_clock::now())));
     if (cover_url.has_value())
@@ -227,7 +265,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::create_a
 }
 
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_article(http_request_wrapper&request) {
+boost::cobalt::task<std::unique_ptr<http_response> > article_controller::update_article(http_request_wrapper &request) {
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     co_await request.validate({{"article_id", {required()}}});
@@ -236,7 +274,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
     auto origin_data = collection.find_one(make_document(kvp("_id", oid))).value();
     std::string content_data(origin_data["content"].get_string());
 
-    const auto&udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
+    const auto &udata = std::any_cast<user_data>(request.additional_data()["__user_info"]);
 
     document document{};
     if (request.params().contains("content")) {
@@ -252,21 +290,20 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
     if (request.params().contains("abstract")) {
         document.append(kvp("abstract", request.params()["abstract"].as_string()));
     }
-    if(request.filebag().contains("cover")) {
+    if (request.filebag().contains("cover")) {
         auto cover_url = co_await save_attachment(request.filebag()["cover"], bsoncxx::oid(udata.user_id));
         attachments.push_back(boost::algorithm::replace_first_copy(cover_url, "${OSS_URL}/", ""));
         document.append(kvp("cover", "${OSS_URL}/" + cover_url));
-    } else if(request.params().contains("cover")){
+    } else if (request.params().contains("cover")) {
         std::string cover_url(request.params()["cover"].as_string().c_str());
         attachments.push_back(boost::algorithm::replace_first_copy(cover_url, "${OSS_URL}/", ""));
-    }
-    else if(!request.params().contains("cover")) {
+    } else if (!request.params().contains("cover")) {
         document.append(kvp("cover", bsoncxx::types::b_null{}));
     }
 
     array categories;
     if (request.params().contains("categories[]") && request.params()["categories[]"].is_array()) {
-        for (const auto&item: request.params()["categories[]"].as_array()) {
+        for (const auto &item: request.params()["categories[]"].as_array()) {
             categories.append(item.as_string());
         }
     }
@@ -285,7 +322,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_controller::update_a
     });
 }
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_controller::delete_article(http_request_wrapper&request) {
+boost::cobalt::task<std::unique_ptr<http_response> > article_controller::delete_article(http_request_wrapper &request) {
     co_await request.validate({{"article_id", {required()}}});
     auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];

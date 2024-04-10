@@ -6,6 +6,7 @@
 #include "http/validator/integer_validator.h"
 
 #include <bsoncxx/json.hpp>
+#include <http/exception/http_exception.h>
 boost::cobalt::task<bsoncxx::document::value> controller_base::paginate(mongocxx::collection&collection,
                                                                 obelisk::http::http_request_wrapper&request,
                                                                 bsoncxx::document::value filter, mongocxx::options::find& option) {
@@ -63,7 +64,14 @@ boost::cobalt::task<bsoncxx::document::value> controller_base::paginate(mongocxx
         {"limit", {integer()}},
     });
 
-    const std::int64_t total = collection.count_documents(filter.view());
+    std::int64_t total = 0;
+    try{
+        total = collection.count_documents(filter.view());
+    } catch (std::exception&e ) {
+        std::cout << e.what() << std::endl;
+        throw obelisk::http::http_exception(e.what(), obelisk::http::EST_INTERNAL_SERVER_ERROR);
+    }
+
     std::int64_t limit = 10;
     std::int64_t page = 1;
     if (request.params().contains("limit")) {
