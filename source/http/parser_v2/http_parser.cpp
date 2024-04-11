@@ -162,10 +162,11 @@ namespace obelisk::http {
             if (is_file && meta_data.contains("filename")) {
                 request.filebag_[meta_data["name"]] = std::make_shared<http_file>(temp_file_path, meta_data["filename"]);
             } else {
-                auto item_key = meta_data["name"].substr(0, meta_data["name"].rfind("[]"));
-                bool is_array = meta_data["name"].ends_with("[]");
-                if(is_array && !request.request_params_.contains(meta_data["name"])) {
-                    request.request_params_[meta_data["name"]] = boost::json::array{};
+                auto item_key = boost::algorithm::replace_last_copy(meta_data["name"], "[]", "");
+                bool is_array = request.request_params_.contains(item_key)? request.request_params_[item_key].is_array() : false;
+                if(request.request_params_.contains(item_key) && !request.request_params_[item_key].is_array()) {
+                    boost::json::array new_value = { request.request_params_[item_key]};
+                    request.request_params_[item_key] = new_value;
                 }
                 if(is_array) {
                     request.request_params_[meta_data["name"]].as_array().emplace_back(line_data);
