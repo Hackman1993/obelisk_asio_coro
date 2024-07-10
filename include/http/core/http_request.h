@@ -12,7 +12,7 @@
 #include <boost/json/object.hpp>
 
 #include "http_block_data.h"
-#include "http/validator/validator_base.h"
+#include "../validator/validator_base.h"
 
 namespace obelisk::http {
     class parser;
