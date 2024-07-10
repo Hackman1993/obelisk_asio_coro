@@ -22,8 +22,7 @@ namespace obelisk::storage::impl::alioss {
         ++ref_count_;
 
         ClientConfiguration conf;
-        client_ = std::make_shared<OssClient>("oss-cn-chengdu.aliyuncs.com", "LTAI5tPTqmds94QQoVv66JkP",
-                                              "mPsqZbgNS3Sy4x7592hHX6y4WU9vgI", conf);
+        client_ = std::make_shared<OssClient>("oss-cn-chengdu.aliyuncs.com", "","", conf);
         bucket_ = "hl-blog-bucket";
     }
 
