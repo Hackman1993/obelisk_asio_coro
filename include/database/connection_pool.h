@@ -12,7 +12,7 @@
 #include "db_connection_base.h"
 #include <boost/asio/io_context.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
-#include "core/coroutine/async_scoped_lock.h"
+#include "../core/coroutine/async_scoped_lock.h"
 
 namespace obelisk::database {
     class connection_pool_base {
