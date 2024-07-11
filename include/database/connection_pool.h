@@ -56,7 +56,7 @@ namespace obelisk::database {
                     std::cout << e.what() << std::endl;
                 }
                 catch (std::exception& e) {
-                    LOG_MODULE_CRITICAL("Database", "{} ", e.message());
+                    LOG_MODULE_CRITICAL("Database", "{} ", e.what());
                     std::cout << e.what() << std::endl;
                 }
 
