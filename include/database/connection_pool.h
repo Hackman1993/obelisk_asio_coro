@@ -53,11 +53,10 @@ namespace obelisk::database {
                         connections_.push_back(conn);
                 }catch (boost::system::error_code& e) {
                     LOG_MODULE_CRITICAL("Database", "{} ", e.to_string());
-                    std::cout << e.what() << std::endl;
+                    LOG_MODULE_CRITICAL("Database", "OKOK");
                 }
                 catch (std::exception& e) {
                     LOG_MODULE_CRITICAL("Database", "{} ", e.what());
-                    std::cout << e.what() << std::endl;
                 }
 
             }
