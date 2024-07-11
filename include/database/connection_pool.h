@@ -52,7 +52,7 @@ namespace obelisk::database {
                     if(conn)
                         connections_.push_back(conn);
                 }catch (boost::system::error_code& e) {
-                    LOG_MODULE_CRITICAL("Database", "{} ", e.message());
+                    LOG_MODULE_CRITICAL("Database", "{} ", e.to_string());
                     std::cout << e.what() << std::endl;
                 }
                 catch (std::exception& e) {
