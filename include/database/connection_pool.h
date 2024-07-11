@@ -51,7 +51,7 @@ namespace obelisk::database {
                     auto conn = connection_maker_(ioctx_);
                     if(conn)
                         connections_.push_back(conn);
-                }catch (boost::system::error_code& e) {
+                }catch (const boost::system::error_code& e) {
                     LOG_MODULE_CRITICAL("Database", "{} ", e.to_string());
                     LOG_MODULE_CRITICAL("Database", "OKOK");
                 }
