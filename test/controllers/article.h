@@ -15,11 +15,11 @@ namespace obelisk::http {
 using namespace obelisk::http;
 class article_controller: public controller_base {
 public:
-    static boost::cobalt::task<std::unique_ptr<http_response>> get_article_list(http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<http_response>> create_article(http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<http_response>> update_article(http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<http_response>> get_article_detail(http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<http_response>> delete_article(http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<http_response>> get_article_list(http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<http_response>> create_article(http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<http_response>> update_article(http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<http_response>> get_article_detail(http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<http_response>> delete_article(http_request_wrapper&request);
 };
 
 

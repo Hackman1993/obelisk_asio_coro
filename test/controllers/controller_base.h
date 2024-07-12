@@ -11,8 +11,8 @@
 
 class controller_base {
 protected:
-    static boost::cobalt::task<bsoncxx::document::value> paginate(mongocxx::collection& collection, obelisk::http::http_request_wrapper& request, bsoncxx::document::value filter, mongocxx::options::find& option);
-    static boost::cobalt::task<bsoncxx::document::value> paginate(mongocxx::collection&collection,
+    static boost::asio::awaitable<bsoncxx::document::value> paginate(mongocxx::collection& collection, obelisk::http::http_request_wrapper& request, bsoncxx::document::value filter, mongocxx::options::find& option);
+    static boost::asio::awaitable<bsoncxx::document::value> paginate(mongocxx::collection&collection,
                                                                 obelisk::http::http_request_wrapper&request,
                                                                 bsoncxx::document::value filter, bsoncxx::array::value lookup);
 };

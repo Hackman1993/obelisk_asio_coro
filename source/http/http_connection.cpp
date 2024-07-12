@@ -114,7 +114,7 @@
 //         f_requested_ = callback;
 //     }
 //
-//     // boost::cobalt::task<void> http_connection::handle_co_() {
-//     //     return boost::cobalt::task<void>();
+//     // boost::asio::awaitable<void> http_connection::handle_co_() {
+//     //     return boost::asio::awaitable<void>();
 //     // }
 // } // obelisk::http

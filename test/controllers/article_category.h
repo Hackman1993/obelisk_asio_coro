@@ -14,11 +14,11 @@ namespace obelisk::http {
 
 class article_category: public controller_base {
 public:
-    static boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> get_article_category_list(obelisk::http::http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> get_article_category_full(obelisk::http::http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> create_article_category(obelisk::http::http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> update_article_category(obelisk::http::http_request_wrapper&request);
-    static boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> delete_article_category(obelisk::http::http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> get_article_category_list(obelisk::http::http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> get_article_category_full(obelisk::http::http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> create_article_category(obelisk::http::http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> update_article_category(obelisk::http::http_request_wrapper&request);
+    static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> delete_article_category(obelisk::http::http_request_wrapper&request);
 };
 
 

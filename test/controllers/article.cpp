@@ -24,7 +24,7 @@ using namespace obelisk::database;
 using namespace obelisk::http::validator;
 using namespace bsoncxx::builder::basic;
 
-boost::cobalt::task<std::unique_ptr<http_response> >
+boost::asio::awaitable<std::unique_ptr<http_response> >
 article_controller::get_article_list(http_request_wrapper &request) {
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
@@ -107,7 +107,7 @@ article_controller::get_article_list(http_request_wrapper &request) {
     co_return std::make_unique<json_response>(result, EST_OK);
 }
 
-boost::cobalt::task<std::unique_ptr<http_response> >
+boost::asio::awaitable<std::unique_ptr<http_response> >
 article_controller::get_article_detail(http_request_wrapper &request) {
     co_await request.validate({{"article_id", {required()}}});
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
@@ -154,7 +154,7 @@ std::vector<std::string> get_oss_attachment_keys(const std::string &html_data) {
     return attachment_keys;
 }
 
-boost::cobalt::task<void> sync_attachment_data(const std::vector<std::string> &attachments, const bsoncxx::oid &oid) {
+boost::asio::awaitable<void> sync_attachment_data(const std::vector<std::string> &attachments, const bsoncxx::oid &oid) {
     auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_attachment"];
     sahara::container::unordered_smap_u<bool> attachment_urls;
@@ -210,7 +210,7 @@ boost::cobalt::task<void> sync_attachment_data(const std::vector<std::string> &a
     co_return;
 }
 
-boost::cobalt::task<std::unique_ptr<http_response> > article_controller::create_article(http_request_wrapper &request) {
+boost::asio::awaitable<std::unique_ptr<http_response> > article_controller::create_article(http_request_wrapper &request) {
     co_await request.validate({
         {"title", {required()}},
         {"content", {required()}},
@@ -265,7 +265,7 @@ boost::cobalt::task<std::unique_ptr<http_response> > article_controller::create_
 }
 
 
-boost::cobalt::task<std::unique_ptr<http_response> > article_controller::update_article(http_request_wrapper &request) {
+boost::asio::awaitable<std::unique_ptr<http_response> > article_controller::update_article(http_request_wrapper &request) {
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];
     co_await request.validate({{"article_id", {required()}}});
@@ -322,7 +322,7 @@ boost::cobalt::task<std::unique_ptr<http_response> > article_controller::update_
     });
 }
 
-boost::cobalt::task<std::unique_ptr<http_response> > article_controller::delete_article(http_request_wrapper &request) {
+boost::asio::awaitable<std::unique_ptr<http_response> > article_controller::delete_article(http_request_wrapper &request) {
     co_await request.validate({{"article_id", {required()}}});
     auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article"];

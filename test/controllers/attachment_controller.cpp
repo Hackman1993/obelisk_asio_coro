@@ -12,7 +12,7 @@
 #include "http/validator/validator.h"
 using namespace obelisk::http::validator;
 
-boost::cobalt::task<std::string> save_attachment(const std::shared_ptr<obelisk::http::http_file>& file, bsoncxx::oid uploader) {
+boost::asio::awaitable<std::string> save_attachment(const std::shared_ptr<obelisk::http::http_file>& file, bsoncxx::oid uploader) {
     const std::string uuid_filename = sahara::utils::uuid::generate();
     const std::string date = sahara::string_ext::time_format(std::chrono::system_clock::now(), "%F");
     const auto fs = std::make_shared<std::fstream>(file->temp_path_, std::ios_base::in | std::ios::binary);
@@ -38,7 +38,7 @@ boost::cobalt::task<std::string> save_attachment(const std::shared_ptr<obelisk::
     co_return storage_path;
 
 }
-boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> upload(obelisk::http::http_request_wrapper&request) {
+boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> upload(obelisk::http::http_request_wrapper&request) {
     co_await request.validate({
         {"file", {required(), image()}}
     });

@@ -9,7 +9,7 @@
 using namespace obelisk::http;
 class authorization : public middleware::before_middleware {
 public:
-    boost::cobalt::task<std::unique_ptr<http_response>> pre_handle(http_request_wrapper& request) override;
+    boost::asio::awaitable<std::unique_ptr<http_response>> pre_handle(http_request_wrapper& request) override;
 };
 
 

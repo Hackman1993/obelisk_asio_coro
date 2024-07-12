@@ -12,6 +12,6 @@ namespace obelisk::http {
     class http_response;
 }
 
-boost::cobalt::task<std::string> save_attachment(const std::shared_ptr<obelisk::http::http_file>& file, bsoncxx::oid uploader);
-boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> upload(obelisk::http::http_request_wrapper&request);
+boost::asio::awaitable<std::string> save_attachment(const std::shared_ptr<obelisk::http::http_file>& file, bsoncxx::oid uploader);
+boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> upload(obelisk::http::http_request_wrapper&request);
 #endif //ATTACHMENT_CONTROLLER_H

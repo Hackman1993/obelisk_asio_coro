@@ -11,7 +11,7 @@
 #include "database/redis/redis_connection.h"
 #include "database/mongo/mongo_connection.h"
 
-boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> login(obelisk::http::http_request_wrapper&request) {
+boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> login(obelisk::http::http_request_wrapper&request) {
     co_await request.validate({
         {"login", {required()}},
         {"password", {required()}}
@@ -57,7 +57,7 @@ boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> login(obelisk
                                                              }, obelisk::http::EResponseCode::EST_OK);
 }
 
-boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> logout(obelisk::http::http_request_wrapper&request) {
+boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> logout(obelisk::http::http_request_wrapper&request) {
     auto udt = std::any_cast<user_data>(request.additional_data()["__user_info"]);
     const auto conn = obelisk::database::connection_manager::get_connection<obelisk::database::redis::redis_connection>("redis");
     if(!conn)
@@ -71,7 +71,7 @@ boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> logout(obelis
 
 }
 
-boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> check_auth(obelisk::http::http_request_wrapper&request) {
+boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> check_auth(obelisk::http::http_request_wrapper&request) {
     co_return std::make_unique<obelisk::http::json_response>(boost::json::object{
         {"data", nullptr}
     }, obelisk::http::EST_OK);

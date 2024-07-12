@@ -15,7 +15,7 @@
 #include "database/redis/redis_connection.h"
 #include "http/exception/http_exception.h"
 
-boost::cobalt::task<std::unique_ptr<http_response>> authorization::pre_handle(http_request_wrapper& request) {
+boost::asio::awaitable<std::unique_ptr<http_response>> authorization::pre_handle(http_request_wrapper& request) {
     if(boost::algorithm::iequals(request.method(), "OPTIONS") | boost::algorithm::iequals(request.method(), "HEAD"))
         co_return nullptr;
     std::unordered_map<std::string, std::string> params;

@@ -12,7 +12,7 @@ namespace obelisk::http::validator {
         file_validator(std::vector<std::string> acceptable): acceptable_extensions_(std::move(acceptable)) {
 
         }
-        boost::cobalt::task<void> validate(const std::string &name, http_request_wrapper &request) override;
+        boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) override;
     private:
         std::vector<std::string> acceptable_extensions_;
     };

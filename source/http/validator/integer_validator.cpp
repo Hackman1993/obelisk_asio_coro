@@ -11,7 +11,7 @@
 
 
 namespace obelisk::http::validator {
-    boost::cobalt::task<void> integer_validator::validate(const std::string&name, http_request_wrapper&request) {
+    boost::asio::awaitable<void> integer_validator::validate(const std::string&name, http_request_wrapper&request) {
         if(!request.params().contains(name))
             co_return;
         if(request.params()[name].is_string()) {

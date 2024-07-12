@@ -13,7 +13,7 @@ using namespace obelisk::http;
 using namespace obelisk::database;
 using namespace obelisk::http::validator;
 using namespace bsoncxx::builder::basic;
-boost::cobalt::task<std::unique_ptr<http_response>> article_category::get_article_category_list(http_request_wrapper& request) {
+boost::asio::awaitable<std::unique_ptr<http_response>> article_category::get_article_category_list(http_request_wrapper& request) {
 
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article_category"];
@@ -39,7 +39,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::get_articl
     co_return std::make_unique<json_response>(result, EST_OK);
 }
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_category::get_article_category_full(http_request_wrapper& request) {
+boost::asio::awaitable<std::unique_ptr<http_response>> article_category::get_article_category_full(http_request_wrapper& request) {
 
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article_category"];
@@ -71,7 +71,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::get_articl
     co_return std::make_unique<json_response>(make_document(kvp("data", arr)), EST_OK);
 }
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_category::create_article_category(http_request_wrapper& request) {
+boost::asio::awaitable<std::unique_ptr<http_response>> article_category::create_article_category(http_request_wrapper& request) {
     co_await request.validate({
         {"name", {required()}},
             {"group", {required()}}
@@ -100,7 +100,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::create_art
     });
 }
 
-boost::cobalt::task<std::unique_ptr<http_response>> article_category::update_article_category(http_request_wrapper& request) {
+boost::asio::awaitable<std::unique_ptr<http_response>> article_category::update_article_category(http_request_wrapper& request) {
     co_await request.validate({{"category_id", {required()}}});
     const auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article_category"];
@@ -128,7 +128,7 @@ boost::cobalt::task<std::unique_ptr<http_response>> article_category::update_art
     });
 }
 
-boost::cobalt::task<std::unique_ptr<obelisk::http::http_response>> article_category::delete_article_category(obelisk::http::http_request_wrapper& request) {
+boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> article_category::delete_article_category(obelisk::http::http_request_wrapper& request) {
     co_await request.validate({{"category_id", {required()}}});
     auto conn = connection_manager::get_connection<mongo::mongo_connection>("mongo");
     auto collection = (*conn)["hl_blog_database"]["c_article_category"];

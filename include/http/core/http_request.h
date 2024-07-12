@@ -96,7 +96,7 @@ namespace obelisk::http {
 
         ~http_request_wrapper();
 
-        boost::cobalt::task<void> validate(const std::vector<validator::validator_group>&validators);
+        boost::asio::awaitable<void> validate(const std::vector<validator::validator_group>&validators);
 
         sahara::container::unordered_smap_u<std::string>& headers();
 

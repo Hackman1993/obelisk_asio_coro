@@ -7,7 +7,7 @@
 
 #include <bsoncxx/json.hpp>
 #include <http/exception/http_exception.h>
-boost::cobalt::task<bsoncxx::document::value> controller_base::paginate(mongocxx::collection&collection,
+boost::asio::awaitable<bsoncxx::document::value> controller_base::paginate(mongocxx::collection&collection,
                                                                 obelisk::http::http_request_wrapper&request,
                                                                 bsoncxx::document::value filter, mongocxx::options::find& option) {
     using namespace obelisk::http::validator;
@@ -55,7 +55,7 @@ boost::cobalt::task<bsoncxx::document::value> controller_base::paginate(mongocxx
     co_return document;
 }
 
-boost::cobalt::task<bsoncxx::document::value> controller_base::paginate(mongocxx::collection&collection,
+boost::asio::awaitable<bsoncxx::document::value> controller_base::paginate(mongocxx::collection&collection,
                                                                 obelisk::http::http_request_wrapper&request,
                                                                 bsoncxx::document::value filter, bsoncxx::array::value lookup) {
     using namespace obelisk::http::validator;
