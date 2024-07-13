@@ -9,8 +9,8 @@
 #define OBELISK_MIDDLEWARE_H
 #include <memory>
 
-#include "http/core/http_request.h"
-#include "http/core/http_response.h"
+#include "../core/http_request.h"
+#include "../core/http_response.h"
 #include <boost/asio/awaitable.hpp>
 
 namespace obelisk::http::middleware {
