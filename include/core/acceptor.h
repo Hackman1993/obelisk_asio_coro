@@ -7,7 +7,7 @@
 
 #ifndef OBELISK_ACCEPTOR_H
 #define OBELISK_ACCEPTOR_H
-#include "core/details/acceptor_base.h"
+#include "details/acceptor_base.h"
 namespace obelisk {
     namespace core {
 
