@@ -15,8 +15,8 @@
 #include <boost/asio/awaitable.hpp>
 
 #include "route_param.h"
-#include "http/core/http_request.h"
-#include "http/core/http_response.h"
+#include "../core/http_request.h"
+#include "../core/http_response.h"
 
 namespace obelisk::http {
 
