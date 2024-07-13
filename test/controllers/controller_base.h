@@ -4,7 +4,6 @@
 
 #ifndef CONTROLLER_BASE_H
 #define CONTROLLER_BASE_H
-#include <boost/cobalt.hpp>
 #include <mongocxx/collection.hpp>
 
 #include "http/core/http_request.h"

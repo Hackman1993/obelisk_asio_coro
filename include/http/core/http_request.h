@@ -8,7 +8,6 @@
 #include <fstream>
 #include <filesystem>
 #include <unordered_map>
-#include <boost/cobalt/task.hpp>
 #include <boost/json/object.hpp>
 
 #include "http_block_data.h"

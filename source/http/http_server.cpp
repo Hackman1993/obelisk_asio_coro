@@ -12,9 +12,6 @@
 
 #include "http/http_server.h"
 
-#include <boost/cobalt/config.hpp>
-#include <boost/cobalt/spawn.hpp>
-
 #include "http/router/route_item.h"
 #include "http/core/http_request.h"
 #include "http/parser/http_parser_v2.h"

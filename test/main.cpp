@@ -6,7 +6,6 @@
 #include "database/database.h"
 #include "database/mysql/mysql_connection.h"
 #include "http/parser/http_parser_v2.h"
-#include <boost/cobalt.hpp>
 
 #include "controllers/article.h"
 #include "controllers/article_category.h"

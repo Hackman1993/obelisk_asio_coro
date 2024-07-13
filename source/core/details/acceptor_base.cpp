@@ -1,6 +1,5 @@
 #include "core/details/acceptor_base.h"
 #include <iostream>
-#include <boost/cobalt/spawn.hpp>
 
 namespace obelisk::core::details {
     acceptor_base::acceptor_base(boost::asio::io_context& ctx): acceptor_(ctx) {

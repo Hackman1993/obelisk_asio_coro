@@ -7,7 +7,7 @@ file(GLOB_RECURSE CPP_SOURCES source/*.cpp source/*.cc)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(Boost REQUIRED COMPONENTS url thread json fiber thread cobalt system)
+find_package(Boost REQUIRED COMPONENTS url thread json fiber thread system)
 find_package(fmt CONFIG REQUIRED)
 find_package(sahara REQUIRED)
 find_package(OpenSSL REQUIRED)

@@ -4,7 +4,6 @@
 
 #ifndef ALIYUN_OSS_H
 #define ALIYUN_OSS_H
-#include <boost/cobalt.hpp>
 #include <utility>
 #include <core/coroutine/awaitable_operation.h>
 #include <alibabacloud/oss/OssClient.h>

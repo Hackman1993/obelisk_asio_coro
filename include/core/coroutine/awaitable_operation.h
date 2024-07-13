@@ -4,7 +4,6 @@
 
 #ifndef AWAITABLE_OPERATION_H
 #define AWAITABLE_OPERATION_H
-#include <boost/cobalt/concepts.hpp>
 
 namespace obelisk::core::coroutine {
         template<typename ReturnType>

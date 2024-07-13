@@ -2,7 +2,6 @@
 #define OBELISK_ACCEPTOR_BASE_H
 #include <boost/asio.hpp>
 #include <boost/asio/awaitable.hpp>
-#include <boost/cobalt/task.hpp>
 
 #include "socket_base.h"
 

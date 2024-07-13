@@ -12,7 +12,6 @@
 #include "http/core/http_request.h"
 #include "http/core/http_response.h"
 #include <boost/asio/awaitable.hpp>
-#include <boost/cobalt/task.hpp>
 
 namespace obelisk::http::middleware {
 

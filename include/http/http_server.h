@@ -9,8 +9,6 @@
 #define OBELISK_HTTP_SERVER_H
 #include "../core/acceptor.h"
 #include <filesystem>
-#include <boost/cobalt/config.hpp>
-#include <boost/cobalt/task.hpp>
 
 #include "http_connection.h"
 #include "middleware/middleware.h"
