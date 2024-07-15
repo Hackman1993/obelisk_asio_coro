@@ -12,6 +12,8 @@
 
 #include "http/http_server.h"
 
+#include <sahara/log/log.h>
+
 #include "http/router/route_item.h"
 #include "http/core/http_request.h"
 #include "http/parser/http_parser_v2.h"
@@ -127,7 +129,11 @@ namespace obelisk::http {
                     socket.close();
                     co_return;
                 }
-                std::cout << e.what() << std::endl;
+                response = std::make_unique<json_response>(boost::json::object{
+                    {"code", 500},
+                    {"message", "system.error.internal_server_error"}
+                });
+                LOG_MODULE_ERROR("Obelisk", "{}" , e.what());
             }
             // Catch Http Exception
             catch (const http_exception &e) {
