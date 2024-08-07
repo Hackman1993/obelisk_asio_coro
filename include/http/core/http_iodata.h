@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <sstream>
 #include <vector>
+#include <memory>
 namespace obelisk::http::core {
     class http_iodata{
     public:

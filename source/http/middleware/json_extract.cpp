@@ -18,7 +18,7 @@ namespace obelisk::http::middleware {
         if(!request.raw_body()) {
             co_return nullptr;
         }
-        boost::json::error_code err;
+        boost::system::error_code err;
         boost::json::value json_data = boost::json::parse(*request.raw_body(), err);
         if(err) {
             throw http_exception("error.http.invalid_json_data", EResponseCode::EST_UNPROCESSABLE_CONTENT);
