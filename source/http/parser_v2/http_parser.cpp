@@ -140,14 +140,12 @@ namespace obelisk::http {
                     file_buffer = std::string_view(boost::asio::buffer_cast<const char *>(sbuf_.data()), sbuf_.size());
                     if (!file_buffer.contains(boundary_split_data)) {
                         fstream->write(file_buffer.data(), file_buffer.size() - boundary.size() - 5);
-                        std::cout << (file_buffer.size() - boundary.size() - 5) << std::endl;
                         sbuf_.consume(file_buffer.size() - boundary.size() - 5);
 
                     } else {
                         auto range = boost::algorithm::find_first(file_buffer, "\r\n--" + boundary);
                         std::string_view file_content_part = std::string_view(file_buffer.data(), range.begin() - file_buffer.begin());
                         fstream->write(file_content_part.data(), static_cast<std::streamsize>(file_content_part.size()));
-                        std::cout << (file_content_part.size() + 2) << std::endl;
                         sbuf_.consume(file_content_part.size() + 2);
                         // Prevent read too much data
                         data->clear();
