@@ -240,8 +240,14 @@ namespace obelisk::http {
     boost::asio::awaitable<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket, const std::unique_ptr<core::http_iodata>&response) {
         unsigned char buffer[1024 * 256] = {};
         while (!response->eof()) {
+
             const auto bytes_read = response->read(buffer, 1024 * 256);
-            auto bytes_transferred = co_await socket.async_write_some(boost::asio::const_buffer(buffer, bytes_read), boost::asio::use_awaitable);
+            std::uint64_t bytes_transferred = 0;
+            while (bytes_transferred< bytes_read){
+                bytes_transferred += co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), boost::asio::use_awaitable);
+            }
+
+            std::cout << bytes_transferred << std::endl;
         }
         co_return;
     }
