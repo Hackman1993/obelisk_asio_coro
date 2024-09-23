@@ -13,13 +13,13 @@ int main(int argc, char* argv[]) {
     using namespace obelisk::database;
     try {
         boost::asio::io_context ioctx;
+        auto result = obelisk::http::parser::parse_split_url("https://www.baidu.com?websocket");
 
         obelisk::http::core::http_client client(ioctx);
 
         boost::asio::ip::tcp::resolver resolver(ioctx);
         auto endpoints = resolver.resolve("www.baidu.com", "https");
         boost::asio::ssl::context ctx(boost::asio::ssl::context::tlsv12_client);
-        ctx.set_default_verify_paths();
 
         boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket(ioctx, ctx);
         boost::asio::connect(ssl_socket.lowest_layer(),endpoints);

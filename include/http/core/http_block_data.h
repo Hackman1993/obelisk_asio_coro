@@ -23,6 +23,13 @@ namespace obelisk::http {
         std::uint64_t content_length_;
         std::shared_ptr<core::http_iodata> content_;
     };
+
+    struct url_parts{
+        std::string protocol;
+        std::string host;
+        std::string path;
+        std::string params;
+    };
 }
 
 

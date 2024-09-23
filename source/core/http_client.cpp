@@ -3,6 +3,7 @@
 //
 
 #include "http/core/http_client.h"
+#include "http/core/http_response.h"
 #include <iostream>
 
 #ifdef _WIN32
@@ -14,26 +15,26 @@ namespace obelisk::http::core {
 
     std::shared_ptr<boost::asio::ssl::context> http_client::_ssl_context = nullptr;
     bool http_client::_load_system_certificates() {
-        try {
+        boost::system::error_code ec;
+        return _load_system_certificates(ec);
+    }
 
-            throw boost::system::error_code(ERROR_ACCESS_DENIED, boost::system::system_category());
+    bool http_client::_load_system_certificates(boost::system::error_code &error) {
+        try {
 #ifndef _WIN32
             _ssl_context->set_default_verify_paths();
 #else
             HCERTSTORE hStore = CertOpenSystemStore(0, "ROOT");
             if (hStore == nullptr) {
-                throw boost::system::error_code(ERROR_ACCESS_DENIED, boost::system::system_category());
-                return -1;
+                error = boost::system::error_code(static_cast<int>(GetLastError()), boost::system::system_category());
+                return false;
             }
 
             X509_STORE *store = X509_STORE_new();
-            PCCERT_CONTEXT pContext = NULL;
-            while ((pContext = CertEnumCertificatesInStore(hStore, pContext)) != NULL) {
-                // convert from DER to internal format
-                X509 *x509 = d2i_X509(NULL,
-                                      (const unsigned char **) &pContext->pbCertEncoded,
-                                      pContext->cbCertEncoded);
-                if (x509 != NULL) {
+            PCCERT_CONTEXT pContext = nullptr;
+            while ((pContext = CertEnumCertificatesInStore(hStore, pContext)) != nullptr) {
+                X509 *x509 = d2i_X509(nullptr,(const unsigned char **) &pContext->pbCertEncoded,static_cast<long>(pContext->cbCertEncoded));
+                if (x509 != nullptr) {
                     X509_STORE_add_cert(store, x509);
                     X509_free(x509);
                 }
@@ -42,7 +43,6 @@ namespace obelisk::http::core {
             CertFreeCertificateContext(pContext);
             CertCloseStore(hStore, 0);
 
-            // attach X509_STORE to boost ssl context
             SSL_CTX_set_cert_store(_ssl_context->native_handle(), store);
 #endif
         } catch (boost::system::error_code &e) {
@@ -51,5 +51,10 @@ namespace obelisk::http::core {
             return false;
         }
         return true;
+    }
+
+    boost::asio::awaitable<std::shared_ptr<http_response>>http_client::send_request(const std::string &uri, std::unordered_map<std::string, std::string> headers,std::shared_ptr<std::istream> body) {
+
+        co_return nullptr;
     }
 } // core
