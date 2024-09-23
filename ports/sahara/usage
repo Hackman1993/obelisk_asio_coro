@@ -1,0 +1,4 @@
+The package sahara provides CMake targets:
+
+    find_package(sahara CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE sahara::sahara)

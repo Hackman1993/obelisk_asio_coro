@@ -39,24 +39,19 @@ install(TARGETS ${PROJECT_NAME}
 
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME} FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
 install(EXPORT ${PROJECT_NAME}-targets NAMESPACE ${PROJECT_NAME}:: DESTINATION share/${PROJECT_NAME})
-#target_link_libraries(obelisk PRIVATE )
-#
-#file(GLOB_RECURSE TEST_HEADERS test/*.h test/*.hpp)
-#file(GLOB_RECURSE TEST_SOURCES test/*.cpp test/*.cc)
 
-#
-#find_package(CURL REQUIRED)
-#find_package(OpenSSL REQUIRED)
-#
-#file(GLOB_RECURSE TEST_SOURCES test/*.h test/*.hpp test/*.cpp test/*.cc)
-#add_executable(${PROJECT_NAME}_test ${TEST_SOURCES} )
-#find_package(sahara REQUIRED)
-#target_include_directories(${PROJECT_NAME}_test PRIVATE "C:/Users/Hackman.Lo/Downloads/Compressed/aliyun-oss-cpp-sdk-master/sdk/include")
-#target_link_directories(${PROJECT_NAME}_test PRIVATE "C:/Users/Hackman.Lo/Downloads/Compressed/aliyun-oss-cpp-sdk-master/cmake-build-debug/lib")
-#target_link_libraries(${PROJECT_NAME}_test PRIVATE alibabacloud-oss-cpp-sdk CURL::libcurl OpenSSL::SSL  OpenSSL::Crypto)
-#target_include_directories(${PROJECT_NAME}_test PRIVATE include)
-#target_link_libraries(${PROJECT_NAME}_test PRIVATE $<$<BOOL:${WIN32}>:ws2_32> $<$<BOOL:${WIN32}>:Mswsock> obelisk Boost::json Boost::locale Boost::cobalt Boost::thread Boost::system sahara::sahara)
-#target_link_libraries(${PROJECT_NAME}_test PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-#target_link_libraries(${PROJECT_NAME}_test PRIVATE $<IF:$<TARGET_EXISTS:mongo::bsoncxx_static>,mongo::bsoncxx_static,mongo::bsoncxx_shared>)
-#target_link_libraries(${PROJECT_NAME}_test PRIVATE $<IF:$<TARGET_EXISTS:mongo::mongocxx_static>,mongo::mongocxx_static,mongo::mongocxx_shared>)
+file(GLOB_RECURSE TEST_HEADERS test/*.h test/*.hpp)
+file(GLOB_RECURSE TEST_SOURCES test/*.cpp test/*.cc)
+
+
+find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
+
+file(GLOB_RECURSE TEST_SOURCES test/*.h test/*.hpp test/*.cpp test/*.cc)
+add_executable(${PROJECT_NAME}_test ${TEST_SOURCES} )
+find_package(sahara REQUIRED)
+target_link_libraries(${PROJECT_NAME}_test PRIVATE CURL::libcurl OpenSSL::SSL  OpenSSL::Crypto)
+target_include_directories(${PROJECT_NAME}_test PRIVATE include)
+target_link_libraries(${PROJECT_NAME}_test PRIVATE $<$<BOOL:${WIN32}>:ws2_32> $<$<BOOL:${WIN32}>:Mswsock> $<$<BOOL:${WIN32}>:crypt32> obelisk Boost::json Boost::locale Boost::thread Boost::system sahara::sahara)
+target_link_libraries(${PROJECT_NAME}_test PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
