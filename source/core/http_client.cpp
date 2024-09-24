@@ -5,7 +5,10 @@
 #include "http/core/http_client.h"
 #include "http/core/http_response.h"
 #include <iostream>
+#include <sahara/log/log.h>
 
+#include "../../../../../vcpkg/installed/x64-windows/include/boost/algorithm/string/case_conv.hpp"
+#include "http/parser/http_parser_v2.h"
 #ifdef _WIN32
 
 #include <wincrypt.h>
@@ -46,14 +49,29 @@ namespace obelisk::http::core {
             SSL_CTX_set_cert_store(_ssl_context->native_handle(), store);
 #endif
         } catch (boost::system::error_code &e) {
-            // TODO: Write Error Log
-            std::cout << e.what() << std::endl;
+            LOG_MODULE_ERROR("Obelisk", "Invalid Protocol: {}", e.what());
             return false;
         }
         return true;
     }
 
-    boost::asio::awaitable<std::shared_ptr<http_response>>http_client::send_request(const std::string &uri, std::unordered_map<std::string, std::string> headers,std::shared_ptr<std::istream> body) {
+    boost::asio::awaitable<std::shared_ptr<http_response>>http_client::send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers,std::shared_ptr<std::istream> body) {
+        auto result = parser::parse_split_url(uri);
+        if(!result)
+            co_return nullptr;
+        boost::algorithm::to_lower(result->protocol);
+
+        if(result->protocol!= "http" && result->protocol != "https"){
+            LOG_MODULE_ERROR("Obelisk", "Invalid Protocol: {}", result->protocol);
+            co_return nullptr;
+        }
+        auto upcased_method = boost::algorithm::to_upper_copy(method);
+        boost::asio::ip::tcp::resolver resolver(ioctx_);
+        auto endpoints = co_await resolver.async_resolve(result->host, result->protocol, boost::asio::use_awaitable);
+
+        if(result->protocol == "https") {
+            boost::asio::ssl::context ctx(boost::asio::ssl::context::tlsv12_client);
+        }
 
         co_return nullptr;
     }

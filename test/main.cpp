@@ -2,7 +2,7 @@
 #include <core/details/acceptor_base.h>
 #include <http/http_server.h>
 #include "database/database.h"
-#include "http/parser/http_parser_v2.h"
+
 
 #include <boost/asio/ssl.hpp>
 #include <http/core/http_client.h>
@@ -13,9 +13,8 @@ int main(int argc, char* argv[]) {
     using namespace obelisk::database;
     try {
         boost::asio::io_context ioctx;
-        auto result = obelisk::http::parser::parse_split_url("https://www.baidu.com?websocket");
-
         obelisk::http::core::http_client client(ioctx);
+        client.send_request("https://www.baidu.com", "GET", {}, nullptr);
 
         boost::asio::ip::tcp::resolver resolver(ioctx);
         auto endpoints = resolver.resolve("www.baidu.com", "https");

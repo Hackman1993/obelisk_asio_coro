@@ -15,7 +15,7 @@ namespace obelisk::http{
         class http_client {
 
         public:
-            explicit http_client(boost::asio::io_context &ioctx) {
+            explicit http_client(boost::asio::io_context &ioctx): ioctx_(ioctx) {
                 if (!_ssl_context) {
                     _ssl_context = std::make_shared<boost::asio::ssl::context>(
                             boost::asio::ssl::context::tlsv12_client);
@@ -24,14 +24,13 @@ namespace obelisk::http{
             }
 
             boost::asio::awaitable<std::shared_ptr<http_response>>
-            send_request(const std::string &uri, std::unordered_map<std::string, std::string> headers,
+            send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers,
                          std::shared_ptr<std::istream> body);
 
         protected:
+            boost::asio::io_context& ioctx_;
             static std::shared_ptr<boost::asio::ssl::context> _ssl_context;
-
             static bool _load_system_certificates();
-
             static bool _load_system_certificates(boost::system::error_code &error);
         };
     }
