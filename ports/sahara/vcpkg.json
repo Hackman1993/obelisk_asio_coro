@@ -1,0 +1,21 @@
+{
+  "name": "sahara",
+  "version": "1.0.1",
+  "description": "A simple utf-8 based unicode decoding and encoding library",
+  "homepage": "https://github.com/northwindtraders/beicode",
+  "dependencies": [
+    "cryptopp",
+    "boost-locale",
+    "date",
+    "fmt",
+    "spdlog",
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

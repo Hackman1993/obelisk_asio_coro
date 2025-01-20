@@ -35,7 +35,7 @@ namespace obelisk {
         { ".jar", "application/java-archive"},
         { ".jpg", "image/jpeg"},
         { ".jpeg", "image/jpeg"},
-        { ".js", "text/javascript"},
+        { ".js", "application/javascript"},
         { ".json", "application/json"},
         { ".jsonld", "application/ld+json"},
         { ".midi", "audio/x-midi"},
