@@ -7,7 +7,6 @@
 #include <core/coroutine/awaitable_operation.h>
 
 #include <utility>
-#include <alibabacloud/oss/OssClient.h>
 #include <sahara/exception/exception_base.h>
 
 namespace obelisk::storage::impl {

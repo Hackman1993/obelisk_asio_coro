@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
         auto bytes_readed = ssl_socket.read_some(sbuf.prepare(10240));
 
 
-        obelisk::http::http_server server(ioctx, R"(D:/webroot)");
+        obelisk::http::http_server server(ioctx);
         server.listen("0.0.0.0", 3308);
         ioctx.run();
     }

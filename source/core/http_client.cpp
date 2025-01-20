@@ -6,14 +6,11 @@
 #include "http/core/http_response.h"
 #include <iostream>
 #include <sahara/log/log.h>
-
-#include "../../../../../vcpkg/installed/x64-windows/include/boost/algorithm/string/case_conv.hpp"
 #include "http/parser/http_parser_v2.h"
 #ifdef _WIN32
-
 #include <wincrypt.h>
-
 #endif
+#include <boost/algorithm/string.hpp>
 namespace obelisk::http::core {
 
     std::shared_ptr<boost::asio::ssl::context> http_client::_ssl_context = nullptr;

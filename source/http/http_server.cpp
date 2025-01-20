@@ -29,9 +29,7 @@
 #include "http/middleware/multipart_extract.h"
 
 namespace obelisk::http {
-    http_server::http_server(boost::asio::io_context&ctx, const std::string&webroot) : acceptor_(ctx), webroot_(webroot), ioctx_(ctx) {
-        if (!(std::filesystem::exists(webroot_) && std::filesystem::is_directory(webroot_)))
-            throw std::logic_error("Root Dirctory Not Exists");
+    http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx) {
         before_middlewares(std::make_unique<middleware::url_params_extract>());
         before_middlewares(std::make_unique<middleware::multipart_extract>());
         before_middlewares(std::make_unique<middleware::json_extract>());
@@ -140,30 +138,6 @@ namespace obelisk::http {
                 response = std::make_unique<json_response>(boost::json::object{{"message", std::string(e.what())}}, e.code());
             }catch (const std::exception&e) {
                 std::cout << e.what() << std::endl;
-            }
-
-            // Matching Static Files
-            if (!response && request) {
-                // Pretreatment Path, Prevent RCE Attach
-                std::string target_path = webroot_.string() + "/" + std::string(request->target());
-                boost::algorithm::replace_all(target_path, "\\", "/");
-                boost::algorithm::replace_all(target_path, "..", "");
-                do {
-                    boost::algorithm::replace_all(target_path, "//", "/");
-                }while (target_path.contains("//"));
-
-                std::filesystem::path file_path(target_path);
-                // Test If the file Exists
-                if (std::filesystem::is_regular_file(file_path)) {
-                    response = std::make_unique<file_response>(file_path, EResponseCode::EST_OK);
-                }
-                // Hittest Index Files
-                for (auto&hittest: index_files_) {
-                    if (std::filesystem::path index_path = file_path.string()+ "/" + hittest; std::filesystem::is_regular_file(index_path)) {
-                        response = std::make_unique<file_response>(index_path, EResponseCode::EST_OK);
-                        break;
-                    }
-                }
             }
 
             // Generate 404 Response
