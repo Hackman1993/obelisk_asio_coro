@@ -9,7 +9,7 @@ namespace obelisk::http::validator {
         return std::make_shared<file_validator>(acceptable);
     }
 
-    boost::cobalt::task<void> file_validator::validate(const std::string &name, http_request_wrapper &request) {
+    boost::asio::awaitable<void> file_validator::validate(const std::string &name, http_request_wrapper &request) {
         if (!request.filebag().contains(name))
             co_return;
         if(acceptable_extensions_.empty())

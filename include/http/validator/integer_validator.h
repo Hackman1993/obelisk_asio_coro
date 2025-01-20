@@ -12,7 +12,7 @@ namespace obelisk::http::validator {
     class integer_validator final: public validator_base {
     public:
         integer_validator(bool is_signed) : signed_(is_signed) {}
-        boost::cobalt::task<void> validate(const std::string &name, http_request_wrapper &request) override;
+        boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) override;
     private:
         bool signed_;
     };

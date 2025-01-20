@@ -78,7 +78,7 @@ namespace obelisk::http {
 
     http_request_wrapper::~http_request_wrapper() = default;
 
-    boost::cobalt::task<void> http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
+    boost::asio::awaitable<void> http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
         for (auto &[name, validator]: validators) {
             for (auto &j: validator) {
                 co_await j->validate(name, *this);

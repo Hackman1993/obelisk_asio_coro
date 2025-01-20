@@ -12,8 +12,8 @@
 #include "db_connection_base.h"
 #include <boost/asio/io_context.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
-#include "core/coroutine/async_scoped_lock.h"
-
+#include "../core/coroutine/async_scoped_lock.h"
+#include <sahara/log/log.h>
 namespace obelisk::database {
     class connection_pool_base {
     public:
@@ -51,11 +51,11 @@ namespace obelisk::database {
                     auto conn = connection_maker_(ioctx_);
                     if(conn)
                         connections_.push_back(conn);
-                }catch (boost::system::error_code& e) {
-                    std::cout << e.what() << std::endl;
+                }catch (const boost::system::error_code& e) {
+                    LOG_MODULE_CRITICAL("Database", "{} ", e.message());
                 }
                 catch (std::exception& e) {
-                    std::cout << e.what() << std::endl;
+                    LOG_MODULE_CRITICAL("Database", "{} ", e.what());
                 }
 
             }

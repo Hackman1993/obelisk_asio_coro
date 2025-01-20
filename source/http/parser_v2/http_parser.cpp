@@ -16,6 +16,7 @@ BOOST_FUSION_ADAPT_TPL_STRUCT((T1)(T2),(std::pair)(T1)(T2),(T1, first)(T2, secon
 using namespace boost::spirit::x3;
 BOOST_FUSION_ADAPT_STRUCT(obelisk::http::request_meta, p1_, p2_, p3_, is_req_)
 BOOST_FUSION_ADAPT_STRUCT(obelisk::http::http_header, meta_, headers_)
+BOOST_FUSION_ADAPT_STRUCT(obelisk::http::url_parts, protocol, host, path, params)
 
 namespace obelisk::http {
     #define RULE(name, attr) const auto name = rule<class mat_parser, attr>{#name}
@@ -35,6 +36,7 @@ namespace obelisk::http {
     RULE(MultipartMeta, string_pair) = MultipartMetaName | MultipartMetaFilename | MultipartMetaFormData;
 
     RULE(UrlEncodedData, string_pair) = *~char_("=&") >> -lit("=") >> *~char_("&");
+    RULE(UrlPartsData, url_parts) = *((string("https")|string("http")) > lit("://")) > (+~char_("/?")) >> *(+~char_("?")) >> *(lit("?") >> (*char_));
 
     bool parser::parse_http_header(std::string_view data, obelisk::http::http_header &header) {
         auto result = parse(data.begin(), data.end(), HttpPackageHeaderParser, header);
@@ -140,14 +142,12 @@ namespace obelisk::http {
                     file_buffer = std::string_view(boost::asio::buffer_cast<const char *>(sbuf_.data()), sbuf_.size());
                     if (!file_buffer.contains(boundary_split_data)) {
                         fstream->write(file_buffer.data(), file_buffer.size() - boundary.size() - 5);
-                        std::cout << (file_buffer.size() - boundary.size() - 5) << std::endl;
                         sbuf_.consume(file_buffer.size() - boundary.size() - 5);
 
                     } else {
                         auto range = boost::algorithm::find_first(file_buffer, "\r\n--" + boundary);
                         std::string_view file_content_part = std::string_view(file_buffer.data(), range.begin() - file_buffer.begin());
                         fstream->write(file_content_part.data(), static_cast<std::streamsize>(file_content_part.size()));
-                        std::cout << (file_content_part.size() + 2) << std::endl;
                         sbuf_.consume(file_content_part.size() + 2);
                         // Prevent read too much data
                         data->clear();
@@ -197,6 +197,19 @@ namespace obelisk::http {
             }
         }
         return true;
+    }
+
+    std::unique_ptr<url_parts> parser::parse_split_url(const std::string &uri) {
+        std::unique_ptr<url_parts> ptr = std::make_unique<url_parts>();
+
+        auto result = parse(uri.begin(), uri.end(), UrlPartsData, *ptr);
+        if(!result) {
+            THROW(protocol_exception, "Invalid Url String", "Obelisk");
+            return nullptr;
+        }
+        if(ptr->path.empty())
+            ptr->path = "/";
+        return ptr;
     }
 
 } // obelisk

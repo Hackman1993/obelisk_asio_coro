@@ -23,7 +23,7 @@ namespace obelisk::http {
     auto route_param_parser = rule<class route_parser, route_param>{"RouteParamParser"} =
                                       (+~char_("*{}") >> attr(true) | '{' > +~char_("}") > '}' >> attr(false) | boost::spirit::x3::string("*") >> attr(false));
 
-    route_item::route_item(const std::string &path, const std::function<boost::cobalt::task<std::unique_ptr<http_response>>(http_request_wrapper &)> &handler): handler_(handler){
+    route_item::route_item(const std::string &path, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>>(http_request_wrapper &)> &handler): handler_(handler){
         auto parse_result = boost::spirit::x3::parse(path.begin(), path.end(),*route_param_parser, pattern_);
         if(!parse_result)
             THROW(route_exception, "Invalid Route: " + path, "Obelisk");
@@ -73,7 +73,7 @@ namespace obelisk::http {
         return allowed;
     }
 
-    boost::cobalt::task<std::unique_ptr<http_response>> route_item::handle(http_request_wrapper &request) {
+    boost::asio::awaitable<std::unique_ptr<http_response>> route_item::handle(http_request_wrapper &request) {
         if(handler_)
             co_return co_await handler_(request);
 

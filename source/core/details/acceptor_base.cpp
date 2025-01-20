@@ -1,6 +1,5 @@
 #include "core/details/acceptor_base.h"
 #include <iostream>
-#include <boost/cobalt/spawn.hpp>
 
 namespace obelisk::core::details {
     acceptor_base::acceptor_base(boost::asio::io_context& ctx): acceptor_(ctx) {
@@ -16,13 +15,13 @@ namespace obelisk::core::details {
         acceptor_.open(ep.protocol());
         acceptor_.bind(ep);
         acceptor_.listen();
-        boost::cobalt::spawn(acceptor_.get_executor(), this->accept_(), boost::asio::detached);
+        boost::asio::co_spawn(acceptor_.get_executor(), this->accept_(), boost::asio::detached);
     }
 
-    boost::cobalt::task<void> details::acceptor_base::accept_() {
+    boost::asio::awaitable<void> details::acceptor_base::accept_() {
         auto executor = co_await boost::asio::this_coro::executor;
         while (true){
-            auto socket = co_await acceptor_.async_accept(boost::cobalt::use_op);
+            auto socket = co_await acceptor_.async_accept(boost::asio::use_awaitable);
             auto wrapped = e_accepted(socket);
         };
     }

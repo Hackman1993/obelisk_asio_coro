@@ -12,7 +12,7 @@
 #include "http/exception/protocol_exception.h"
 
 namespace obelisk::http::middleware {
-    boost::cobalt::task<std::unique_ptr<http_response>> url_params_extract::pre_handle(http_request_wrapper&request) {
+    boost::asio::awaitable<std::unique_ptr<http_response>> url_params_extract::pre_handle(http_request_wrapper&request) {
         const auto query = sahara::string_ext::url_decode(request.query_string());
         if (!query.empty()) {
             if (!parser::parse_urlencoded_param(request, query)) {

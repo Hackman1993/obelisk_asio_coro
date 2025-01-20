@@ -11,6 +11,8 @@
 
 namespace obelisk::http {
     class http_block_data;
+
+    class url_parts;
     class parser {
     public:
         static bool parse_boundary(std::string_view data, std::string &boundary);
@@ -22,6 +24,8 @@ namespace obelisk::http {
         static bool parse_multipart_body(http_request_wrapper &request, const std::string& boundary);
 
         static bool parse_urlencoded_param(http_request_wrapper &request, std::string_view data);
+
+        static std::unique_ptr<url_parts> parse_split_url(const std::string& uri);
     };
 
 } // obelisk
