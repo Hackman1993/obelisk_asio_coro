@@ -6,6 +6,7 @@
 #define AWAITABLE_OPERATION_H
 #include <boost/asio/awaitable.hpp>
 namespace obelisk::core::coroutine {
+
 //         template<typename ReturnType>
 //         struct awaitable_operation : boost::cobalt::enable_awaitables<ReturnType> {
 //             virtual bool await_ready() const noexcept { return false; }

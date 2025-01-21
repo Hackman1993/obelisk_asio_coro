@@ -7,7 +7,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/ssl.hpp>
-
+#include <boost/cobalt/task.hpp>
 namespace obelisk::http{
     class http_response;
     namespace core {
@@ -23,7 +23,7 @@ namespace obelisk::http{
                 }
             }
 
-            boost::asio::awaitable<std::shared_ptr<http_response>>
+            boost::cobalt::task<std::shared_ptr<http_response>>
             send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers,
                          std::shared_ptr<std::istream> body);
 

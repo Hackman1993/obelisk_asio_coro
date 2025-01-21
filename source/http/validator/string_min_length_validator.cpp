@@ -1,9 +1,9 @@
 #include "http/validator/string_min_length_validator.h"
 #include "http/exception/validation_exception.h"
 #include "http/core/http_request.h"
-
+#include <boost/cobalt.hpp>
 namespace obelisk::http::validator {
-    boost::asio::awaitable<void> string_min_length_validator::validate(const std::string&name,
+    boost::cobalt::task<void> string_min_length_validator::validate(const std::string&name,
                                                                     http_request_wrapper&request) {
         if (request.params().contains(name)) {
             const auto&value = request.params()[std::string(name)];

@@ -12,6 +12,7 @@
 
 #include "http/http_server.h"
 
+#include <boost/cobalt/spawn.hpp>
 #include <sahara/log/log.h>
 
 #include "http/router/route_item.h"
@@ -35,7 +36,7 @@ namespace obelisk::http {
         before_middlewares(std::make_unique<middleware::json_extract>());
     }
 
-    std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
+    std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<boost::cobalt::task<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
         return routes_.emplace_back(std::make_unique<route_item>(route, handler));
     }
 
@@ -64,17 +65,17 @@ namespace obelisk::http {
         acceptor_.open(endpoint.protocol());
         acceptor_.bind(endpoint);
         acceptor_.listen();
-        boost::asio::co_spawn(acceptor_.get_executor(), listen_(), boost::asio::detached);
+        spawn(acceptor_.get_executor(), listen_(), boost::asio::detached);
     }
 
-    boost::asio::awaitable<void> http_server::listen_() {
+    boost::cobalt::task<void> http_server::listen_() {
         while (true) {
-            auto socket = co_await acceptor_.async_accept(boost::asio::use_awaitable);
-            boost::asio::co_spawn(this->acceptor_.get_executor(), handle_(std::move(socket)), boost::asio::detached);
+            auto socket = co_await acceptor_.async_accept(boost::cobalt::use_op);
+            spawn(this->acceptor_.get_executor(), handle_(std::move(socket)), boost::asio::detached);
         }
     }
 
-    boost::asio::awaitable<void> http_server::handle_(boost::asio::ip::tcp::socket socket) {
+    boost::cobalt::task<void> http_server::handle_(boost::asio::ip::tcp::socket socket) {
         boost::asio::streambuf buffer;
         while (true) {
             std::unique_ptr<http_response> response;
@@ -156,13 +157,13 @@ namespace obelisk::http {
         }
     }
 
-    boost::asio::awaitable<http::http_header> http_server::receive_header_(
+    boost::cobalt::task<http::http_header> http_server::receive_header_(
         boost::asio::ip::tcp::socket&socket, boost::asio::streambuf&buffer) {
         http_header header{};
         std::string_view bytes_view;
         do {
             const auto bytes_transferred = co_await socket.async_read_some(
-                buffer.prepare(1024 * 10), boost::asio::use_awaitable);
+                buffer.prepare(1024 * 10), boost::cobalt::use_op);
             buffer.commit(bytes_transferred);
             bytes_view = std::string_view(boost::asio::buffer_cast<const char *>(buffer.data()), buffer.size());
         }
@@ -178,7 +179,7 @@ namespace obelisk::http {
         co_return header;
     }
 
-    boost::asio::awaitable<std::unique_ptr<std::iostream>> http_server::receive_body_(
+    boost::cobalt::task<std::unique_ptr<std::iostream>> http_server::receive_body_(
         boost::asio::ip::tcp::socket&socket, boost::asio::streambuf&buffer, http_header&header) {
         if (!header.headers_.contains("Content-Length")) {
             co_return nullptr;
@@ -200,7 +201,7 @@ namespace obelisk::http {
         }
         while (total_transferred < content_length) {
             const auto bytes_wanna_read = std::min<uint32_t>(content_length - total_transferred, 1024 * 10);
-            const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read), boost::asio::use_awaitable);
+            const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read), boost::cobalt::use_op);
             buffer.commit(transferred);
             total_transferred += transferred;
             ret->write(boost::asio::buffer_cast<const char *>(buffer.data()), transferred);
@@ -211,13 +212,13 @@ namespace obelisk::http {
         co_return ret;
     }
 
-    boost::asio::awaitable<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket, const std::unique_ptr<core::http_iodata>&response) {
+    boost::cobalt::task<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket, const std::unique_ptr<core::http_iodata>&response) {
         unsigned char buffer[1024 * 256] = {};
         while (!response->eof()) {
             const auto bytes_read = response->read(buffer, 1024 * 256);
             std::uint64_t bytes_transferred = 0;
             while (bytes_transferred< bytes_read){
-                bytes_transferred += co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), boost::asio::use_awaitable);
+                bytes_transferred += co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), boost::cobalt::use_op);
             }
         }
         co_return;

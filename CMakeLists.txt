@@ -7,7 +7,7 @@ file(GLOB_RECURSE CPP_SOURCES source/*.cpp source/*.cc)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(Boost REQUIRED COMPONENTS url thread json fiber thread system)
+find_package(Boost REQUIRED COMPONENTS url thread json fiber thread system cobalt)
 find_package(fmt CONFIG REQUIRED)
 find_package(sahara REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -50,6 +50,6 @@ file(GLOB_RECURSE TEST_SOURCES test/*.h test/*.hpp test/*.cpp test/*.cc)
 add_executable(${PROJECT_NAME}_test ${TEST_SOURCES} )
 find_package(sahara REQUIRED)
 target_include_directories(${PROJECT_NAME}_test PRIVATE include)
-target_link_libraries(${PROJECT_NAME}_test PRIVATE $<$<BOOL:${WIN32}>:ws2_32> $<$<BOOL:${WIN32}>:Mswsock> $<$<BOOL:${WIN32}>:crypt32> obelisk Boost::json Boost::locale Boost::thread Boost::system sahara::sahara)
+target_link_libraries(${PROJECT_NAME}_test PRIVATE $<$<BOOL:${WIN32}>:ws2_32> $<$<BOOL:${WIN32}>:Mswsock> $<$<BOOL:${WIN32}>:crypt32> obelisk Boost::json Boost::locale Boost::thread Boost::system Boost::cobalt sahara::sahara)
 target_link_libraries(${PROJECT_NAME}_test PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 

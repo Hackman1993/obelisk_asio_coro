@@ -3,13 +3,13 @@
 #include <boost/json.hpp>
 #include "http/core/http_request.h"
 #include "http/exception/validation_exception.h"
-
+#include <boost/cobalt/task.hpp>
 namespace obelisk::http::validator {
     std::shared_ptr<required_validator> required() {
         return std::make_shared<required_validator>();
     }
 
-    boost::asio::awaitable<void> required_validator::validate(const std::string&name, http_request_wrapper&request) {
+    boost::cobalt::task<void> required_validator::validate(const std::string&name, http_request_wrapper&request) {
         if(request.filebag().contains(name))
             co_return;
         if (request.params().contains(name)) {

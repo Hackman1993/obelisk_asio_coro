@@ -13,7 +13,7 @@
 #include "http_connection.h"
 #include "middleware/middleware.h"
 #include "router/route_item.h"
-
+#include <boost/cobalt/task.hpp>
 namespace obelisk::http {
     struct http_header;
     class http_response;
@@ -21,14 +21,14 @@ namespace obelisk::http {
     class route_item;
     class http_middleware_base;
 
-    typedef boost::asio::awaitable<std::unique_ptr<http_response>>(*request_handler)(http_request_wrapper&);
+    typedef boost::cobalt::task<std::unique_ptr<http_response>>(*request_handler)(http_request_wrapper&);
 
     class http_server {
     public:
         http_server(boost::asio::io_context& ctx);
 
         void listen(const std::string& address, unsigned short port);
-        std::unique_ptr<route_item>& route(const std::string& route, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>> (http_request_wrapper&)>& handler);
+        std::unique_ptr<route_item>& route(const std::string& route, const std::function<boost::cobalt::task<std::unique_ptr<http_response>> (http_request_wrapper&)>& handler);
         std::unique_ptr<route_item>& route(const std::string& route, const request_handler& handler);
 
         const std::vector<std::unique_ptr<middleware::after_middleware>>& after_middlewares();
@@ -42,11 +42,11 @@ namespace obelisk::http {
         std::vector<std::unique_ptr<middleware::after_middleware>> middlewares_after_;
         std::vector<std::unique_ptr<middleware::before_middleware>> middlewares_before_;
 
-        boost::asio::awaitable<void> listen_();
-        boost::asio::awaitable<void> handle_(boost::asio::ip::tcp::socket socket);
-        static boost::asio::awaitable<http::http_header> receive_header_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf &buffer);
-        static boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, http_header& header);
-        static boost::asio::awaitable<void> write_response_(boost::asio::ip::tcp::socket& socket, const std::unique_ptr<core::http_iodata>& response);
+        boost::cobalt::task<void> listen_();
+        boost::cobalt::task<void> handle_(boost::asio::ip::tcp::socket socket);
+        static boost::cobalt::task<http::http_header> receive_header_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf &buffer);
+        static boost::cobalt::task<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, http_header& header);
+        static boost::cobalt::task<void> write_response_(boost::asio::ip::tcp::socket& socket, const std::unique_ptr<core::http_iodata>& response);
 
         boost::asio::io_context& ioctx_;
     };

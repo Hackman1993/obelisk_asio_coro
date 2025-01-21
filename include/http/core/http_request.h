@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <boost/json/object.hpp>
-
+#include <boost/cobalt/task.hpp>
 #include "http_block_data.h"
 #include "../validator/validator_base.h"
 
@@ -95,7 +95,7 @@ namespace obelisk::http {
 
         ~http_request_wrapper();
 
-        boost::asio::awaitable<void> validate(const std::vector<validator::validator_group>&validators);
+        boost::cobalt::task<void> validate(const std::vector<validator::validator_group>&validators);
 
         sahara::container::unordered_smap_u<std::string>& headers();
 
