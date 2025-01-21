@@ -15,22 +15,11 @@ namespace obelisk::storage::impl {
         explicit storage_error(const std::string&message): exception_base(message) {}
     };
 
-    template<typename ResultType>
-    struct operation_result {
-        bool success_ = false;
-        ResultType result_{};
-        std::shared_ptr<storage_error> error_;
-    };
-
     template<typename Result>
-    struct storage_operation : core::coroutine::awaitable_operation<operation_result<Result>> {
+    struct storage_operation : core::coroutine::thread_awaitable_operation<Result> {
         explicit storage_operation(std::string path): path_(std::move(path)){}
-        [[nodiscard]] operation_result<Result> await_resume() const noexcept override {
-            return result_;
-        }
     protected:
         std::string path_;
-        operation_result<Result> result_;
     };
 
     struct save_operation : storage_operation<std::string> {
