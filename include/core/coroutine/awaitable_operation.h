@@ -21,9 +21,10 @@ namespace obelisk::core::coroutine {
         virtual ~thread_awaitable_operation() = default;
 
         virtual void await_suspend(std::coroutine_handle<> coro){
+
             std::thread([&,coro]{
               try{
-                result_.result_ = this->_handle();
+                receiver_.result = this->_handle();
                 result_.success_ = true;
                 coro.resume();
               }catch (std::exception& e){
@@ -32,9 +33,12 @@ namespace obelisk::core::coroutine {
             }).detach();
         };
 
-        virtual awaitable_result<ReturnType> await_resume() const noexcept =0;
+        virtual awaitable_result<ReturnType> await_resume() const noexcept {
+            return result_;
+        };
     protected:
-        virtual std::shared_ptr<ReturnType> _handle() = 0;
+        virtual ReturnType _handle() = 0;
+        boost::cobalt::detail::promise_receiver<ReturnType> receiver_;
         awaitable_result<ReturnType> result_;
     }; // struct awaitable_operation
 } // obelisk::core::coroutine

@@ -3,7 +3,7 @@
 include(CMakeFindDependencyMacro)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
-find_dependency(Boost REQUIRED COMPONENTS json)
+find_dependency(Boost REQUIRED COMPONENTS json cobalt)
 find_dependency(sahara REQUIRED)
 
 include(${CMAKE_CURRENT_LIST_DIR}/obelisk-targets.cmake)

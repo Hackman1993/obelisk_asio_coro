@@ -6,10 +6,13 @@
 
 #include <boost/asio/ssl.hpp>
 #include <http/core/http_client.h>
-#include <wincrypt.h>
+
+#include <boost/cobalt.hpp>
+
 
 int main(int argc, char* argv[]) {
 
+    boost::asio::thread_pool thread_pool;
     using namespace obelisk::database;
     try {
         boost::asio::io_context ioctx;
