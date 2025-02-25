@@ -68,7 +68,7 @@ namespace obelisk::core::details {
     }
 
     void socket_base::connect(const std::string &addr, std::uint16_t port) {
-        boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address::from_string(addr),port);
+        boost::asio::ip::tcp::endpoint ep(boost::asio::ip::make_address(addr),port);
         socket_.async_connect(ep, [&](const boost::system::error_code& error){
             if(!error)
                 this->e_connected_();

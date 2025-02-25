@@ -2,6 +2,7 @@
 #include "http/core/http_request.h"
 
 std::shared_ptr<std::iostream> obelisk::http::http_block_data::prepare_content(std::uint64_t size) {
+
     // content_length_ = size;
     // if (content_length_ > 1 * 1024 * 1024) {
     //     // If content length greater than 1 MB, Create a filestream

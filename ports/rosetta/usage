@@ -1,4 +1,0 @@
-The package obelisk provides CMake targets:
-
-    find_package(rosetta CONFIG REQUIRED)
-    target_link_libraries(main PRIVATE rosetta::rosetta)

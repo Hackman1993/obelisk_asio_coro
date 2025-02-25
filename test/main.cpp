@@ -3,15 +3,12 @@
 #include <http/http_server.h>
 #include "database/database.h"
 
-
 #include <boost/asio/ssl.hpp>
 #include <http/core/http_client.h>
 
 #include <boost/cobalt.hpp>
 
-
 int main(int argc, char* argv[]) {
-
     boost::asio::thread_pool thread_pool;
     using namespace obelisk::database;
     try {

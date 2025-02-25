@@ -11,7 +11,7 @@ namespace obelisk::core::details {
     }
 
     void acceptor_base::listen(const std::string &addr, std::uint16_t port) {
-        const boost::asio::ip::address address = boost::asio::ip::address::from_string(addr);
+        const boost::asio::ip::address address = boost::asio::ip::make_address(addr);
         const boost::asio::ip::tcp::endpoint ep(address, port);
         acceptor_.open(ep.protocol());
         acceptor_.bind(ep);

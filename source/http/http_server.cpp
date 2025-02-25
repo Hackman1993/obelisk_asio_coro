@@ -29,6 +29,7 @@
 #include "http/middleware/json_extract.h"
 #include "http/middleware/multipart_extract.h"
 
+
 namespace obelisk::http {
     http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx) {
         before_middlewares(std::make_unique<middleware::url_params_extract>());
@@ -61,7 +62,7 @@ namespace obelisk::http {
     }
 
     void http_server::listen(const std::string&address, unsigned short port) {
-        const boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(address), port);
+        const boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::make_address(address), port);
         acceptor_.open(endpoint.protocol());
         acceptor_.bind(endpoint);
         acceptor_.listen();
@@ -165,7 +166,7 @@ namespace obelisk::http {
             const auto bytes_transferred = co_await socket.async_read_some(
                 buffer.prepare(1024 * 10), boost::cobalt::use_op);
             buffer.commit(bytes_transferred);
-            bytes_view = std::string_view(boost::asio::buffer_cast<const char *>(buffer.data()), buffer.size());
+            bytes_view = std::string_view(static_cast<const char *>(buffer.data().data()), buffer.size());
         }
         while (buffer.size() < 1024 * 10 && !bytes_view.contains("\r\n\r\n"));
 
@@ -196,7 +197,7 @@ namespace obelisk::http {
         uint32_t total_transferred = 0;
         if(buffer.size() > 0) {
             total_transferred = std::min<uint32_t>(buffer.size(), content_length);
-            ret->write(boost::asio::buffer_cast<const char*>(buffer.data()), total_transferred);
+            ret->write(static_cast<const char *>(buffer.data().data()), total_transferred);
             buffer.consume(total_transferred);
         }
         while (total_transferred < content_length) {
@@ -204,7 +205,7 @@ namespace obelisk::http {
             const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read), boost::cobalt::use_op);
             buffer.commit(transferred);
             total_transferred += transferred;
-            ret->write(boost::asio::buffer_cast<const char *>(buffer.data()), transferred);
+            ret->write(static_cast<const char *>(buffer.data().data()), transferred);
             buffer.consume(transferred);
         }
 

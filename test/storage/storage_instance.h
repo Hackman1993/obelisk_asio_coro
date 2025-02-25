@@ -4,7 +4,6 @@
 
 #ifndef STORAGE_INSTANCE_H
 #define STORAGE_INSTANCE_H
-#include <core/coroutine/awaitable_operation.h>
 
 #include <utility>
 #include <sahara/exception/exception_base.h>

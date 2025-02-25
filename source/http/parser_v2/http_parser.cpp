@@ -139,7 +139,7 @@ namespace obelisk::http {
                     data->read(data_, 10240);
                     auto bytes_read = data->gcount();
                     sbuf_.sputn(data_, bytes_read);
-                    file_buffer = std::string_view(boost::asio::buffer_cast<const char *>(sbuf_.data()), sbuf_.size());
+                    file_buffer = std::string_view(static_cast<const char *>(sbuf_.data().data()), sbuf_.size());
                     if (!file_buffer.contains(boundary_split_data)) {
                         fstream->write(file_buffer.data(), file_buffer.size() - boundary.size() - 5);
                         sbuf_.consume(file_buffer.size() - boundary.size() - 5);
