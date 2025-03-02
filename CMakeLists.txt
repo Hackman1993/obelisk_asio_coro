@@ -12,11 +12,11 @@ add_library(obelisk STATIC "")
 set_target_properties(obelisk PROPERTIES OUTPUT_NAME "obelisk")
 set_target_properties(obelisk PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/linux/x86_64/debug")
 target_include_directories(obelisk PRIVATE
-    include
+    include/obelisk
 )
 target_include_directories(obelisk SYSTEM PRIVATE
     /home/hackman/.xmake/packages/s/sahara/1.0.0/ff0d16a6df064366a4c775afe9728bee/include
-    /home/hackman/.xmake/packages/b/boost/1.87.0/ca37835d9df348f4ab0f9cd8bfc85937/include
+    /home/hackman/.xmake/packages/b/boost/1.87.0/f84f5d7667964ed4b9587fdf33e61fa0/include
     /home/hackman/.xmake/packages/s/spdlog/v1.15.1/1115c65deb5c445d9624ca0e359e3540/include
 )
 target_compile_options(obelisk PRIVATE
@@ -49,6 +49,7 @@ target_link_libraries(obelisk PRIVATE
     boost_context
     boost_container
     boost_chrono
+    boost_charconv
     boost_atomic
     ssl
     crypto
@@ -57,7 +58,7 @@ target_link_libraries(obelisk PRIVATE
 )
 target_link_directories(obelisk PRIVATE
     /home/hackman/.xmake/packages/s/sahara/1.0.0/ff0d16a6df064366a4c775afe9728bee/lib
-    /home/hackman/.xmake/packages/b/boost/1.87.0/ca37835d9df348f4ab0f9cd8bfc85937/lib
+    /home/hackman/.xmake/packages/b/boost/1.87.0/f84f5d7667964ed4b9587fdf33e61fa0/lib
 )
 target_link_options(obelisk PRIVATE
     -m64
@@ -71,6 +72,7 @@ target_sources(obelisk PRIVATE
     source/http/response/file_response.cpp
     source/http/response/json_response.cpp
     source/http/parser_v2/http_parser.cpp
+    source/http/parser_v2/http_parser_v3.cpp
     source/http/core/raw_http_response.cpp
     source/http/core/http_iodata_stream_wrapper.cpp
     source/http/core/http_block_data.cpp
@@ -102,9 +104,10 @@ set_target_properties(obelisk_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_
 add_dependencies(obelisk_test obelisk)
 target_include_directories(obelisk_test PRIVATE
     include
+    test
 )
 target_include_directories(obelisk_test SYSTEM PRIVATE
-    /home/hackman/.xmake/packages/b/boost/1.87.0/ca37835d9df348f4ab0f9cd8bfc85937/include
+    /home/hackman/.xmake/packages/b/boost/1.87.0/f84f5d7667964ed4b9587fdf33e61fa0/include
     /home/hackman/.xmake/packages/s/sahara/1.0.0/ff0d16a6df064366a4c775afe9728bee/include
     /home/hackman/.xmake/packages/s/spdlog/v1.15.1/1115c65deb5c445d9624ca0e359e3540/include
 )
@@ -137,6 +140,7 @@ target_link_libraries(obelisk_test PRIVATE
     boost_context
     boost_container
     boost_chrono
+    boost_charconv
     boost_atomic
     sahara
     ssl
@@ -146,14 +150,30 @@ target_link_libraries(obelisk_test PRIVATE
     dl
 )
 target_link_directories(obelisk_test PRIVATE
-    /home/hackman/.xmake/packages/b/boost/1.87.0/ca37835d9df348f4ab0f9cd8bfc85937/lib
+    /home/hackman/.xmake/packages/b/boost/1.87.0/f84f5d7667964ed4b9587fdf33e61fa0/lib
     /home/hackman/.xmake/packages/s/sahara/1.0.0/ff0d16a6df064366a4c775afe9728bee/lib
     build/linux/x86_64/debug
 )
 target_link_options(obelisk_test PRIVATE
     -m64
+    -lquadmath
 )
 target_sources(obelisk_test PRIVATE
     test/main.cpp
+    test/coro/database_manager.cpp
+    test/middleware/cors.cpp
+    test/controllers/member_controller.cpp
+    test/controllers/article_category.cpp
+    test/controllers/article.cpp
+    test/controllers/controller_base.cpp
+    test/controllers/auth_controller.cpp
+    test/controllers/attachment_controller.cpp
+    test/controllers/user_controller.cpp
+    test/common/global_configuration.cpp
+    test/database/redis/redis_connection.cpp
+    test/database/mysql/mysql_connection.cpp
+    test/database/sql_task_manager.cpp
+    test/storage/storage_instance.cpp
+    test/storage/storage.cpp
 )
 

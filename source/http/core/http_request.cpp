@@ -6,23 +6,23 @@
 #include <filesystem>
 #include <sahara/sahara.h>
 #include "http/exception/protocol_exception.h"
-#include "http/core/http_block_data.h"
+#include "http/core/raw.h"
 namespace obelisk::http {
-    http_request::http_request(std::shared_ptr<http_block_data> &data) : data_(std::move(data)) {
-        path_ = data_->header_.meta_.p2_;
-        if (path_.contains("?")) {
-            auto position = path_.find_first_of('?');
-            //
-            // std::string_view url_params = path_.substr(position +1);
-            // parser::parse_urlencoded_param(*this, url_params);
-            // path_ = std::string_view(path_.data(), position);
-        }
-        if(!data_->header_.headers_.contains("Content-Type") || data_->content_length_ <= 0)
-            return;
-
-        content_type_ = data_->header_.headers_["Content-Type"];
-        parser::parse_body(*this);
-    }
+    // http_request::http_request(std::shared_ptr<http_block_data> &data) : data_(std::move(data)) {
+    //     path_ = data_->header_.meta_.p2_;
+    //     if (path_.contains("?")) {
+    //         auto position = path_.find_first_of('?');
+    //         //
+    //         // std::string_view url_params = path_.substr(position +1);
+    //         // parser::parse_urlencoded_param(*this, url_params);
+    //         // path_ = std::string_view(path_.data(), position);
+    //     }
+    //     if(!data_->header_.headers_.contains("Content-Type") || data_->content_length_ <= 0)
+    //         return;
+    //
+    //     content_type_ = data_->header_.headers_["Content-Type"];
+    //     parser_v2::parse_body(*this);
+    // }
     void http_request::set_param(const std::string& name, const std::string& value) {
         if(params_.contains(name)){
             params_[name].push_back(value);
@@ -48,37 +48,38 @@ namespace obelisk::http {
     }
 
     const std::string& http_request::method() const{
-        return data_->header_.meta_.p1_;
+        return header_.meta_.p1_;
     }
 
     const std::string& http_request::target() const {
-        return data_->header_.meta_.p2_;
+        return header_.meta_.p2_;
     }
 
     const std::string& http_request::protocol() const{
-        return data_->header_.meta_.p3_;
+        return header_.meta_.p3_;
     }
 
     bool http_request::has_header(const std::string &name) const {
-        return data_->header_.headers_.contains(name);
+        return header_.headers_.contains(name);
     }
 
     const std::string &http_request::header(const std::string &name) const{
-        return data_->header_.headers_[name];
+        return header_.headers_.find(name)->second;
     }
 
     const std::string_view& http_request::content_type() {
         return content_type_;
     }
 
-    http_request_wrapper::http_request_wrapper(boost::asio::io_context& ioctx, http_header& header, std::unique_ptr<std::iostream> raw_body) : raw_header_(std::move(header)), raw_body_(raw_body? std::move(raw_body):nullptr), ioctx_(ioctx) {
-        const auto pos = raw_header_.meta_.p2_.find('?');
-        target_ = std::string_view(raw_header_.meta_.p2_.data(),pos == -1? raw_header_.meta_.p2_.size(): pos);
+
+    http_request_wrapper::http_request_wrapper(boost::asio::io_context &ioctx, core::raw::http_header_raw &header, std::unique_ptr<std::iostream> raw_body): header_raw_(std::move(header)), raw_body_(raw_body? std::move(raw_body):nullptr), ioctx_(ioctx) {
+        const auto pos = header_raw_.meta_.p2_.find('?');
+        target_ = std::string_view(header_raw_.meta_.p2_.data(),pos == -1? header_raw_.meta_.p2_.size(): pos);
     }
 
     http_request_wrapper::~http_request_wrapper() = default;
 
-    boost::cobalt::task<void> http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
+    boost::asio::awaitable<void> http_request_wrapper::validate(const std::vector<validator::validator_group>& validators) {
         for (auto &[name, validator]: validators) {
             for (auto &j: validator) {
                 co_await j->validate(name, *this);
@@ -88,19 +89,19 @@ namespace obelisk::http {
     }
 
     sahara::container::unordered_smap_u<std::string>& http_request_wrapper::headers() {
-        return raw_header_.headers_;
+        return header_raw_.headers_;
     }
 
     std::string_view http_request_wrapper::version() const {
-        return raw_header_.meta_.p3_;
+        return header_raw_.meta_.p3_;
     }
 
     void http_request_wrapper::set_version(const std::string& version) {
-        raw_header_.meta_.p3_ = version;
+        header_raw_.meta_.p3_ = version;
     }
 
     std::string_view http_request_wrapper::path() const {
-        return raw_header_.meta_.p2_;
+        return header_raw_.meta_.p2_;
     }
 
     std::string_view http_request_wrapper::target() const {
@@ -108,13 +109,13 @@ namespace obelisk::http {
     }
 
     std::string_view http_request_wrapper::method() const {
-        return raw_header_.meta_.p1_;
+        return header_raw_.meta_.p1_;
     }
 
     std::string_view http_request_wrapper::query_string() const {
-        const auto pos = raw_header_.meta_.p2_.find('?');
+        const auto pos = header_raw_.meta_.p2_.find('?');
 
-        return (pos== -1? std::string_view{}:std::string_view{raw_header_.meta_.p2_.data() + pos +1, raw_header_.meta_.p2_.size() - pos});
+        return (pos== -1? std::string_view{}:std::string_view{header_raw_.meta_.p2_.data() + pos +1, header_raw_.meta_.p2_.size() - pos});
     }
 
     std::shared_ptr<std::iostream>& http_request_wrapper::raw_body() {
@@ -141,9 +142,9 @@ namespace obelisk::http {
         return path_;
     }
 
-    std::shared_ptr<http_block_data>& http_request::raw() {
-        return data_;
-    }
+    // std::shared_ptr<http_block_data>& http_request::raw() {
+    //     return data_;
+    // }
 
     http_temp_fstream::http_temp_fstream(std::string path): path_(std::move(path)) {
         std::ofstream fstream(path_);

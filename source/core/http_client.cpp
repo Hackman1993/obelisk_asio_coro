@@ -52,8 +52,8 @@ namespace obelisk::http::core {
         return true;
     }
 
-    boost::cobalt::task<std::shared_ptr<http_response>>http_client::send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers,std::shared_ptr<std::istream> body) {
-        auto result = parser::parse_split_url(uri);
+    boost::asio::awaitable<std::shared_ptr<http_response>>http_client::send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers,std::shared_ptr<std::istream> body) {
+        auto result = parser_v2::parse_split_url(uri);
         if(!result)
             co_return nullptr;
         boost::algorithm::to_lower(result->protocol);
@@ -64,7 +64,7 @@ namespace obelisk::http::core {
         }
         auto upcased_method = boost::algorithm::to_upper_copy(method);
         boost::asio::ip::tcp::resolver resolver(ioctx_);
-        auto endpoints = co_await resolver.async_resolve(result->host, result->protocol, boost::cobalt::use_op);
+        auto endpoints = co_await resolver.async_resolve(result->host, result->protocol, obelisk::use_token);
 
         if(result->protocol == "https") {
             boost::asio::ssl::context ctx(boost::asio::ssl::context::tlsv12_client);

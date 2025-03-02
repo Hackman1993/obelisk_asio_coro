@@ -16,13 +16,13 @@ namespace obelisk::core::details {
         acceptor_.open(ep.protocol());
         acceptor_.bind(ep);
         acceptor_.listen();
-        spawn(acceptor_.get_executor(), this->accept_(), boost::asio::detached);
+        boost::asio::co_spawn(acceptor_.get_executor(), this->accept_(), boost::asio::detached);
     }
 
-    boost::cobalt::task<void> details::acceptor_base::accept_() {
+    boost::asio::awaitable<void> details::acceptor_base::accept_() {
         auto executor = co_await boost::asio::this_coro::executor;
-        while (true){
-            auto socket = co_await acceptor_.async_accept(boost::cobalt::use_op);
+        while (true) {
+            auto [ec, socket]= co_await acceptor_.async_accept(boost::asio::as_tuple(obelisk::use_token));
             auto wrapped = e_accepted(socket);
         };
     }

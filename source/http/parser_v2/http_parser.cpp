@@ -4,7 +4,7 @@
 
 #include <sahara/utils/uuid.h>
 #include "http/exception/protocol_exception.h"
-#include "http/core/http_block_data.h"
+#include "http/core/raw.h"
 #include <boost/asio.hpp>
 #include <iostream>
 #include <filesystem>
@@ -38,12 +38,12 @@ namespace obelisk::http {
     RULE(UrlEncodedData, string_pair) = *~char_("=&") >> -lit("=") >> *~char_("&");
     RULE(UrlPartsData, url_parts) = *((string("https")|string("http")) > lit("://")) > (+~char_("/?")) >> *(+~char_("?")) >> *(lit("?") >> (*char_));
 
-    bool parser::parse_http_header(std::string_view data, obelisk::http::http_header &header) {
+    bool parser_v2::parse_http_header(std::string_view data, obelisk::http::http_header &header) {
         auto result = parse(data.begin(), data.end(), HttpPackageHeaderParser, header);
         return result;
     }
 
-    bool parser::parse_boundary(std::string_view data, std::string &boundary) {
+    bool parser_v2::parse_boundary(std::string_view data, std::string &boundary) {
         auto result = parse(data.begin(), data.end(), MultipartBoundaryParser, boundary);
         if(!result) {
             THROW(protocol_exception, "Boundary Parse Failed", "Obelisk");
@@ -51,7 +51,7 @@ namespace obelisk::http {
         return result;
     }
 
-    bool parser::parse_body(http_request &request) {
+    bool parser_v2::parse_body(http_request &request) {
         // auto content_type = request.content_type();
         // auto content_length = request.content_length();
         // if (boost::algorithm::icontains(content_type, "multipart/form-data")) {
@@ -76,7 +76,7 @@ namespace obelisk::http {
         return true;
     }
 
-    bool parser::parse_multipart_body(obelisk::http::http_request_wrapper &request, const std::string& boundary) {
+    bool parser_v2::parse_multipart_body(obelisk::http::http_request_wrapper &request, const std::string& boundary) {
         std::string boundary_end_data = "--" + boundary + "--\r";
         std::string boundary_split_data = "--" + boundary;
         auto data = request.raw_body();
@@ -178,7 +178,7 @@ namespace obelisk::http {
         return true;
     }
 
-    bool parser::parse_urlencoded_param(http_request_wrapper &request, std::string_view data) {
+    bool parser_v2::parse_urlencoded_param(http_request_wrapper &request, std::string_view data) {
 
         std::vector<std::pair<std::string, std::string>> params;
         if (!parse(data.begin(), data.end(), UrlEncodedData % '&', params))
@@ -199,7 +199,7 @@ namespace obelisk::http {
         return true;
     }
 
-    std::unique_ptr<url_parts> parser::parse_split_url(const std::string &uri) {
+    std::unique_ptr<url_parts> parser_v2::parse_split_url(const std::string &uri) {
         std::unique_ptr<url_parts> ptr = std::make_unique<url_parts>();
 
         auto result = parse(uri.begin(), uri.end(), UrlPartsData, *ptr);
