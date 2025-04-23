@@ -5,17 +5,17 @@
  * @created_at 2023-10-09
 ***********************************************************************************************************************/
 #include <vector>
-#include "http/router/route_item.h"
+#include "obelisk/http/router/route_item.h"
 #include <boost/spirit/home/x3.hpp>
 #include <boost/fusion/adapted/struct.hpp>
-#include "http/exception/route_exception.h"
-#include "http/router/route_param.h"
+#include "obelisk/http/exception/route_exception.h"
+#include "obelisk/http/router/route_param.h"
 #include <regex>
 #include <iostream>
 #include <ranges>
 
-#include "http/core/http_request.h"
-#include "http/exception/validation_exception.h"
+#include "obelisk/http/core/http_request.h"
+#include "obelisk/http/exception/validation_exception.h"
 BOOST_FUSION_ADAPT_STRUCT(obelisk::http::route_param, name_, static_);
 
 namespace obelisk::http {

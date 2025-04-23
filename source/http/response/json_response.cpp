@@ -1,5 +1,5 @@
-#include "http/response/json_response.h"
-#include "http/core/http_iodata_stream_wrapper.h"
+#include "obelisk/http/response/json_response.h"
+#include "obelisk/http/core/http_iodata_stream_wrapper.h"
 #include <sstream>
 
 namespace obelisk::http {

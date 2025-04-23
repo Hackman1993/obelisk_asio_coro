@@ -2,11 +2,11 @@
 // Created by Hackman.Lo on 2024/9/23.
 //
 
-#include "http/core/http_client.h"
-#include "http/core/http_response.h"
+#include "obelisk/http/core/http_client.h"
+#include "obelisk/http/core/http_response.h"
 #include <iostream>
 #include <sahara/log/log.h>
-#include "http/parser/http_parser_v2.h"
+#include "obelisk/http/parser/http_parser_v2.h"
 #ifdef _WIN32
 #include <wincrypt.h>
 #endif

@@ -5,7 +5,7 @@
  * @created_at 2023-10-11
 ***********************************************************************************************************************/
 
-#include "http/core/raw_http_response.h"
+#include "obelisk/http/core/raw_http_response.h"
 #include <istream>
 #include <cstring>
 

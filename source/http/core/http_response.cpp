@@ -3,9 +3,9 @@
 //
 
 #include <sstream>
-#include "http/core/http_response.h"
+#include "obelisk/http/core/http_response.h"
 
-#include "http/core/http_iodata_stream_wrapper.h"
+#include "obelisk/http/core/http_iodata_stream_wrapper.h"
 
 namespace obelisk::http {
     std::unordered_map<EResponseCode, std::string> http_response::resp_status_map_{

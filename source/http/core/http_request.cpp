@@ -1,12 +1,12 @@
-#include "http/core/http_request.h"
-#include "http/parser/http_parser_v2.h"
+#include "obelisk/http/core/http_request.h"
+#include "obelisk/http/parser/http_parser_v2.h"
 
 #include <utility>
 #include <iostream>
 #include <filesystem>
 #include <sahara/sahara.h>
-#include "http/exception/protocol_exception.h"
-#include "http/core/raw.h"
+#include "obelisk/http/exception/protocol_exception.h"
+#include "obelisk/http/core/raw.h"
 namespace obelisk::http {
     // http_request::http_request(std::shared_ptr<http_block_data> &data) : data_(std::move(data)) {
     //     path_ = data_->header_.meta_.p2_;

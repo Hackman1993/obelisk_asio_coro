@@ -1,4 +1,4 @@
-#include "http/core/http_iodata_stream_wrapper.h"
+#include "obelisk/http/core/http_iodata_stream_wrapper.h"
 
 namespace obelisk::http::core {
     http_data_istream_wrapper::~http_data_istream_wrapper() {

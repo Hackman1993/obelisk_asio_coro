@@ -3,13 +3,13 @@
 //
 #include <algorithm>
 #include <sahara/string/string_ext.h>
-#include "http/middleware/url_params_extract.h"
+#include "obelisk/http/middleware/url_params_extract.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/spirit/home/x3.hpp>
-#include "http/parser/http_parser_v2.h"
-#include "http/exception/protocol_exception.h"
+#include "obelisk/http/parser/http_parser_v2.h"
+#include "obelisk/http/exception/protocol_exception.h"
 
 namespace obelisk::http::middleware {
     obelisk::task<std::unique_ptr<http_response>> url_params_extract::pre_handle(http_request_wrapper&request) {

@@ -10,7 +10,6 @@
 #include "obelisk/http/exception/http_exception.h"
 #include "auth_controller.h"
 #include "coro/database_manager.h"
-
 #include "awaitables/async_mutex.hpp"
 
 

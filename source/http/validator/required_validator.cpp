@@ -1,8 +1,8 @@
-#include "http/validator/required_validator.h"
+#include "obelisk/http/validator/required_validator.h"
 #include <memory>
 #include <boost/json.hpp>
-#include "http/core/http_request.h"
-#include "http/exception/validation_exception.h"
+#include "obelisk/http/core/http_request.h"
+#include "obelisk/http/exception/validation_exception.h"
 #include <boost/cobalt/task.hpp>
 namespace obelisk::http::validator {
     std::shared_ptr<required_validator> required() {

@@ -12,7 +12,9 @@
 #include "db_connection_base.h"
 #include <boost/asio/io_context.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
-#include "../core/coroutine/async_scoped_lock.h"
+#include <obelisk/core/coroutine/async_mutex.h>
+
+#include "obelisk/core/coroutine/async_scoped_lock.h"
 #include <sahara/log/log.h>
 namespace obelisk::database {
     class connection_pool_base {
@@ -37,12 +39,12 @@ namespace obelisk::database {
     template<typename Connection>
     class connection_pool : public connection_pool_base {
     public:
-        explicit connection_pool(boost::asio::io_context&ios): ioctx_(ios) {
+        explicit connection_pool(boost::asio::io_context&ios): ioctx_(ios), mutex_(ios) {
         }
 
         template<typename... Args>
         void initialize(Args... args) {
-            connection_maker_ = [=](boost::asio::io_context& ioctx) {
+            connection_maker_ = [=,this](boost::asio::io_context& ioctx) {
                 return std::shared_ptr<Connection>(new Connection(ioctx, args...), std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1));
             };
             std::unique_lock lock(mutex_);
@@ -85,7 +87,7 @@ namespace obelisk::database {
         }
 
         std::atomic_int16_t min_ = 5;
-        boost::timed_mutex mutex_;
+        obelisk::core::coroutine::async_mutex mutex_;
         std::atomic_int16_t max_ = 100;
         boost::asio::io_context&ioctx_;
         std::atomic_bool shutdown_ = false;

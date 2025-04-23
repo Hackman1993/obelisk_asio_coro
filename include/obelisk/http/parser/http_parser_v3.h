@@ -5,8 +5,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include "../core/http_request.h"
-#include "http/core/raw.h"
+#include "obelisk/http/core/http_request.h"
+#include "obelisk/http/core/raw.h"
 #include "boost/spirit/home/x3.hpp"
 
 namespace obelisk::http {

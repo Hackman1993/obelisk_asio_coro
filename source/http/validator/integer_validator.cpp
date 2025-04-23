@@ -2,12 +2,12 @@
 // Created by Hackman.Lo on 2024/3/5.
 //
 
-#include "http/validator/integer_validator.h"
+#include "obelisk/http/validator/integer_validator.h"
 
 #include <boost/lexical_cast.hpp>
 
-#include "http/core/http_request.h"
-#include "http/exception/http_exception.h"
+#include "obelisk/http/core/http_request.h"
+#include "obelisk/http/exception/http_exception.h"
 
 
 namespace obelisk::http::validator {

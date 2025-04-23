@@ -1,6 +1,6 @@
-#include "http/validator/string_min_length_validator.h"
-#include "http/exception/validation_exception.h"
-#include "http/core/http_request.h"
+#include "obelisk/http/validator/string_min_length_validator.h"
+#include "obelisk/http/exception/validation_exception.h"
+#include "obelisk/http/core/http_request.h"
 #include <boost/cobalt.hpp>
 namespace obelisk::http::validator {
     obelisk::task<void> string_min_length_validator::validate(const std::string&name,

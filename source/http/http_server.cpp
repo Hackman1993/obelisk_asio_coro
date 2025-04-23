@@ -10,26 +10,26 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "http/http_server.h"
+#include "obelisk/http/http_server.h"
 
-#include <obelisk.h>
+#include <obelisk/obelisk.h>
 #include <boost/cobalt/spawn.hpp>
-#include <http/parser/http_parser3.h>
+#include <obelisk/http/parser/http_parser_v3.h>
 #include <sahara/log/log.h>
 
-#include "http/router/route_item.h"
-#include "http/core/http_request.h"
-#include "http/parser/http_parser_v2.h"
-#include "http/middleware/middleware.h"
-#include "http/response/json_response.h"
-#include "http/response/file_response.h"
-#include "http/response/empty_response.h"
-#include "http/exception/http_exception.h"
-#include "http/exception/protocol_exception.h"
-#include "http/middleware/url_params_extract.h"
-#include "http/core/http_iodata_stream_wrapper.h"
-#include "http/middleware/json_extract.h"
-#include "http/middleware/multipart_extract.h"
+#include "obelisk/http/router/route_item.h"
+#include "obelisk/http/core/http_request.h"
+#include "obelisk/http/parser/http_parser_v2.h"
+#include "obelisk/http/middleware/middleware.h"
+#include "obelisk/http/response/json_response.h"
+#include "obelisk/http/response/file_response.h"
+#include "obelisk/http/response/empty_response.h"
+#include "obelisk/http/exception/http_exception.h"
+#include "obelisk/http/exception/protocol_exception.h"
+#include "obelisk/http/middleware/url_params_extract.h"
+#include "obelisk/http/core/http_iodata_stream_wrapper.h"
+#include "obelisk/http/middleware/json_extract.h"
+#include "obelisk/http/middleware/multipart_extract.h"
 
 
 namespace obelisk::http {

@@ -5,10 +5,10 @@
  * @created_at 2023-10-10
 ***********************************************************************************************************************/
 
-#include "http/core/mime_types.h"
-#include "http/response/file_response.h"
-#include "http/exception/http_exception.h"
-#include "http/core/http_iodata_stream_wrapper.h"
+#include "obelisk/http/core/mime_types.h"
+#include "obelisk/http/response/file_response.h"
+#include "obelisk/http/exception/http_exception.h"
+#include "obelisk/http/core/http_iodata_stream_wrapper.h"
 #include <fstream>
 #include <filesystem>
 namespace obelisk::http {

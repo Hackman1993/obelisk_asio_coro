@@ -5,7 +5,7 @@
  * @created_at 2023-10-10
 ***********************************************************************************************************************/
 
-#include "http/core/mime_types.h"
+#include "obelisk/http/core/mime_types.h"
 
 namespace obelisk {
     std::unordered_map<std::string, std::string> mime_types::mimes_ = std::unordered_map<std::string, std::string>({

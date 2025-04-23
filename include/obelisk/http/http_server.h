@@ -7,14 +7,13 @@
 
 #ifndef OBELISK_HTTP_SERVER_H
 #define OBELISK_HTTP_SERVER_H
-#include "../core/acceptor.h"
 #include <filesystem>
 
 #include "http_connection.h"
 #include "middleware/middleware.h"
 #include "router/route_item.h"
 #include "../core/coroutine/task.h"
-
+#include <boost/asio.hpp>
 namespace obelisk::http {
     struct http_header;
     class http_response;

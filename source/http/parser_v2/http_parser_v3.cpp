@@ -1,14 +1,14 @@
-#include "http/parser/http_parser3.h"
+#include "obelisk/http/parser/http_parser_v3.h"
 #include <boost/spirit/home/x3.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <sahara/utils/uuid.h>
-#include "http/exception/protocol_exception.h"
-#include "http/core/raw.h"
+#include "obelisk/http/exception/protocol_exception.h"
+#include "obelisk/http/core/raw.h"
 #include <boost/asio.hpp>
 #include <iostream>
 #include <filesystem>
-#include "http/core/http_request.h"
+#include "obelisk/http/core/http_request.h"
 #include <utility>
 #include <boost/parser/parser.hpp>
 using namespace boost::parser;

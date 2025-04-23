@@ -2,7 +2,7 @@
 // Created by Hackman.Lo on 2023/12/21.
 //
 
-#include "http/response/empty_response.h"
+#include "obelisk/http/response/empty_response.h"
 
 namespace obelisk::http {
     empty_response::empty_response(): http_response(EResponseCode::EST_OK) {

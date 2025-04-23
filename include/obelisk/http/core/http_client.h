@@ -8,7 +8,7 @@
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/cobalt/task.hpp>
-#include <core/coroutine/task.h>
+#include <obelisk/core/coroutine/task.h>
 
 namespace obelisk::http{
     class http_response;

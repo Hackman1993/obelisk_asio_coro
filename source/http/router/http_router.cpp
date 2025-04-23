@@ -5,8 +5,8 @@
  * @created_at 2023-10-09
 ***********************************************************************************************************************/
 
-#include "http/router/http_router.h"
-#include "http/router/route_item.h"
+#include "obelisk/http/router/http_router.h"
+#include "obelisk/http/router/route_item.h"
 
 namespace obelisk::http {
     // std::shared_ptr<http_response> http_router::handle(std::shared_ptr<http_request> request) {

@@ -2,11 +2,11 @@ add_rules("mode.debug", "mode.release")
 add_repositories("my https://github.com/Hackman1993/repository.git")
 
 add_requires("sahara", "spdlog", "openssl")
-add_requires("boost >=1.87.0", {configs={json=true, cobalt = true, asio = true, thread = true, mysql=true, charconv=true}})
+add_requires("boost >=1.87.0", {configs={cmake=false, json=true, cobalt = true, asio = true, thread = true, mysql=true, charconv=true}})
 target("obelisk")
     set_kind("static")
     set_languages("c++23")
-    add_includedirs("include/obelisk")
+    add_includedirs("include")
     add_files("source/**/*.cpp")
     add_packages("sahara", "boost", "spdlog", "openssl")
 

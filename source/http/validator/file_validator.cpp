@@ -1,7 +1,7 @@
-#include "http/validator/file_validator.h"
+#include "obelisk/http/validator/file_validator.h"
 #include <memory>
-#include "http/core/http_request.h"
-#include "http/exception/validation_exception.h"
+#include "obelisk/http/core/http_request.h"
+#include "obelisk/http/exception/validation_exception.h"
 
 namespace obelisk::http::validator {
     std::shared_ptr<file_validator> file(std::vector<std::string> &acceptable) {

@@ -5,7 +5,7 @@
  * @created_at 2023-10-10
 ***********************************************************************************************************************/
 
-#include "http/middleware/middleware.h"
+#include "obelisk/http/middleware/middleware.h"
 #include "sahara/utils/uuid.h"
 #include <iostream>
 namespace obelisk::http::middleware {
