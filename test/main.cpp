@@ -27,6 +27,7 @@
 #include <middleware/cors.h>
 #include <obelisk/database/database.h>
 #include <sahara/log/log.h>
+#include <obelisk/database/database.h>
 #include <obelisk/core/coroutine/async_mutex.h>
 using namespace  boost::parser;
 
@@ -35,14 +36,12 @@ int main(int argc, char* argv[]) {
     try {
         sahara::log::initialize();
         boost::asio::io_context ioctx;
+        co_spawn(ioctx, obelisk::database::db::run_migration({
+            std::make_shared<obelisk::database::migration::create_migration_table>()
+        }), boost::asio::detached);
+        ioctx.run();
 
         std::string content = "Get /asdfasdf/ HTTP/1.1 \r\nAuthorization:asdfasdf\r\nAuthorization1:asdfasdf\r\n";
-//
-//         //rule<struct MetaParser, request_meta> MetaParser= "MetaParser";
-//         // auto MetaParser_def = ((+!char_(" \r\n") >> " " >> ServerUrlParser >> " " >> +!char_(" \r\n") >> "\r\n" >> attr(true)) |
-//         //                                  (+!char_(" \r\n") >> " " >> +!char_(" \r\n") >> " " >> +!char_(" \r\n") >> "\r\n" >> attr(false)));
-//
-//
 #ifdef NDEBUG
         obelisk::database::db_pool::make_pool<mysql_connection>(ioctx, "mysql", "localhost", 3306, "root", "hl97005497--", "shop_test");
 #else
@@ -72,6 +71,7 @@ int main(int argc, char* argv[]) {
         server.listen("0.0.0.0", 3308);
 
         std::vector<std::shared_ptr<std::thread>> threads;
+
         ioctx.run();
      }
     catch (std::exception&err) {

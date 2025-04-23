@@ -4,7 +4,7 @@
 
 #ifndef DATABASE_H
 #define DATABASE_H
-
+#include "db.h"
 #include "db_pool.h"
 
 #endif //DATABASE_H

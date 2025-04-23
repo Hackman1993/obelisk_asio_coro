@@ -17,7 +17,7 @@ namespace obelisk::database::migration
     public:
         virtual ~column_blueprint() = default;
 
-        column_blueprint(const std::string& column, const std::string& type, bool nullable = false): column_(column), type_(type), nullable_(nullable)
+        column_blueprint(const std::string& column, const std::string& type, const bool nullable = false)
         {
         }
 
@@ -44,7 +44,10 @@ namespace obelisk::database::migration
             comment_ = comment;
             return *this;
         }
-        virtual column_blueprint& default_value();
+        virtual column_blueprint& default_value()
+        {
+            return *this;
+        };
 
         virtual column_blueprint& from(int start_with)
         {
@@ -83,7 +86,7 @@ namespace obelisk::database::migration
         }
         virtual column_blueprint& use_current()
         {
-            default_value_ = 'CURRENT_TIMESTAMP';
+            default_value_ = "CURRENT_TIMESTAMP";
             return *this;
         }
         virtual column_blueprint& use_current_on_update()
@@ -110,93 +113,105 @@ namespace obelisk::database::migration
         std::optional<std::string> unique_name_;
     };
 
-    class foreign_id_column_blueprint : public column_blueprint
-    {
-    public:
-        foreign_id_column_blueprint(const std::string& column, const std::string& type): column_blueprint(column, type){ }
+     class foreign_id_column_blueprint final : public column_blueprint
+     {
+     public:
+         foreign_id_column_blueprint(const std::string& column, const std::string& type): column_blueprint(column, type, false){ }
 
-        foreign_id_column_blueprint& after(const std::string& column) override
-        {
-            column_blueprint::after(column);
-            return *this;
-        }
-        foreign_id_column_blueprint& auto_increment() override
-        {
-            column_blueprint::auto_increment();
-            return *this;
-        }
-        foreign_id_column_blueprint& change() override
-        {
-            column_blueprint::change();
-            return *this;
-        }
-        foreign_id_column_blueprint& comment(const std::string& comment) override
-        {
-            column_blueprint::comment(comment);
-            return *this;
-        }
-        foreign_id_column_blueprint& default_value() override
-        {
-            column_blueprint::default_value();
-            return *this;
-        }
-        foreign_id_column_blueprint& from(int start_with) override
-        {
-            start_with_ = start_with;
-            return *this;
-        }
-        foreign_id_column_blueprint& index(const std::string& name) override
-        {
-            index_name_ = name;
-            return *this;
-        }
-        foreign_id_column_blueprint& nullable(const bool value) override
-        {
-            column_blueprint::nullable(value);
-            return *this;
-        }
-        foreign_id_column_blueprint& primary() override
-        {
-            column_blueprint::primary();
-            return *this;
-        }
-        foreign_id_column_blueprint& unique(const std::string& index_name) override
-        {
-            unique_name_ = index_name;
-            return *this;
-        }
-        foreign_id_column_blueprint& set_unsigned(bool value = true) override
-        {
-            column_blueprint::set_unsigned(value);
-            return *this;
-        }
-        foreign_id_column_blueprint& use_current() override
-        {
-            column_blueprint::use_current();
-            return *this;
-        }
-        foreign_id_column_blueprint& use_current_on_update() override
-        {
-            column_blueprint::use_current_on_update();
-            return *this;
-        }
+         foreign_id_column_blueprint& after(const std::string& column) override
+         {
+             column_blueprint::after(column);
+             return *this;
+         }
 
-        foreign_id_column_blueprint& on(const std::string& table)
-        {
-            on_ = table;
-            return *this;
-        }
+         foreign_id_column_blueprint& auto_increment() override
+         {
+             column_blueprint::auto_increment();
+             return *this;
+         }
 
-        foreign_id_column_blueprint& reference(const std::string& column)
-        {
-            reference_ = "id";
-            return *this;
-        }
+         foreign_id_column_blueprint& change() override
+         {
+             column_blueprint::change();
+             return *this;
+         }
 
-    protected:
-        std::optional<std::string> reference_;
-        std::optional<std::string> on_;
-    };
+         foreign_id_column_blueprint& comment(const std::string& comment) override
+         {
+             column_blueprint::comment(comment);
+             return *this;
+         }
+
+         foreign_id_column_blueprint& default_value() override
+         {
+             column_blueprint::default_value();
+             return *this;
+         }
+
+         foreign_id_column_blueprint& from(int start_with) override
+         {
+             start_with_ = start_with;
+             return *this;
+         }
+
+         foreign_id_column_blueprint& index(const std::string& name) override
+         {
+             index_name_ = name;
+             return *this;
+         }
+
+         foreign_id_column_blueprint& nullable(const bool value) override
+         {
+             column_blueprint::nullable(value);
+             return *this;
+         }
+
+         foreign_id_column_blueprint& primary() override
+         {
+             column_blueprint::primary();
+             return *this;
+         }
+
+         foreign_id_column_blueprint& unique(const std::string& index_name) override
+         {
+             unique_name_ = index_name;
+             return *this;
+         }
+
+         foreign_id_column_blueprint& set_unsigned(bool value = true) override
+         {
+             column_blueprint::set_unsigned(value);
+             return *this;
+         }
+
+         foreign_id_column_blueprint& use_current() override
+         {
+             column_blueprint::use_current();
+             return *this;
+         }
+
+         foreign_id_column_blueprint& use_current_on_update() override
+         {
+             column_blueprint::use_current_on_update();
+             return *this;
+         }
+
+         foreign_id_column_blueprint& on(const std::string& table)
+         {
+             on_ = table;
+             return *this;
+         }
+
+         foreign_id_column_blueprint& reference(const std::string& column)
+         {
+             reference_ = "id";
+             return *this;
+         }
+
+     protected:
+         std::optional<std::string> reference_;
+         std::optional<std::string> on_;
+     };
 
     class table_blueprint
     {
@@ -216,8 +231,7 @@ namespace obelisk::database::migration
         column_blueprint& primary(const std::string& column)
         {
             auto ref = columns_.emplace_back(std::make_shared<column_blueprint>(column, "bigint"));
-            ref->set_unsigned().auto_increment().primary();
-            return *this;
+            return ref->set_unsigned().auto_increment().primary();
         }
 
         column_blueprint& id()

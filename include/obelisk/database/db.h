@@ -1,7 +1,7 @@
 #ifndef DB_H
 #define DB_H
 #include <vector>
-#include <database/mysql/mysql_connection.h>
+#include <obelisk/database/mysql/mysql_connection.h>
 #include <sahara/log/log.h>
 
 #include "db_pool.h"
@@ -19,15 +19,17 @@ namespace obelisk::database
             return instance;
         }
 
-        boost::asio::awaitable<void> db::run_migration(std::vector<std::shared_ptr<migration::migration_base>> migrations)
+        static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::migration_base>> migrations)
         {
             for (auto &migration : migrations)
             {
-                auto connection  = co_await db_pool::get_connection<mysql_connection>("mysql");
+                //auto connection  = co_await db_pool::get_connection<mysql_connection>("mysql");
+                auto migration_name = migration->migration_name();
                 LOG_TRACE("Running migration {} ...", migration->migration_name());
-                connection->a
-                LOG_TRACE("Running migration {} ...", migration->migration_name());
+
+                LOG_TRACE("Running migration {} complete!", migration->migration_name());
             }
+            co_return;
         }
 
     private:

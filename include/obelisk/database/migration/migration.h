@@ -9,7 +9,7 @@
 #include <string>
 
 #include "blueprint.h"
-#define DEFINE_OBELISK_MIGRATION public: const std::string& migration_name() override { return __FILE__; }
+#define DEFINE_OBELISK_MIGRATION public: std::string migration_name() override { return __FILE__; }
 
 
 namespace obelisk::database::migration
@@ -18,7 +18,7 @@ namespace obelisk::database::migration
     {
     public:
         virtual ~migration_base() = default;
-        virtual const std::string& migration_name() = 0;
+        virtual std::string migration_name() = 0;
 
         virtual void up() = 0;
         virtual void down()=0;
@@ -31,30 +31,32 @@ namespace obelisk::database::migration
         {
             table_blueprint blueprint(table, true);
             call(blueprint);
+        }
+
+        static void drop_if_exists(const std::string&& table)
+        {
 
         }
     };
     class create_migration_table : public migration_base
     {
-        DEFINE_OBELISK_MIGRATION
+        public: std::string migration_name() override
+        {
+            return __FILE__;
+        }
         void up() override
         {
-            migration::create("members", [](table_blueprint& blueprint)
+            migration::create("migrations", [](table_blueprint& blueprint)
             {
                 blueprint.id();
-                blueprint.string("username", 50).unique().comment("用户名");
-                blueprint.string("nickname", 50).nullable().comment("昵称");
-                blueprint.string("real_name", 50).nullable().comment("真实姓名");
-                blueprint.string("password", 100).nullable().comment("密码");
-                blueprint.string("phone", 20).nullable().comment("手机号");
-                blueprint.string("avatar").nullable().comment("头像路径");
-                blueprint.string("wechat_openid").nullable().index().comment("微信OpenID");
+                blueprint.string("migration", 50).unique().comment("迁移名称");
+                blueprint.integer("batch").comment("批次");
                 blueprint.timestamps();
             });
         }
         void down() override
         {
-
+          migration::drop_if_exists("migrations");
         }
     };
 

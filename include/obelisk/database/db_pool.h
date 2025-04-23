@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+
+#include "../../../cmake-build-debug/vcpkg_installed/x64-linux/include/sahara/exception/exception_base.h"
 #include "obelisk/core/coroutine/async_scoped_lock.h"
 #include "connection_pool/connection_pool.h"
 
@@ -29,6 +31,8 @@ namespace obelisk::database
         template <typename Connection>
         static boost::asio::awaitable<std::shared_ptr<Connection>> get_connection(const std::string& key)
         {
+            if (!self().connections_.contains(key))
+                THROW(sahara::exception::exception_base, "Connection pool not found", "Obelisk");
             co_return co_await self().connections_[key]->get_connection<Connection>();
         }
         db_pool(const db_pool&) = delete;
