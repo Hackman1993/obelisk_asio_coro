@@ -1,6 +1,7 @@
 #include "obelisk/http/middleware/multipart_extract.h"
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <obelisk/http/parser/http_parser_v3.h>
 
 #include "obelisk/http/exception/http_exception.h"
 #include "obelisk/http/parser/http_parser_v2.h"
@@ -15,11 +16,11 @@ namespace obelisk::http::middleware {
             co_return nullptr;
 
         std::string boundary;
-        auto result = parser_v2::parse_boundary(content_type, boundary);
+        auto result = parser_v3::parse_boundary(content_type, boundary);
         if (!result)
             throw http_exception("error.http.invalid_multipart_data", EResponseCode::EST_UNPROCESSABLE_CONTENT);
 
-        result = parser_v2::parse_multipart_body(request, boundary);
+        result = parser_v3::parse_multipart_body(request, boundary);
         if (!result)
             throw http_exception("error.http.invalid_multipart_data", EResponseCode::EST_UNPROCESSABLE_CONTENT);
 

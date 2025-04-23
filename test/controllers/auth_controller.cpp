@@ -6,7 +6,7 @@
 #include "obelisk/obelisk.h"
 #include "database/mysql/mysql_connection.h"
 #include "obelisk/http/validator/validator.h"
-#include "obelisk/database/connection_pool.h"
+#include "obelisk/database/database.h"
 #include "obelisk/http/exception/http_exception.h"
 #include "auth_controller.h"
 #include "coro/database_manager.h"
@@ -19,7 +19,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::l
         {"password", {required()}}
     });
 
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
 
 
     std::string username = std::string(request.params()["login"].as_string());
@@ -68,15 +68,15 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::l
 
 obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::login(
     obelisk::http::http_request_wrapper &request) {
-    // co_await request.validate({
-    //     {"login", {required()}},
-    //     {"password", {required()}}
-    // });
+    co_await request.validate({
+        {"login", {required()}},
+        {"password", {required()}}
+    });
 
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
 
 
-    std::string query = boost::mysql::format_sql(connection->format_opts().value(),
+    std::string query = format_sql(connection->format_opts().value(),
                                                  "SELECT operator_id, username, password, token_id, expire_at FROM t_operator LEFT JOIN t_system_admin_access_token ON fn_operator_id = operator_id AND expire_at > NOW() WHERE deleted_at IS NULL AND username = 'admin'",
                                                  request.params()["login"].as_string());
     boost::mysql::results result;
@@ -134,7 +134,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::c
 
 obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::get_permissions(
     obelisk::http::http_request_wrapper &request) {
-    auto conn = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto conn = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
     std::string permission_sql = boost::mysql::format_sql(conn->format_opts().value(),
                                                           R"(select t_permission.code from t_permission
                                                        left join t_mid_role_permission on t_mid_role_permission.mid_permission_id = t_permission.permission_id

@@ -4,7 +4,7 @@
 
 #include "article_category.h"
 
-#include <obelisk/database/connection_pool.h>
+#include <obelisk/database/database.h>
 #include <obelisk/http/response/json_response.h>
 #include <obelisk/http/exception/http_exception.h>
 #include <obelisk/http/validator/required_validator.h>

@@ -7,7 +7,7 @@
 
 #include <boost/redis.hpp>
 #include <boost/asio/detached.hpp>
-#include <obelisk/database/db_connection_base.h>
+#include <obelisk/database/core/db_connection_base.h>
 
 class redis_connection : public obelisk::database::db_connection_base, public boost::redis::connection{
 public:

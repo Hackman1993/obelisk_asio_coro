@@ -13,7 +13,7 @@
 // #include "controllers/user_controller.h"
 // #include "middleware/cors.h"
 //
-// #include "database/mysql/mysql_connection.h"
+#include "database/mysql/mysql_connection.h"
 //
 // #include "database/redis/redis_connection.h"
 // #include <boost/mysql.hpp>
@@ -25,7 +25,7 @@
 #include <controllers/member_controller.h>
 #include <controllers/user_controller.h>
 #include <middleware/cors.h>
-#include <obelisk/database/connection_pool.h>
+#include <obelisk/database/database.h>
 #include <sahara/log/log.h>
 #include <obelisk/core/coroutine/async_mutex.h>
 using namespace  boost::parser;
@@ -43,11 +43,11 @@ int main(int argc, char* argv[]) {
 //         //                                  (+!char_(" \r\n") >> " " >> +!char_(" \r\n") >> " " >> +!char_(" \r\n") >> "\r\n" >> attr(false)));
 //
 //
-// #ifndef NDEBUG
-//         obelisk::database::connection_manager::make_pool<mysql_connection>(ioctx, "mysql", "localhost", 3306, "root", "hl97005497--", "member_system_core");
-// #else
-//         obelisk::database::connection_manager::make_pool<mysql_connection>(ioctx, "mysql", "127.0.0.1", 3306, "root", "password@123", "laravel");
-// #endif
+#ifdef NDEBUG
+        obelisk::database::db_pool::make_pool<mysql_connection>(ioctx, "mysql", "localhost", 3306, "root", "hl97005497--", "shop_test");
+#else
+        obelisk::database::connection_manager::make_pool<mysql_connection>(ioctx, "mysql", "127.0.0.1", 3306, "root", "password@123", "laravel");
+#endif
 
         http_server server(ioctx);
         server.after_middlewares(std::make_unique<cors>());

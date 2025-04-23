@@ -7,7 +7,7 @@
 #include "obelisk/obelisk.h"
 #include <boost/asio/awaitable.hpp>
 #include "database/mysql/mysql_connection.h"
-#include <obelisk/database/connection_pool.h>
+#include <obelisk/database/database.h>
 #include <obelisk/http/validator/integer_validator.h>
 
 obelisk::task<std::unique_ptr<obelisk::http::http_response>> user_controller::view(obelisk::http::http_request_wrapper&request) {
@@ -16,7 +16,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> user_controller::vi
     validators.push_back(validator_group{"limit", {integer()}});
     co_await request.validate(validators);
 
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
     connection->set_meta_mode(boost::mysql::metadata_mode::full);
     std::uint32_t page = 1;
     std::uint32_t limit = 10;

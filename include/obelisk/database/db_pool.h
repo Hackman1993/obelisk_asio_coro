@@ -1,0 +1,48 @@
+//
+// Created by hackman on 4/23/25.
+//
+
+#ifndef DB_POOL_H
+#define DB_POOL_H
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include "obelisk/core/coroutine/async_scoped_lock.h"
+#include "connection_pool/connection_pool.h"
+
+namespace obelisk::database
+{
+    class db_pool : public std::enable_shared_from_this<db_pool>
+    {
+    public:
+        template <typename Connection, typename... Args>
+        static void make_pool(boost::asio::io_context& ios, const std::string& key, Args... args)
+        {
+            if (self().connections_.contains(key)) return;
+            auto ptr = std::make_shared<connection_pool<Connection>>(ios);
+            ptr->initialize(args...);
+
+            self().connections_.emplace(key, ptr);
+        }
+
+        template <typename Connection>
+        static boost::asio::awaitable<std::shared_ptr<Connection>> get_connection(const std::string& key)
+        {
+            co_return co_await self().connections_[key]->get_connection<Connection>();
+        }
+        db_pool(const db_pool&) = delete;
+        db_pool& operator=(const db_pool&) = delete;
+
+    protected:
+        db_pool() = default;
+        ~db_pool() = default;
+        static db_pool& self()
+        {
+            static db_pool inst;
+            return inst;
+        }
+        std::unordered_map<std::string, std::shared_ptr<connection_pool_base>> connections_;
+    };
+} // obelisk::database
+#endif //DB_POOL_H

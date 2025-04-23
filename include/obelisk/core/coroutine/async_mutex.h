@@ -2,7 +2,8 @@
 #include <boost/asio/awaitable.hpp>
 #include <deque>
 #include <memory>
-
+#ifndef OBELISK_ASYNC_MUTEX_H
+#define OBELISK_ASYNC_MUTEX_H
 namespace obelisk::core::coroutine
 {
     class async_mutex
@@ -68,3 +69,4 @@ namespace obelisk::core::coroutine
         std::deque<std::shared_ptr<boost::asio::steady_timer>> waiters_;
     };
 }
+#endif

@@ -5,7 +5,7 @@
 #include "obelisk/obelisk.h"
 #include <boost/asio/awaitable.hpp>
 #include "database/mysql/mysql_connection.h"
-#include <obelisk/database/connection_pool.h>
+#include <obelisk/database/database.h>
 #include <obelisk/http/exception/http_exception.h>
 #include <obelisk/http/validator/integer_validator.h>
 #include <obelisk/http/validator/required_validator.h>
@@ -18,7 +18,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
     validators.emplace_back(validator_group{"limit", {integer()}});
     co_await request.validate(validators);
 
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
     connection->set_meta_mode(boost::mysql::metadata_mode::full);
     std::uint32_t page = 1;
     std::uint32_t limit = 10;
@@ -101,7 +101,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
     validators.emplace_back(validator_group{"passport_expires_at", {required()}});
     co_await request.validate(validators);
 
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
 
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
@@ -146,7 +146,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
     validators.emplace_back(validator_group{"gender", {integer(false)}});
     co_await request.validate(validators);
 
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
 
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
@@ -220,7 +220,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
     co_await request.validate(validators);
 
 
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection =co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
 
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
@@ -262,7 +262,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
 
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
     std::string query = boost::mysql::format_sql(connection->format_opts().value(), R"(UPDATE t_member SET deleted_at = NOW() WHERE member_id={})", request.params()["member_id"].as_uint64());
     auto [ec] = co_await connection->async_execute(query, results, diagnostics, boost::asio::as_tuple(obelisk::use_token));
 
@@ -278,7 +278,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
 
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection =co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
     connection->set_meta_mode(boost::mysql::metadata_mode::full);
     std::string query = std::format(R"(
         SELECT member_id, name, number, nationality, passport_no, picture_path, gender, birthday, phone_number, description, visa_expires_at, visa_issue_at, passport_sign_location, passport_issue_at, passport_expires_at, status, card_no FROM t_member
@@ -310,7 +310,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
 
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
     connection->set_meta_mode(boost::mysql::metadata_mode::full);
     std::string query = std::format(R"(
         SELECT member_id, name, number, nationality, passport_no, picture_path, gender, birthday, phone_number, description, visa_expires_at, visa_issue_at, passport_sign_location, passport_issue_at, passport_expires_at, status, card_no FROM t_member
@@ -367,7 +367,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
 
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection =co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
 
     std::string query = std::format(R"(SELECT member_id from t_member, t_card where cardable_id = member_id and cardable_type='mph_member' and t_member.deleted_at is null and t_card.deleted_at is null and t_member.status = 1 and card_no={})",
                                     escape_string(request.params()["card_no"].as_string())
@@ -401,7 +401,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::
     co_await request.validate(validators);
     boost::mysql::results results;
     boost::mysql::diagnostics diagnostics;
-    auto connection = obelisk::database::connection_manager::get_connection<mysql_connection>("mysql");
+    auto connection =co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
 
     std::string query = std::format(R"(UPDATE t_member set updated_at=NOW(), status={} where member_id = {} and deleted_at is null)",
         request.params()["status"].as_uint64(),

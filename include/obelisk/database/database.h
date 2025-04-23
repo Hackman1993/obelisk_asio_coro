@@ -5,6 +5,6 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include "connection_pool.h"
+#include "db_pool.h"
 
 #endif //DATABASE_H
