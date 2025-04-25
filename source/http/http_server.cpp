@@ -74,7 +74,7 @@ namespace obelisk::http {
     obelisk::task<void> http_server::listen_() {
         while (true) {
             auto [ec, socket] = co_await acceptor_.async_accept(boost::asio::as_tuple(boost::asio::use_awaitable));
-            boost::asio::co_spawn(this->acceptor_.get_executor(), handle_(std::move(socket)), boost::asio::detached);
+            boost::asio::co_spawn(ioctx_, handle_(std::move(socket)), boost::asio::detached);
         }
     }
 

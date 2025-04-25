@@ -44,6 +44,7 @@ namespace obelisk::http {
 
         task<void> listen_();
         task<void> handle_(boost::asio::ip::tcp::socket socket);
+        void handle_accept_(const boost::system::error_code& error, boost::asio::ip::tcp::socket socket);
         static task<http::core::raw::http_header_raw> receive_header_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf &buffer);
         static task<std::unique_ptr<std::iostream>> receive_body_(boost::asio::ip::tcp::socket &socket, boost::asio::streambuf& buffer, core::raw::http_header_raw& header);
         static task<void> write_response_(boost::asio::ip::tcp::socket& socket, const std::unique_ptr<core::http_iodata>& response);

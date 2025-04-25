@@ -37,7 +37,6 @@ namespace obelisk::database
         }
         db_pool(const db_pool&) = delete;
         db_pool& operator=(const db_pool&) = delete;
-
     protected:
         db_pool() = default;
         ~db_pool() = default;

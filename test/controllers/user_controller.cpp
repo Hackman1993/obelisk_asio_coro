@@ -6,7 +6,7 @@
 
 #include "obelisk/obelisk.h"
 #include <boost/asio/awaitable.hpp>
-#include "database/mysql/mysql_connection.h"
+#include "obelisk/database/mysql/mysql_connection.h"
 #include <obelisk/database/database.h>
 #include <obelisk/http/validator/integer_validator.h>
 

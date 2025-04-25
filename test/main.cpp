@@ -13,7 +13,7 @@
 // #include "controllers/user_controller.h"
 // #include "middleware/cors.h"
 //
-#include "database/mysql/mysql_connection.h"
+#include "obelisk/database/mysql/mysql_connection.h"
 //
 // #include "database/redis/redis_connection.h"
 // #include <boost/mysql.hpp>
@@ -28,26 +28,24 @@
 #include <obelisk/database/database.h>
 #include <sahara/log/log.h>
 #include <obelisk/database/database.h>
+#include <obelisk/http/framework.h>
 #include <obelisk/core/coroutine/async_mutex.h>
 using namespace  boost::parser;
 
 int main(int argc, char* argv[]) {
 
     try {
+
         sahara::log::initialize();
         boost::asio::io_context ioctx;
-        co_spawn(ioctx, obelisk::database::db::run_migration({
-            std::make_shared<obelisk::database::migration::create_migration_table>()
-        }), boost::asio::detached);
-        ioctx.run();
+        framework::init(ioctx);
 
-        std::string content = "Get /asdfasdf/ HTTP/1.1 \r\nAuthorization:asdfasdf\r\nAuthorization1:asdfasdf\r\n";
 #ifdef NDEBUG
         obelisk::database::db_pool::make_pool<mysql_connection>(ioctx, "mysql", "localhost", 3306, "root", "hl97005497--", "shop_test");
 #else
-        obelisk::database::connection_manager::make_pool<mysql_connection>(ioctx, "mysql", "127.0.0.1", 3306, "root", "password@123", "laravel");
+        obelisk::database::db_pool::make_pool<mysql_connection>(ioctx, "mysql", "127.0.0.1", 3306, "root", "hl97005497--", "obelisk");
 #endif
-
+        co_spawn(ioctx, obelisk::database::db::run_migration({}), boost::asio::detached);
         http_server server(ioctx);
         server.after_middlewares(std::make_unique<cors>());
         server.route("/auth/login1", auth_controller::login1)->method({"POST"});
@@ -74,8 +72,14 @@ int main(int argc, char* argv[]) {
 
         ioctx.run();
      }
+    catch (boost::mysql::error_with_diagnostics & err)
+    {
+        std::cout << err.get_diagnostics().client_message() << std::endl;
+        std::cout << err.get_diagnostics().server_message() << std::endl;
+    }
     catch (std::exception&err) {
         std::cout << err.what() << std::endl;
     }
+
     return 0;
 }

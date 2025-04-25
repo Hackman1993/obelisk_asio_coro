@@ -13,7 +13,7 @@
 #include <boost/asio/as_tuple.hpp>
 
 #include "common/global_configuration.h"
-#include "database/mysql/mysql_connection.h"
+#include "obelisk/database/mysql/mysql_connection.h"
 std::unique_ptr<obelisk::http::http_response> controller_base::json_response(const boost::mysql::results &result,const std::unordered_map<std::string, boost::json::value>& additional_field, obelisk::http::EResponseCode code) {
 
 

@@ -4,7 +4,7 @@
 #include <boost/algorithm/string/replace.hpp>
 
 #include "obelisk/obelisk.h"
-#include "database/mysql/mysql_connection.h"
+#include "obelisk/database/mysql/mysql_connection.h"
 #include "obelisk/http/validator/validator.h"
 #include "obelisk/database/database.h"
 #include "obelisk/http/exception/http_exception.h"
