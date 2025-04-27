@@ -7,7 +7,7 @@
 #include <memory>
 #include "blueprint.h"
 #include "column_blueprint.h"
-
+#include <iostream>
 namespace obelisk::database::migration
 {
     class table_blueprint
@@ -30,6 +30,11 @@ namespace obelisk::database::migration
         column_blueprint& id()
         {
             return primary("id");
+        }
+
+        virtual column_blueprint& foreign_id(const std::string& column)
+        {
+            return integer(column, "bigint", true);
         }
 
         column_blueprint& integer(const std::string& column, const std::string& type = "int",

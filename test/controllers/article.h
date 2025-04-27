@@ -12,8 +12,10 @@ namespace obelisk::http {
     class http_response;
 }
 
-using namespace obelisk::http;
+namespace controller{
+    using namespace obelisk::http;
 class article_controller: public controller_base {
+
 public:
     static obelisk::task<std::unique_ptr<http_response>> get_article_list(http_request_wrapper&request);
     static obelisk::task<std::unique_ptr<http_response>> create_article(http_request_wrapper&request);
@@ -21,6 +23,8 @@ public:
     static obelisk::task<std::unique_ptr<http_response>> get_article_detail(http_request_wrapper&request);
     static obelisk::task<std::unique_ptr<http_response>> delete_article(http_request_wrapper&request);
 };
+
+}
 
 
 

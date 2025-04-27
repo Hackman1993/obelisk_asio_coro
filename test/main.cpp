@@ -14,10 +14,6 @@
 // #include "middleware/cors.h"
 //
 #include "obelisk/database/mysql/mysql_connection.h"
-//
-// #include "database/redis/redis_connection.h"
-// #include <boost/mysql.hpp>
-// #include <sahara/log/log.h>
 #include <boost/parser/parser.hpp>
 #include <obelisk/http/core/raw.h>
 #include <boost/asio.hpp>
@@ -27,45 +23,39 @@
 #include <middleware/cors.h>
 #include <obelisk/database/database.h>
 #include <sahara/log/log.h>
-#include <obelisk/database/database.h>
 #include <obelisk/http/framework.h>
 #include <obelisk/core/coroutine/async_mutex.h>
+#include "module/default/default_.h"
 using namespace  boost::parser;
 
 int main(int argc, char* argv[]) {
 
     try {
-
+        sql_value value = nullptr;
         sahara::log::initialize();
         boost::asio::io_context ioctx;
-        framework::init(ioctx);
-
-#ifdef NDEBUG
-        obelisk::database::db_pool::make_pool<mysql_connection>(ioctx, "mysql", "localhost", 3306, "root", "hl97005497--", "shop_test");
-#else
-        obelisk::database::db_pool::make_pool<mysql_connection>(ioctx, "mysql", "127.0.0.1", 3306, "root", "hl97005497--", "obelisk");
-#endif
-        co_spawn(ioctx, obelisk::database::db::run_migration({}), boost::asio::detached);
-        http_server server(ioctx);
-        server.after_middlewares(std::make_unique<cors>());
-        server.route("/auth/login1", auth_controller::login1)->method({"POST"});
-        server.route("/auth/login", auth_controller::login)->method({"POST"});
-        server.route("/api/backend/check_auth", auth_controller::check_auth)->method({"GET"});
-        server.route("/api/backend/permission", auth_controller::get_permissions)->method({"GET"});
+        obelisk::http::framework::init(ioctx);
+        obelisk::http::http_server server(ioctx);
+        boost::asio::co_spawn(ioctx,server.module(module::default_{}) ,boost::asio::detached);
+        server.after_middlewares(std::make_unique<middleware::cors>());
+        server.route("/auth/login1", controller::auth_controller::login1)->method({"POST"}).middleware(middleware::cors());
+        server.route("/auth/login", controller::auth_controller::login)->method({"POST"});
+        server.route("/api/backend/check_auth", controller::auth_controller::check_auth)->method({"GET"});
+        server.route("/api/backend/permission", controller::auth_controller::get_permissions)->method({"GET"});
         server.route("/api/backend/operator", user_controller::view)->method({"GET"});
-        server.route("/api/backend/member", member_controller::view)->method({"GET"});
+        server.route("/api/backend/member", controller::member_controller::view)->method({"GET"});
 
-        server.route("/api/backend/member/create", member_controller::create)->method({"POST"});
-        server.route("/api/backend/member/update", member_controller::update)->method({"POST"});
-        server.route("/api/backend/member/freeze", member_controller::freeze)->method({"PUT"});
-        server.route("/api/backend/member/sign_card", member_controller::sign_card)->method({"POST"});
-        server.route("/api/backend/member/delete", member_controller::soft_delete)->method({"DELETE"});
+        server.route("/api/backend/member/create", controller::member_controller::create)->method({"POST"});
+        server.route("/api/backend/member/update", controller::member_controller::update)->method({"POST"});
+        server.route("/api/backend/member/freeze", controller::member_controller::freeze)->method({"PUT"});
+        server.route("/api/backend/member/sign_card", controller::member_controller::sign_card)->method({"POST"});
+        server.route("/api/backend/member/delete", controller::member_controller::soft_delete)->method({"DELETE"});
 
         // OLD
         server.route("/api/terminal/get_token", controller_base::getTerminalToken)->method({"POST"});
-        server.route("/api/member/find_by_precise_data", member_controller::findByPreciseData)->method({"GET"});
-        server.route("/api/member/findby_card", member_controller::getCardOwner)->method({"GET"});
-        server.route("/api/member/entrance", member_controller::entrance)->method({"POST"});
+        server.route("/api/member/find_by_precise_data", controller::member_controller::findByPreciseData)->method({"GET"});
+        server.route("/api/member/findby_card", controller::member_controller::getCardOwner)->method({"GET"});
+        server.route("/api/member/entrance", controller::member_controller::entrance)->method({"POST"});
         server.listen("0.0.0.0", 3308);
 
         std::vector<std::shared_ptr<std::thread>> threads;

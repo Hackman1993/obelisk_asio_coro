@@ -4,6 +4,7 @@
 #include "obelisk/http/core/http_request.h"
 #include "obelisk/http/exception/validation_exception.h"
 #include <boost/cobalt/task.hpp>
+#include <nlohmann/json.hpp>
 namespace obelisk::http::validator {
     std::shared_ptr<required_validator> required() {
         return std::make_shared<required_validator>();
@@ -16,7 +17,7 @@ namespace obelisk::http::validator {
             if(!request.params()[name].is_string())
                 co_return;
 
-            if(!request.params()[name].as_string().empty()) {
+            if(!request.params()[name].get<std::string>().empty()) {
                 co_return;
             }
         }

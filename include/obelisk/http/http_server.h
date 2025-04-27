@@ -14,6 +14,9 @@
 #include "router/route_item.h"
 #include "../core/coroutine/task.h"
 #include <boost/asio.hpp>
+
+#include "module/base_module.h"
+
 namespace obelisk::http {
     struct http_header;
     class http_response;
@@ -36,6 +39,15 @@ namespace obelisk::http {
 
         void after_middlewares(std::unique_ptr<middleware::after_middleware>);
         void before_middlewares(std::unique_ptr<middleware::before_middleware>);
+
+        template<typename T>
+        std::enable_if_t<std::is_base_of_v<module::base_module, T>, boost::asio::awaitable<void>>
+        module(T module)
+        {
+            co_await module.migrate();
+            module.route(*this);
+            co_return;
+        }
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
         std::vector<std::unique_ptr<route_item>> routes_;

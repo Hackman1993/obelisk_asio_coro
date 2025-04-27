@@ -2,6 +2,8 @@
 #include "obelisk/http/exception/validation_exception.h"
 #include "obelisk/http/core/http_request.h"
 #include <boost/cobalt.hpp>
+#include <nlohmann/json.hpp>
+
 namespace obelisk::http::validator {
     obelisk::task<void> string_min_length_validator::validate(const std::string&name,
                                                                     http_request_wrapper&request) {
@@ -9,13 +11,13 @@ namespace obelisk::http::validator {
             const auto&value = request.params()[std::string(name)];
             auto success = true;
             if (
-                (value.is_string() && value.as_string().size() < length_) ||
-                (value.is_int64() && value.as_int64() < length_) ||
-                (value.is_uint64() && value.as_uint64() < length_) ||
-                (value.is_array() && value.as_uint64() < length_) ||
-                (value.is_double() && value.as_double() < static_cast<double>(length_)))
+                (value.is_string() && value.get<std::string>().size() < length_) ||
+                (value.is_number_integer() && value.get<std::int64_t>() < length_) ||
+                (value.is_number_unsigned() && value.get<std::uint64_t>() < length_) ||
+                (value.is_array() && value.size() < length_) ||
+                (value.is_number_float() && value.get<double>() < static_cast<double>(length_)))
                 success = false;
-            else if (value.is_bool() || value.is_object() || value.is_null()) {
+            else if (value.is_boolean() || value.is_object() || value.is_null()) {
                 throw validation_exception("validation.error.invalid_type[" + name + "]");
             }
             if (!success)

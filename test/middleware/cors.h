@@ -7,18 +7,21 @@
 
 #include <obelisk/obelisk.h>
 #include <obelisk/core/coroutine/task.h>
-using namespace obelisk::http;
 
-class cors : public middleware::after_middleware {
-public:
-    obelisk::task<void> after_handle(http_request_wrapper&request, http_response&response) override {
-        response.headers().emplace("Access-Control-Allow-Origin", "http://192.168.124.2:3000");
 
-        response.headers().emplace("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        response.headers().emplace("Access-Control-Allow-Credentials", "true");
-        co_return;
-    }
-};
+namespace middleware{
+    class cors : public obelisk::http::middleware::after_middleware {
+    public:
+        obelisk::task<void> after_handle(obelisk::http::http_request_wrapper&request, obelisk::http::http_response&response) override {
+            response.headers().emplace("Access-Control-Allow-Origin", "http://192.168.124.2:3000");
+
+            response.headers().emplace("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            response.headers().emplace("Access-Control-Allow-Credentials", "true");
+            co_return;
+        }
+    };
+
+}
 
 
 #endif //CORS_H

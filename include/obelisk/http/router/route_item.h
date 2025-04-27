@@ -13,6 +13,8 @@
 #include <memory>
 #include <functional>
 #include <boost/asio/awaitable.hpp>
+#include <obelisk/http/http_server.h>
+#include <obelisk/http/middleware/middleware.h>
 
 #include "route_param.h"
 #include "../core/http_request.h"
@@ -32,9 +34,17 @@ namespace obelisk::http {
         std::string allowed_methods();
         obelisk::task<std::unique_ptr<http_response>> handle(http_request_wrapper &request);
 
+        template<typename T>
+        typename std::enable_if_t<std::is_base_of_v<middleware::http_middleware_base, T>, void>
+        middleware(T middleware)
+        {
+            middlewares_.emplace_back(std::make_unique<T>(middleware));
+        }
+
     protected:
         std::regex address_;
         std::vector<route_param> pattern_;
+        std::vector<std::unique_ptr<middleware::http_middleware_base>> middlewares_;
         std::unordered_map<std::string, bool> available_method_ = {{"OPTIONS", true}, {"HEAD", true}};
         std::function<obelisk::task<std::unique_ptr<http_response>>(http_request_wrapper &)> handler_;
     };

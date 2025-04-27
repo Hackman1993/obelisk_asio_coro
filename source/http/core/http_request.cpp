@@ -1,6 +1,6 @@
 #include "obelisk/http/core/http_request.h"
 #include "obelisk/http/parser/http_parser_v2.h"
-
+#include <nlohmann/json.hpp>
 #include <utility>
 #include <iostream>
 #include <filesystem>
@@ -126,7 +126,7 @@ namespace obelisk::http {
         return registered_value_;
     }
 
-    std::unordered_map<std::string, boost::json::value>& http_request_wrapper::params() {
+    std::unordered_map<std::string, nlohmann::json>& http_request_wrapper::params() {
         return request_params_;
     }
 

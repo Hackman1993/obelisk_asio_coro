@@ -5,7 +5,7 @@
 #include "obelisk/http/validator/integer_validator.h"
 
 #include <boost/lexical_cast.hpp>
-
+#include <nlohmann/json.hpp>
 #include "obelisk/http/core/http_request.h"
 #include "obelisk/http/exception/http_exception.h"
 
@@ -17,15 +17,15 @@ namespace obelisk::http::validator {
         if(request.params()[name].is_string()) {
             try {
                 if(signed_)
-                    request.params()[name] = strtoll(request.params()[name].as_string().c_str(),nullptr, 10);
+                    request.params()[name] = strtoll(request.params()[name].get<std::string>().c_str(),nullptr, 10);
                 else
-                    request.params()[name] = strtoull(request.params()[name].as_string().c_str(), nullptr, 10);
+                    request.params()[name] = strtoull(request.params()[name].get<std::string>().c_str(), nullptr, 10);
             }catch (const std::exception& ) {
                 throw http_exception("error.validator." + std::string(signed_? "integer":"unsigned_integer"), EST_UNPROCESSABLE_CONTENT);
             }
-        }else if(request.params()[name].is_uint64() && !signed_) {
+        }else if(request.params()[name].is_number_unsigned() && !signed_) {
             co_return;
-        }else if(request.params()[name].is_int64() && signed_) {
+        }else if(request.params()[name].is_number_integer() && signed_) {
             co_return;
         }else {
             throw http_exception("error.validator." + std::string(signed_? "integer":"unsigned_integer"), EST_UNPROCESSABLE_CONTENT);

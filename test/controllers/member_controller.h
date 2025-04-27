@@ -8,20 +8,23 @@
 #include "controller_base.h"
 #include "obelisk/http/core/http_request.h"
 
-using namespace obelisk::http::validator;
-class member_controller: public controller_base {
-public:
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> view(obelisk::http::http_request_wrapper&request);
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> create(obelisk::http::http_request_wrapper&request);
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> update(obelisk::http::http_request_wrapper&request);
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> freeze(obelisk::http::http_request_wrapper&request);
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> sign_card(obelisk::http::http_request_wrapper&request);
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> soft_delete(obelisk::http::http_request_wrapper&request);
+namespace controller
+{
+    using namespace obelisk::http;
+    class member_controller: public controller_base {
+    public:
+        static obelisk::task<std::unique_ptr<http_response>> view(http_request_wrapper&request);
+        static obelisk::task<std::unique_ptr<http_response>> create(http_request_wrapper&request);
+        static obelisk::task<std::unique_ptr<http_response>> update(http_request_wrapper&request);
+        static obelisk::task<std::unique_ptr<http_response>> freeze(http_request_wrapper&request);
+        static obelisk::task<std::unique_ptr<http_response>> sign_card(http_request_wrapper&request);
+        static obelisk::task<std::unique_ptr<http_response>> soft_delete(http_request_wrapper&request);
 
-    // OLD
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> findByPreciseData(obelisk::http::http_request_wrapper&request);
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> getCardOwner(obelisk::http::http_request_wrapper&request);
-    static obelisk::task<std::unique_ptr<obelisk::http::http_response>> entrance(obelisk::http::http_request_wrapper&request);
-};
+        // OLD
+        static obelisk::task<std::unique_ptr<http_response>> findByPreciseData(http_request_wrapper&request);
+        static obelisk::task<std::unique_ptr<http_response>> getCardOwner(http_request_wrapper&request);
+        static obelisk::task<std::unique_ptr<http_response>> entrance(http_request_wrapper&request);
+    };
+}
 
 #endif //USER_CONTROLLER_H

@@ -7,7 +7,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
-
+#include <nlohmann/json.hpp>
 #include "obelisk/http/exception/http_exception.h"
 
 
@@ -18,23 +18,9 @@ namespace obelisk::http::middleware {
         if(!request.raw_body()) {
             co_return nullptr;
         }
-        boost::system::error_code err;
-        boost::json::value json_data = boost::json::parse(*request.raw_body(), err);
-        if(err) {
-            throw http_exception("error.http.invalid_json_data", EResponseCode::EST_UNPROCESSABLE_CONTENT);
-        }
 
-        auto json = json_data.as_object();
-        for (auto& item: json) {
-            if(!request.params().contains(item.key())) {
-                request.params().emplace(item.key(), item.value());
-            }
-
-            // request.params().contains(item.key())
-            // request.params("",item.value().as_string());
-            // if(item.value().is_primitive())
-        }
-        request.additional_data().emplace("__json_body", json_data.as_object());
+        nlohmann::json json = nlohmann::json::parse(*request.raw_body());
+        request.additional_data().emplace("__json_body", json);
         co_return nullptr;
     }
 } // obelisk::http::middleware

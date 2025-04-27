@@ -4,9 +4,6 @@
 
 #include "builder.h"
 
-namespace obelisk {
-namespace database {
-namespace query {
-} // query
-} // database
-} // obelisk
+namespace obelisk::database::query
+{
+}

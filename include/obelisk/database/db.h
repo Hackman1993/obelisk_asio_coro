@@ -1,6 +1,7 @@
 #ifndef DB_H
 #define DB_H
 #include <vector>
+#include <iostream>
 #include <obelisk/database/mysql/mysql_connection.h>
 #include <sahara/log/log.h>
 
@@ -19,14 +20,14 @@ namespace obelisk::database
             return instance;
         }
 
-        static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::migration_base>> migrations)
+        static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::base_migration>> migrations)
         {
             const auto prefix = http::config::get<std::string>("database.default.prefix", "");
             const auto connection = co_await db_pool::get_connection<mysql_connection>("default");
             // Check if migrations table exists
             {
                 auto query = boost::mysql::with_params("SHOW TABLES LIKE {};", prefix + "migrations");
-                boost::mysql::results results = co_await connection->co_execute(query);
+                boost::mysql::results results = co_await connection->co_query(query);
                 if (results.rows().empty())
                 {
                     migration::create_migration_table migration;
@@ -37,7 +38,7 @@ namespace obelisk::database
             std::int64_t batch = 1;
             {
                 auto query = boost::mysql::with_params("select MAX(batch) from {:i};", prefix+"migrations");
-                boost::mysql::results results = co_await connection->co_execute(query);
+                boost::mysql::results results = co_await connection->co_query(query);
                 if (!results.rows().empty())
                 {
                     batch =   results.rows()[0][0].is_null()? 1:results.rows()[0][0].as_int64() + 1;
@@ -48,14 +49,15 @@ namespace obelisk::database
                 try
                 {
                     auto migration_name = migration->migration_name();
-                    LOG_TRACE("Running migration {} ...", migration_name);
-                    auto query = boost::mysql::with_params("SELECT id, batch, migration FROM {:i} WHERE migrations='{}'", prefix + "migrations", migration_name);
-                    boost::mysql::results results = co_await connection->co_execute(query);
-                    if (results.empty()){
+                    auto query = boost::mysql::with_params("SELECT id, batch, migration FROM {:i} WHERE migration={}", prefix + "migrations", migration_name);
+                    boost::mysql::results results = co_await connection->co_query(query);
+                    if (results.rows().empty()){
+                        LOG_TRACE("Running migration {} ...", migration_name);
                         co_await migration->up();
-                        auto insert_query = boost::mysql::with_params("INSERT INTO `{:i}migrations` (migration, batch) VALUES ('{}', {})", prefix, migration_name, batch);
+                        auto insert_query = boost::mysql::with_params("INSERT INTO `{:r}migrations` (migration, batch) VALUES ({}, {})", prefix, migration_name, batch);
+                        co_await connection->co_execute(insert_query);
+                        LOG_TRACE("Running migration {} complete!", migration->migration_name());
                     }
-                    LOG_TRACE("Running migration {} complete!", migration->migration_name());
                 }catch (std::exception& e)
                 {
                     LOG_CRITICAL("{}", e.what());

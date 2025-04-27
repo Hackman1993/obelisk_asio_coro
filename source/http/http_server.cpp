@@ -16,7 +16,7 @@
 #include <boost/cobalt/spawn.hpp>
 #include <obelisk/http/parser/http_parser_v3.h>
 #include <sahara/log/log.h>
-
+#include <nlohmann/json.hpp>
 #include "obelisk/http/router/route_item.h"
 #include "obelisk/http/core/http_request.h"
 #include "obelisk/http/parser/http_parser_v2.h"

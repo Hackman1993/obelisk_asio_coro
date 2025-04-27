@@ -6,7 +6,7 @@
 #define CREATE_SYS_ADMINS_TABLE_H
 #include <obelisk/database/migration/migration.h>
 
-class create_sys_admins_table : public obelisk::database::migration::migration_base
+class create_sys_admins_table : public obelisk::database::migration::base_migration
 {
     DEFINE_OBELISK_MIGRATION
 public:

@@ -10,6 +10,7 @@
 #include <filesystem>
 #include "obelisk/http/core/http_request.h"
 #include <utility>
+#include <nlohmann/json.hpp>
 #include <boost/parser/parser.hpp>
 using namespace boost::parser;
 
@@ -195,13 +196,13 @@ namespace obelisk::http {
                 auto item_key = boost::algorithm::replace_last_copy(meta_data["name"], "[]", "");
                 bool is_array = request.request_params_.contains(item_key)? request.request_params_[item_key].is_array() : false;
                 if(request.request_params_.contains(item_key) && !request.request_params_[item_key].is_array()) {
-                    boost::json::array new_value = { request.request_params_[item_key]};
+                    nlohmann::json new_value = { request.request_params_[item_key]};
                     request.request_params_[item_key] = new_value;
                 }
                 if(is_array) {
-                    request.request_params_[meta_data["name"]].as_array().emplace_back(line_data);
+                    request.request_params_[meta_data["name"]].emplace_back(line_data);
                 } else {
-                    request.params()[meta_data["name"]] = boost::json::value(line_data);
+                    request.params()[meta_data["name"]] = nlohmann::json(line_data);
                 }
             }
         }

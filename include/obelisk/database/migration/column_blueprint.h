@@ -8,8 +8,13 @@
 #include <vector>
 #include <format>
 #include <optional>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <obelisk/http/framework/config.h>
 
 #include "basic_action.h"
+#include "obelisk/database/builder/base_statement.h"
 
 namespace obelisk::database::migration
 {
@@ -53,8 +58,9 @@ namespace obelisk::database::migration
             return *this;
         }
 
-        virtual column_blueprint& default_value()
+        virtual column_blueprint& default_value(sql_value value)
         {
+            default_value_ = value.compile();
             return *this;
         }
 
@@ -102,6 +108,16 @@ namespace obelisk::database::migration
             return *this;
         }
 
+        virtual void references(const std::string& reference_table , const std::string& reference_column)
+        {
+            auto prefix = http::config::get<std::string>("database.default.prefix", "");
+
+            auto table_name = boost::algorithm::replace_all_copy(reference_table, ".", "`.`");
+            table_name = std::format("`{}{}`", table_name.contains(".")? prefix : "", table_name);
+
+            reference_ = std::format(" {}(`{}`)", table_name, reference_column);
+        }
+
         [[nodiscard]] bool is_update() const
         {
             return update_;
@@ -129,6 +145,10 @@ namespace obelisk::database::migration
                 column_describe += " ON UPDATE CURRENT_TIMESTAMP";
             if (after_){
                 column_describe += after_.value();
+            }
+            if (reference_)
+            {
+                column_describe += " REFERENCES " + reference_.value();
             }
             if (comment_)
                 column_describe += std::format(" COMMENT '{}'", comment_.value());
@@ -177,6 +197,7 @@ namespace obelisk::database::migration
         bool is_primary_ : 1 = false;
         bool table_creation_ : 1 = false;
         bool use_current_on_update_ : 1 = false;
+        std::optional<std::string> reference_;
         std::optional<int> auto_increment_;
         std::optional<bool> index_unique_;
         std::optional<std::string> index_name_;
