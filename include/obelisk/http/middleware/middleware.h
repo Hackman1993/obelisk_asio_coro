@@ -15,19 +15,12 @@
 
 namespace obelisk::http::middleware {
 
-    class http_middleware_base{
+    class base_middleware{
     public:
-        http_middleware_base();
-        virtual ~http_middleware_base() = default;
-    };
-    class before_middleware: public http_middleware_base {
-    public:
-        virtual obelisk::task<std::unique_ptr<http_response>> pre_handle(http_request_wrapper& request) = 0;
-    };
-
-    class after_middleware: public http_middleware_base {
-    public:
-        virtual obelisk::task<void> after_handle(http_request_wrapper& request, http_response& response) = 0;
+        base_middleware();
+        virtual ~base_middleware() = default;
+        virtual boost::asio::awaitable<std::unique_ptr<http_response>> pre_handle(http_request_wrapper& request) { co_return nullptr; }
+        virtual boost::asio::awaitable<void> after_handle(http_request_wrapper& request, http_response& response) { co_return; }
     };
 
 } // obelisk

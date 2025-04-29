@@ -5,7 +5,6 @@
 #ifndef TABLE_BLUEPRINT_H
 #define TABLE_BLUEPRINT_H
 #include <memory>
-#include "blueprint.h"
 #include "column_blueprint.h"
 #include <iostream>
 namespace obelisk::database::migration
@@ -78,7 +77,7 @@ namespace obelisk::database::migration
             std::string index_name = name;
             if (index_name.empty())
             {
-                index_name = unique? "idx_":"uniq_";
+                index_name = std::format("{}_{}_", unique? "uniq":"idx", table_);
                 for (auto & column : columns)
                 {
                     index_name.append("_" + column);

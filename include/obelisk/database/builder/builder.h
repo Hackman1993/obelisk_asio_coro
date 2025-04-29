@@ -61,11 +61,26 @@ namespace obelisk::database::query
         {
         }
 
+        static builder update(const std::initializer_list<table>& tables)
+        {
+            builder result(EST_UPDATE);
+            result.update_(tables);
+            return result;
+        }
+
         static builder insert(std::string table)
         {
             builder result(EST_INSERT);
             result.from_.emplace_back(std::move(table));
             return result;
+        }
+
+        builder& set(const std::initializer_list<std::pair<std::string, sql_value>>& values)
+        {
+            if (type_ != EST_UPDATE)
+                throw std::logic_error("server.error.cant_use_set_in_non_update");
+            std::ranges::copy(values, std::back_inserter(set_pack_));
+            return *this;
         }
 
         builder& values(const std::initializer_list<std::pair<std::string, sql_value>>& value_pack)
@@ -109,12 +124,12 @@ namespace obelisk::database::query
         //     return *this;
         // }
 
-        builder& where(std::initializer_list<condition> conditions) {
+        builder& where(const std::initializer_list<condition>& conditions) {
             if (where_groups_.empty())
                 where_groups_.emplace_back();
 
             auto &where = where_groups_.back();
-            std::copy(conditions.begin(), conditions.end(),std::back_inserter( where));
+            std::ranges::copy(conditions,std::back_inserter( where));
             return *this;
         }
         // builder& where(std::vector<condition>& conditions)
@@ -132,7 +147,6 @@ namespace obelisk::database::query
 
 
     protected:
-        builder()=default;
         template<typename... Args>
         builder& select_(Args&&... args) {
             type_ = EST_QUERY;
@@ -149,10 +163,17 @@ namespace obelisk::database::query
             return *this;
         }
 
+        builder& update_(const std::initializer_list<table>& tables)
+        {
+            std::ranges::move(tables, std::back_inserter(from_));
+            return *this;
+        }
+
         E_STATEMENT_TYPE type_;
         std::vector<table> from_;
         bool distinct_ = false;
         std::vector<std::pair<std::string, sql_value>> insert_pack_;
+        std::vector<std::pair<std::string, sql_value>> set_pack_;
         std::vector<condition_group> where_groups_;
         std::vector<col> select_columns_;
     };

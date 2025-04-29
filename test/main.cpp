@@ -26,19 +26,19 @@
 #include <obelisk/http/framework.h>
 #include <obelisk/core/coroutine/async_mutex.h>
 #include "module/default/default_.h"
+#include "middleware/auth_require.h"
 using namespace  boost::parser;
 
 int main(int argc, char* argv[]) {
 
     try {
-        sql_value value = nullptr;
         sahara::log::initialize();
         boost::asio::io_context ioctx;
         obelisk::http::framework::init(ioctx);
         obelisk::http::http_server server(ioctx);
         boost::asio::co_spawn(ioctx,server.module(module::default_{}) ,boost::asio::detached);
-        server.after_middlewares(std::make_unique<middleware::cors>());
-        server.route("/auth/login1", controller::auth_controller::login1)->method({"POST"}).middleware(middleware::cors());
+        server.reg_middleware(std::make_unique<middleware::cors>());
+
         server.route("/auth/login", controller::auth_controller::login)->method({"POST"});
         server.route("/api/backend/check_auth", controller::auth_controller::check_auth)->method({"GET"});
         server.route("/api/backend/permission", controller::auth_controller::get_permissions)->method({"GET"});

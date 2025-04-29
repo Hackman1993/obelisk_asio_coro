@@ -7,7 +7,7 @@
 #include "middleware.h"
 
 namespace obelisk::http::middleware {
-    class url_params_extract: public before_middleware{
+    class url_params_extract: public base_middleware{
     public:
         url_params_extract() = default;
         obelisk::task<std::unique_ptr<http_response>> pre_handle(http_request_wrapper& request) override;

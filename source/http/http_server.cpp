@@ -34,9 +34,10 @@
 
 namespace obelisk::http {
     http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx) {
-        before_middlewares(std::make_unique<middleware::url_params_extract>());
-        before_middlewares(std::make_unique<middleware::multipart_extract>());
-        before_middlewares(std::make_unique<middleware::json_extract>());
+        reg_middleware(std::make_unique<middleware::url_params_extract>());
+        reg_middleware(std::make_unique<middleware::multipart_extract>());
+        reg_middleware(std::make_unique<middleware::json_extract>());
+
     }
 
     std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<obelisk::task<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
@@ -47,20 +48,12 @@ namespace obelisk::http {
         return routes_.emplace_back(std::make_unique<route_item>(route, handler));
     }
 
-    const std::vector<std::unique_ptr<middleware::after_middleware>>& http_server::after_middlewares() {
-        return middlewares_after_;
+    const std::vector<std::unique_ptr<middleware::base_middleware>>& http_server::middlewares() {
+        return middlewares_;
     }
 
-    const std::vector<std::unique_ptr<middleware::before_middleware>>& http_server::before_middlewares() {
-        return middlewares_before_;
-    }
-
-    void http_server::after_middlewares(std::unique_ptr<middleware::after_middleware> middleware) {
-        middlewares_after_.push_back(std::move(middleware));
-    }
-
-    void http_server::before_middlewares(std::unique_ptr<middleware::before_middleware> middleware) {
-        middlewares_before_.push_back(std::move(middleware));
+    void http_server::reg_middleware(std::unique_ptr<middleware::base_middleware> middleware) {
+        middlewares_.push_back(std::move(middleware));
     }
 
     void http_server::listen(const std::string&address, unsigned short port) {
@@ -86,8 +79,10 @@ namespace obelisk::http {
             try {
                 auto header = co_await receive_header_(socket, buffer);;
                 std::unique_ptr<std::iostream> body = co_await receive_body_(socket, buffer, header);
+
+                // Running Middleware
                 request = std::make_unique<http_request_wrapper>(ioctx_, header, std::move(body));
-                for (auto&before_middleware: middlewares_before_) {
+                for (auto&before_middleware: middlewares_) {
                     response = co_await before_middleware->pre_handle(*request);
                     if (response) break;
                 }
@@ -116,7 +111,16 @@ namespace obelisk::http {
                         }
                         // Calling Handler
                         else {
+                            auto& middlewares =ptr->middlewares();
+                            for (const auto & route_middleware: middlewares)
+                            {
+                                co_await route_middleware->pre_handle(*request);
+                            }
                             response = co_await ptr->handle(*request);
+                            for (const auto & route_middleware: middlewares)
+                            {
+                                co_await route_middleware->after_handle(*request, *response);
+                            }
                         }
 
                         if (response) break;
@@ -149,9 +153,9 @@ namespace obelisk::http {
                 response = std::make_unique<json_response>(boost::json::object{{"message", "null"}}, EResponseCode::EST_NOT_FOUND);
             }
 
-            // Matching Response
+            // Matching Response Middleware
             if (response) {
-                for (auto&middleware: middlewares_after_) {
+                for (auto&middleware: middlewares_) {
                     co_await middleware->after_handle(*request, *response);
                 }
                 std::unique_ptr<core::http_iodata> response_data = response->serialize();

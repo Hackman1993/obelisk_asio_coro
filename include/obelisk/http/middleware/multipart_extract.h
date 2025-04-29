@@ -8,7 +8,7 @@
 
 namespace obelisk::http::middleware {
 
-class multipart_extract : public before_middleware{
+class multipart_extract : public base_middleware{
 public:
     obelisk::task<std::unique_ptr<http_response>> pre_handle(http_request_wrapper& request) override;
 };

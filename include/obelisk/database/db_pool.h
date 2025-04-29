@@ -9,7 +9,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "../../../cmake-build-debug/vcpkg_installed/x64-linux/include/sahara/exception/exception_base.h"
+#include <sahara/exception/exception_base.h>
 #include "obelisk/core/coroutine/async_scoped_lock.h"
 #include "connection_pool/connection_pool.h"
 

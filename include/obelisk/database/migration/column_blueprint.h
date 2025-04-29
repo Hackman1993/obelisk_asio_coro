@@ -179,7 +179,7 @@ namespace obelisk::database::migration
             if (reference_)
             {
                 auto prefix = http::config::get<std::string>("database.default.prefix", "");
-                const std::string foreign_key_name = std::format("fk_{}_{}_{}", column_, reference_.value().first, reference_.value().second);
+                const std::string foreign_key_name = std::format("fk_{}_{}_{}_{}", table_, column_, reference_.value().first, reference_.value().second);
                 if (update_)
                 {
                     commands.emplace_back(std::format("ALTER TABLE {} DROP FOREIGN KEY {};", table_, foreign_key_name), false);

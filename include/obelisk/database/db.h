@@ -31,6 +31,11 @@ namespace obelisk::database
             return query::builder::insert(std::move(tables));
         }
 
+        static query::builder update(const std::initializer_list<table>& tables)
+        {
+            return query::builder::update(tables);
+        }
+
         static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::base_migration>> migrations)
         {
             const auto prefix = http::config::get<std::string>("database.default.prefix", "");

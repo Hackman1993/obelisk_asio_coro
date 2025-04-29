@@ -20,7 +20,7 @@ namespace default_::migrations
                 blueprint.string("target_key", 100).index();
                 blueprint.string("token", 64).unique();
                 blueprint.timestamp("last_used_at").nullable();
-                blueprint.timestamp("last_used_at").nullable();
+                blueprint.timestamp("expires_at").nullable();
                 blueprint.timestamps();
                 blueprint.index({"fn_target_id", "target_key", "type"});
             });

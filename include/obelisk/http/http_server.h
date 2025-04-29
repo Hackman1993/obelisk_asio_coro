@@ -34,12 +34,8 @@ namespace obelisk::http {
         std::unique_ptr<route_item>& route(const std::string& route, const std::function<obelisk::task<std::unique_ptr<http_response>> (http_request_wrapper&)>& handler);
         std::unique_ptr<route_item>& route(const std::string& route, const request_handler& handler);
 
-        const std::vector<std::unique_ptr<middleware::after_middleware>>& after_middlewares();
-        const std::vector<std::unique_ptr<middleware::before_middleware>>& before_middlewares();
-
-        void after_middlewares(std::unique_ptr<middleware::after_middleware>);
-        void before_middlewares(std::unique_ptr<middleware::before_middleware>);
-
+        const std::vector<std::unique_ptr<middleware::base_middleware>>& middlewares();
+        void reg_middleware(std::unique_ptr<middleware::base_middleware> middleware);
         template<typename T>
         std::enable_if_t<std::is_base_of_v<module::base_module, T>, boost::asio::awaitable<void>>
         module(T module)
@@ -51,8 +47,7 @@ namespace obelisk::http {
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
         std::vector<std::unique_ptr<route_item>> routes_;
-        std::vector<std::unique_ptr<middleware::after_middleware>> middlewares_after_;
-        std::vector<std::unique_ptr<middleware::before_middleware>> middlewares_before_;
+        std::vector<std::unique_ptr<middleware::base_middleware>> middlewares_;
 
         task<void> listen_();
         task<void> handle_(boost::asio::ip::tcp::socket socket);
