@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
         boost::asio::io_context ioctx;
         obelisk::http::framework::init(ioctx);
         obelisk::http::http_server server(ioctx);
-        boost::asio::co_spawn(ioctx,server.module(module::default_{}) ,boost::asio::detached);
+        boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
         server.reg_middleware(std::make_unique<middleware::cors>());
 
         server.route("/auth/login", controller::auth_controller::login)->method({"POST"});

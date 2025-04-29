@@ -5,7 +5,7 @@
 #ifndef CREATE_SYS_ROLES_TABLE_H
 #define CREATE_SYS_ROLES_TABLE_H
 #include <obelisk/database/migration/migration.h>
-namespace default_::migrations
+namespace module::default_::migrations
 {
     class create_sys_roles_table final : public obelisk::database::migration::base_migration{
         DEFINE_OBELISK_MIGRATION;

@@ -8,7 +8,7 @@
 
 namespace module
 {
-    class default_ final : public obelisk::http::module::base_module
+    class default_module final : public obelisk::http::module::base_module
     {
     public:
         void route(obelisk::http::http_server& server) override;

@@ -8,8 +8,7 @@
 #include <obelisk/database/db.h>
 #include <obelisk/database/migration/migration.h>
 #include <sahara/hash/bcrypt.h>
-
-namespace default_::migrations
+namespace module::default_::migrations
 {
     class create_sys_admin_table : public obelisk::database::migration::base_migration
     {

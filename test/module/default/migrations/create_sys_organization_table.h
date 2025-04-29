@@ -7,7 +7,7 @@
 
 #include <obelisk/database/db.h>
 #include <obelisk/database/migration/migration.h>
-namespace default_::migrations
+namespace module::default_::migrations
 {
     class create_sys_organization_table : public obelisk::database::migration::base_migration{
         DEFINE_OBELISK_MIGRATION;

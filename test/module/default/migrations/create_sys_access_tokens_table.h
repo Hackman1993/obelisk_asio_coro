@@ -6,7 +6,7 @@
 #define CREATE_SYS_ACCESS_TOKENS_TABLE_H
 
 #include <obelisk/database/migration/migration.h>
-namespace default_::migrations
+namespace module::default_::migrations
 {
     class create_sys_access_tokens_table : public obelisk::database::migration::base_migration{
         DEFINE_OBELISK_MIGRATION;
