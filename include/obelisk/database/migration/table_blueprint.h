@@ -70,8 +70,21 @@ namespace obelisk::database::migration
         column_blueprint& timestamp(const std::string& column)
         {
             auto ref = std::make_shared<column_blueprint>(table_, column, "timestamp");
-            ref->use_current();
             return *columns_.emplace_back(ref);
+        }
+
+        void index(const std::vector<std::string>& columns, bool unique = false, const std::string& name = "")
+        {
+            std::string index_name = name;
+            if (index_name.empty())
+            {
+                index_name = unique? "idx_":"uniq_";
+                for (auto & column : columns)
+                {
+                    index_name.append("_" + column);
+                }
+            }
+            indexes_.emplace_back(index_name, unique, columns);
         }
 
         void timestamps()
@@ -104,9 +117,20 @@ namespace obelisk::database::migration
                 commands.insert(commands.begin(),
                                 detail::basic_action(std::format("CREATE TABLE {} ({}\n);", table_, column_describe)));
             }
-            for (auto& command : commands)
+            if (!indexes_.empty())
             {
-                std::cout << command.sql() << std::endl;
+                for (auto& index_pair:indexes_)
+                {
+                    std::string columns_str;
+                    auto &columns = std::get<std::vector<std::string>>(index_pair);
+                    for (int i = 0; i < columns.size(); ++i)
+                    {
+                        if (i != 0) columns_str.append(", ");
+                        columns_str.append(columns[i]);
+                    }
+                    commands.emplace_back(std::format("ALTER TABLE {} ADD {}INDEX {}({});", table_, std::get<bool>(index_pair)?"UNIQUE ":"" , std::get<std::string>(index_pair),columns_str));
+                }
+
             }
             return commands;
         }
@@ -114,6 +138,7 @@ namespace obelisk::database::migration
     private:
         bool creation_ = false;
         std::string table_;
+        std::vector<std::tuple<std::string, bool, std::vector<std::string>>> indexes_;
         std::vector<std::shared_ptr<column_blueprint>> columns_;
     };
 }

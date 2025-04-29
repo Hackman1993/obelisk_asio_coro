@@ -5,7 +5,9 @@
 #ifndef CREATE_SYS_ADMIN_TABLE_H
 #define CREATE_SYS_ADMIN_TABLE_H
 
+#include <obelisk/database/db.h>
 #include <obelisk/database/migration/migration.h>
+#include <sahara/hash/bcrypt.h>
 
 namespace default_::migrations
 {
@@ -21,9 +23,16 @@ namespace default_::migrations
                 blueprint.string("password", 100).nullable();
                 blueprint.string("real_name", 20).nullable();
                 blueprint.string("phone", 20).unique();
+                blueprint.foreign_id("fn_organization_id").references("sys_organizations", "id");
                 blueprint.timestamps();
                 blueprint.soft_delete();
             });
+            co_await obelisk::database::db::insert("sys_admins").values({
+                {"username", "admin"},
+                {"password", sahara::hash::bcrypt::generateHash(std::string("123456"))},
+                {"phone", "13658834664"},
+                {"fn_organization_id", 1}
+            }).execute();
             co_return;
         };
         boost::asio::awaitable<void> down() override

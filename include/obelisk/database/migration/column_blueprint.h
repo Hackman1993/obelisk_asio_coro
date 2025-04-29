@@ -77,7 +77,7 @@ namespace obelisk::database::migration
             return index(name, true);
         }
 
-        virtual column_blueprint& nullable(const bool value = false)
+        virtual column_blueprint& nullable(const bool value = true)
         {
             nullable_ = value;
             return *this;
@@ -110,12 +110,7 @@ namespace obelisk::database::migration
 
         virtual void references(const std::string& reference_table , const std::string& reference_column)
         {
-            auto prefix = http::config::get<std::string>("database.default.prefix", "");
-
-            auto table_name = boost::algorithm::replace_all_copy(reference_table, ".", "`.`");
-            table_name = std::format("`{}{}`", table_name.contains(".")? prefix : "", table_name);
-
-            reference_ = std::format(" {}(`{}`)", table_name, reference_column);
+            reference_ = {reference_table, reference_column};
         }
 
         [[nodiscard]] bool is_update() const
@@ -145,10 +140,6 @@ namespace obelisk::database::migration
                 column_describe += " ON UPDATE CURRENT_TIMESTAMP";
             if (after_){
                 column_describe += after_.value();
-            }
-            if (reference_)
-            {
-                column_describe += " REFERENCES " + reference_.value();
             }
             if (comment_)
                 column_describe += std::format(" COMMENT '{}'", comment_.value());
@@ -180,9 +171,22 @@ namespace obelisk::database::migration
             {
                 if (update_)
                 {
-                    commands.emplace_back(std::format("ALTER TABLE {} DROP INDEX {};", table_, index_name_.value()));
+                    commands.emplace_back(std::format("ALTER TABLE {} DROP INDEX {};", table_, index_name_.value()),false);
                 }
                 commands.emplace_back(std::format("ALTER TABLE {} ADD {}INDEX {}({});", table_, index_unique_.value()?"UNIQUE ":"",index_name_.value(), column_));
+            }
+
+            if (reference_)
+            {
+                auto prefix = http::config::get<std::string>("database.default.prefix", "");
+                const std::string foreign_key_name = std::format("fk_{}_{}_{}", column_, reference_.value().first, reference_.value().second);
+                if (update_)
+                {
+                    commands.emplace_back(std::format("ALTER TABLE {} DROP FOREIGN KEY {};", table_, foreign_key_name), false);
+                }
+
+                commands.emplace_back(std::format("ALTER TABLE {} ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES `{}{}`(`{}`);", table_,foreign_key_name, column_, prefix, reference_.value().first, reference_.value().second));
+
             }
         }
 
@@ -197,7 +201,7 @@ namespace obelisk::database::migration
         bool is_primary_ : 1 = false;
         bool table_creation_ : 1 = false;
         bool use_current_on_update_ : 1 = false;
-        std::optional<std::string> reference_;
+        std::optional<std::pair<std::string, std::string>> reference_;
         std::optional<int> auto_increment_;
         std::optional<bool> index_unique_;
         std::optional<std::string> index_name_;

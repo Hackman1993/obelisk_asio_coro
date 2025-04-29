@@ -5,6 +5,7 @@
 #ifndef CREATE_SYS_ORGANIZATION_TABLE_H
 #define CREATE_SYS_ORGANIZATION_TABLE_H
 
+#include <obelisk/database/db.h>
 #include <obelisk/database/migration/migration.h>
 namespace default_::migrations
 {
@@ -24,10 +25,13 @@ namespace default_::migrations
                 blueprint.integer("_lft", "int", true).default_value(0);
                 blueprint.integer("_rgt", "int", true).default_value(0);
                 blueprint.integer("parent_id", "bigint", true).nullable();
+                blueprint.index({"_lft", "_rgt", "parent_id"});
                 blueprint.timestamps();
                 blueprint.soft_delete();
-
             });
+            co_await obelisk::database::db::insert("sys_organizations").values({
+                {"name", "Root"}
+            }).execute();
             co_return;
         };
         boost::asio::awaitable<void> down() override

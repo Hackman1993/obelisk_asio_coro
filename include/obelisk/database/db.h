@@ -6,6 +6,7 @@
 #include <sahara/log/log.h>
 
 #include "db_pool.h"
+#include "builder/builder.h"
 #include "migration/migration.h"
 
 namespace obelisk::database
@@ -18,6 +19,16 @@ namespace obelisk::database
         static db& getInstance() {
             static db instance;
             return instance;
+        }
+
+        static query::builder select(std::initializer_list<col> tables)
+        {
+            return query::builder::select(tables);
+        }
+
+        static query::builder insert(std::string tables)
+        {
+            return query::builder::insert(std::move(tables));
         }
 
         static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::base_migration>> migrations)
@@ -50,12 +61,13 @@ namespace obelisk::database
                 {
                     auto migration_name = migration->migration_name();
                     auto query = boost::mysql::with_params("SELECT id, batch, migration FROM {:i} WHERE migration={}", prefix + "migrations", migration_name);
-                    boost::mysql::results results = co_await connection->co_query(query);
-                    if (results.rows().empty()){
+                    if (boost::mysql::results results = co_await connection->co_query(query); results.rows().empty()){
                         LOG_TRACE("Running migration {} ...", migration_name);
                         co_await migration->up();
-                        auto insert_query = boost::mysql::with_params("INSERT INTO `{:r}migrations` (migration, batch) VALUES ({}, {})", prefix, migration_name, batch);
-                        co_await connection->co_execute(insert_query);
+                        co_await insert("migrations").values({
+                            {"migration", migration_name},
+                            {"batch", batch}
+                        }).execute();
                         LOG_TRACE("Running migration {} complete!", migration->migration_name());
                     }
                 }catch (std::exception& e)

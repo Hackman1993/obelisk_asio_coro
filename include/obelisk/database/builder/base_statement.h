@@ -14,7 +14,7 @@ struct value_compile_visitor {
         return std::format("'{}'", s);
     }
 
-    std::string operator()(const std::nullptr_t&) const
+    std::string operator()(std::nullptr_t) const
     {
         return "NULL";
     }
@@ -46,14 +46,7 @@ public:
     using sql_value_t::variant;
     std::string compile()
     {
-        return std::visit(value_compile_visitor{}, value_);
-    };
-    template<typename T>
-    sql_value& operator=(const T& value) {
-        value_ = value;
-        return *this;
+        return std::visit(value_compile_visitor{}, *this);
     }
-private:
-    sql_value_t value_;
 };
 #endif //BASE_STATEMENT_H

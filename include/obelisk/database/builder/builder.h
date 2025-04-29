@@ -30,6 +30,23 @@ namespace obelisk::database::query
         std::string compile() override
         {
             std::string result;
+            if (type_ == EST_INSERT)
+            {
+                std::string value_names;
+                std::string value_str;
+                for (int i =0; i< insert_pack_.size(); ++i)
+                {
+                    if (i != 0)
+                    {
+                        value_names.append(",");
+                        value_str.append(",");
+                    }
+                    value_names.append(insert_pack_[i].first);
+                    value_str.append(insert_pack_[i].second.compile());
+                }
+
+                return std::format("INSERT INTO {}({}) VALUES({});" ,from_.empty()? "": from_[0].compile(), value_names, value_str);
+            }
             if (type_ == EST_QUERY)
             {
                 result.append(std::format("SELECT {}{} FROM {}", distinct_? "DISTINCT ": "", utils::separate_with(select_columns_, ","), utils::separate_with(from_, ",")));
@@ -43,6 +60,19 @@ namespace obelisk::database::query
         explicit builder(const E_STATEMENT_TYPE type): type_(type)
         {
         }
+
+        static builder insert(std::string table)
+        {
+            builder result(EST_INSERT);
+            result.from_.emplace_back(std::move(table));
+            return result;
+        }
+
+        builder& values(const std::initializer_list<std::pair<std::string, sql_value>>& value_pack)
+        {
+            std::ranges::copy(value_pack.begin(), value_pack.end(), std::back_inserter(insert_pack_));
+            return *this;
+        }
         static builder select(std::initializer_list<col> args) {
             builder result(EST_QUERY);
             std::ranges::copy(args, std::back_inserter(result.select_columns_));
@@ -51,7 +81,7 @@ namespace obelisk::database::query
 
         builder& from(std::initializer_list<table> tables)
         {
-            std::copy(tables.begin(), tables.end(), std::back_inserter(from_));
+            std::ranges::copy(tables, std::back_inserter(from_));
             return *this;
         }
 
@@ -122,6 +152,7 @@ namespace obelisk::database::query
         E_STATEMENT_TYPE type_;
         std::vector<table> from_;
         bool distinct_ = false;
+        std::vector<std::pair<std::string, sql_value>> insert_pack_;
         std::vector<condition_group> where_groups_;
         std::vector<col> select_columns_;
     };
