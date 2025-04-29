@@ -14,6 +14,7 @@
 
 #include "common/global_configuration.h"
 #include "obelisk/database/mysql/mysql_connection.h"
+#include <nlohmann/json.hpp>
 std::unique_ptr<obelisk::http::http_response> controller_base::json_response(const boost::mysql::results &result,const std::unordered_map<std::string, boost::json::value>& additional_field, obelisk::http::EResponseCode code) {
 
 
@@ -25,7 +26,8 @@ std::unique_ptr<obelisk::http::http_response> controller_base::json_response(con
         resp_object.emplace(item.first, item.second);
     }
 
-    return std::make_unique<obelisk::http::json_response>(resp_object, code);
+    // TODO:// Impl
+    return nullptr;
 }
 
 obelisk::task<std::string> controller_base::save_attachment(obelisk::http::http_file &file, std::string path, std::shared_ptr<mysql_connection> connection, std::uint64_t uploader_id, const std::string& replace) {
@@ -90,8 +92,8 @@ std::string controller_base::escape_string(const std::optional<std::string> &str
 
 obelisk::task<std::unique_ptr<obelisk::http::http_response>> controller_base::getTerminalToken(obelisk::http::http_request_wrapper &request) {
 
-    co_return std::make_unique<obelisk::http::json_response>(boost::json::object{
-            { "terminal", boost::json::object{
+    co_return std::make_unique<obelisk::http::json_response>(nlohmann::json{
+            { "terminal", nlohmann::json{
                     {"name", "Official Backend"},
                     {"terminal_id", 1},
                     {"status", 1},

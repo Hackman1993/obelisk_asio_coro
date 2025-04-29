@@ -44,19 +44,6 @@ public:
         co_return results;
     }
 
-    template <typename T>
-    boost::asio::awaitable<void> co_execute(const T& query)
-    {
-        boost::mysql::diagnostics diagnostics;
-        boost::mysql::results results;
-        if (auto [ec] = co_await boost::mysql::any_connection::async_execute(query,results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
-        {
-            const auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
-            throw std::logic_error(message);
-        }
-        co_return;
-    }
-
     void refresh() override;
 
     bool reset() override;

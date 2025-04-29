@@ -49,7 +49,7 @@ namespace obelisk::database::query
             }
             if (type_ == EST_QUERY)
             {
-                result.append(std::format("SELECT {}{} FROM {}", distinct_? "DISTINCT ": "", utils::separate_with(select_columns_, ","), utils::separate_with(from_, ",")));
+                result.append(std::format("SELECT {}{} FROM {} ", distinct_? "DISTINCT ": "", utils::separate_with(select_columns_, ","), utils::separate_with(from_, ",")));
             }
             if (!where_groups_.empty())
             {
@@ -103,15 +103,7 @@ namespace obelisk::database::query
         boost::asio::awaitable<boost::mysql::results> get()
         {
             auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("default");
-            boost::mysql::results results = co_await connection->co_query(compile());
-            co_return results;
-        }
-
-        boost::asio::awaitable<void> execute()
-        {
-            auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("default");
-            co_await connection->co_execute(compile());
-            co_return;
+            co_return co_await connection->co_query(compile());
         }
 
         // template<typename... Args>

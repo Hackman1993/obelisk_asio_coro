@@ -72,7 +72,7 @@ namespace obelisk::database
                         co_await insert("migrations").values({
                             {"migration", migration_name},
                             {"batch", batch}
-                        }).execute();
+                        }).get();
                         LOG_TRACE("Running migration {} complete!", migration->migration_name());
                     }
                 }catch (std::exception& e)

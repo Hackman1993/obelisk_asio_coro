@@ -63,11 +63,11 @@ namespace controller{
         boost::mysql::throw_on_error(ec, diagnostics);
 
         if(result.rows()[0][0].as_int64() == 0) {
-            co_return std::make_unique<obelisk::http::json_response>(boost::json::object{
+            co_return std::make_unique<obelisk::http::json_response>(nlohmann::json{
                 { "total", 0 },
                 { "page", 1 },
                 { "limit", limit},
-                { "data", boost::json::array{}}
+                { "data", nlohmann::json{}}
             });
         }
         total = result.rows()[0][0].as_int64();

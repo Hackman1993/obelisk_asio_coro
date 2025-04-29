@@ -135,7 +135,7 @@ namespace obelisk::http {
                     socket.close();
                     co_return;
                 }
-                response = std::make_unique<json_response>(boost::json::object{
+                response = std::make_unique<json_response>(nlohmann::json{
                     {"code", 500},
                     {"message", "system.error.internal_server_error"}
                 });
@@ -143,14 +143,15 @@ namespace obelisk::http {
             }
             // Catch Http Exception
             catch (const http_exception &e) {
-                response = std::make_unique<json_response>(boost::json::object{{"message", std::string(e.what())}}, e.code());
+                response = std::make_unique<json_response>(nlohmann::json{{"message", std::string(e.what())}}, e.code());
             }catch (const std::exception&e) {
                 std::cout << e.what() << std::endl;
+                response = std::make_unique<json_response>(nlohmann::json{{"message", std::string(e.what())}}, EST_INTERNAL_SERVER_ERROR);
             }
 
             // Generate 404 Response
             if (!response) {
-                response = std::make_unique<json_response>(boost::json::object{{"message", "null"}}, EResponseCode::EST_NOT_FOUND);
+                response = std::make_unique<json_response>(nlohmann::json{{"message", "null"}}, EResponseCode::EST_NOT_FOUND);
             }
 
             // Matching Response Middleware

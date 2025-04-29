@@ -32,7 +32,7 @@ namespace default_::migrations
                 {"password", sahara::hash::bcrypt::generateHash(std::string("123456"))},
                 {"phone", "13658834664"},
                 {"fn_organization_id", 1}
-            }).execute();
+            }).get();
             co_return;
         };
         boost::asio::awaitable<void> down() override

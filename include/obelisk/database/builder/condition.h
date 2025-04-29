@@ -33,6 +33,12 @@ public:
         return std::visit(condition_operand_visitor{}, var_);
     }
 
+    [[nodiscard]] bool is_null() const
+    {
+        auto& v = std::get<sql_value>(var_);
+        return var_.index() == 1 && v.index() == 0;
+    }
+
 private:
     condition_operand_t var_;
 };
@@ -41,13 +47,13 @@ class condition : public base_statement {
 public:
     condition(const std::string& column, std::string operator_string, sql_value value): first(col(column)), second(value), operator_(std::move(operator_string)){}
     condition(const char* col, const char* operator_string, const sql_value& value) : condition(std::string(col), operator_string, value){}
-    condition(const std::string& column): first(col(column)), second(sql_value(nullptr)){}
-    condition(const char* column): first(col(column)), second(sql_value(nullptr)), operator_(" NOT "){}
+    condition(const std::string& column): first(col(column)), second(sql_value(nullptr)), operator_("IS NOT"){}
+    condition(const char* column): first(col(column)), second(sql_value(nullptr)), operator_("IS NOT"){}
     condition(const char* column, const sql_value& value): condition(column, " = ", value){}
 
     std::string compile() override
     {
-        return std::format("{} {} {}", first.compile(), operator_, second.compile());
+        return std::format("{} {} {}", first.compile(), second.is_null()? "IS":operator_, second.compile());
     };
 private:
     condition_operands first, second;

@@ -31,7 +31,7 @@ namespace default_::migrations
             });
             co_await obelisk::database::db::insert("sys_organizations").values({
                 {"name", "Root"}
-            }).execute();
+            }).get();
             co_return;
         };
         boost::asio::awaitable<void> down() override

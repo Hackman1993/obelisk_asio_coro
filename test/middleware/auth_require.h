@@ -13,12 +13,15 @@
 namespace middleware{
     class auth_require : public obelisk::http::middleware::base_middleware {
     public:
+        auth_require(std::string target_key, std::vector<std::string> permissions): target_key_(std::move(target_key)), permissions_(std::move(permissions))
+        {
+        }
         boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> pre_handle(obelisk::http::http_request_wrapper&request) override {
             if (!request.headers().contains("authorization"))
                 throw obelisk::http::http_exception("server.error.access_forbidden", obelisk::http::EST_FORBIDDEN);
 
             auto token = request.headers()["authorization"];
-            boost::mysql::results results = co_await obelisk::database::db::select({"fn_target_id", "target_key"}).where({
+            const boost::mysql::results results = co_await obelisk::database::db::select({"fn_target_id", "target_key"}).where({
                 {"token", token},
                 {"target_key", target_key_}
             }).get();

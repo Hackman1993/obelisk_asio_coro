@@ -20,7 +20,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::l
     }).get();
 
     if (result.rows().empty() || !sahara::hash::bcrypt::validatePassword(request.params()["password"].get<std::string>(), result.rows()[0][2].as_string()))
-         co_return std::make_unique<obelisk::http::json_response>(boost::json::object{
+         co_return std::make_unique<obelisk::http::json_response>(nlohmann::json{
              {"code", 403},
              {"message", "server.error.invalid_credential"}
          });
@@ -120,7 +120,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::l
 
 obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::check_auth(
     obelisk::http::http_request_wrapper &request) {
-    co_return std::make_unique<obelisk::http::json_response>(boost::json::object{
+    co_return std::make_unique<obelisk::http::json_response>(nlohmann::json{
         {"validate", true},
     });
 }

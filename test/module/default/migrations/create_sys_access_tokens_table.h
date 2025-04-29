@@ -15,14 +15,13 @@ namespace default_::migrations
             co_await obelisk::database::migration::migration::create("sys_access_tokens", [](obelisk::database::migration::table_blueprint& blueprint)
             {
                 blueprint.id();
-                blueprint.string("type", 50).index();
                 blueprint.foreign_id("fn_target_id").index();
                 blueprint.string("target_key", 100).index();
                 blueprint.string("token", 64).unique();
                 blueprint.timestamp("last_used_at").nullable();
                 blueprint.timestamp("expires_at").nullable();
                 blueprint.timestamps();
-                blueprint.index({"fn_target_id", "target_key", "type"});
+                blueprint.index({"fn_target_id", "target_key"});
             });
             co_return;
         };

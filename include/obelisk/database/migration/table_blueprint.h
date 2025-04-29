@@ -77,7 +77,7 @@ namespace obelisk::database::migration
             std::string index_name = name;
             if (index_name.empty())
             {
-                index_name = std::format("{}_{}_", unique? "uniq":"idx", table_);
+                index_name = std::format("{}_{}", unique? "uniq":"idx", table_);
                 for (auto & column : columns)
                 {
                     index_name.append("_" + column);

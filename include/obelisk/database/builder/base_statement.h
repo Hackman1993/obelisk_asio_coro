@@ -24,7 +24,7 @@ struct value_compile_visitor {
 
     std::string operator()(const std::chrono::system_clock::time_point& tp) const
     {
-        return std::format("{:%F %T}", tp);
+        return std::format("'{:%F %T}'", tp);
     }
     template <typename T>
     std::string operator()(const T i) const {
