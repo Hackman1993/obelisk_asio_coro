@@ -26,7 +26,6 @@
 #include <obelisk/http/framework.h>
 #include <obelisk/core/coroutine/async_mutex.h>
 #include "module/default/default_.h"
-#include "middleware/auth_require.h"
 using namespace  boost::parser;
 
 int main(int argc, char* argv[]) {

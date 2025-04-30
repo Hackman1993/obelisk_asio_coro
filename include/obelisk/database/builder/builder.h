@@ -15,6 +15,8 @@
 #include "detail/utils.h"
 #include <obelisk/database/mysql/mysql_connection.h>
 
+#include "join.h"
+
 namespace obelisk::database::query
 {
     class builder : public base_statement
@@ -49,12 +51,34 @@ namespace obelisk::database::query
             }
             if (type_ == EST_QUERY)
             {
-                result.append(std::format("SELECT {}{} FROM {} ", distinct_? "DISTINCT ": "", utils::separate_with(select_columns_, ","), utils::separate_with(from_, ",")));
+                std::string join;
+                for (int i = 0; i< joins_.size(); ++i)
+                {
+                    if (i != 0)
+                        join.append("\n\t");
+                    join.append(joins_[i].compile());
+                }
+                result.append(std::format("SELECT {}{} FROM {} {}", distinct_? "DISTINCT ": "", utils::separate_with(select_columns_, ","), utils::separate_with(from_, ","), join));
+            }
+            if (type_ == EST_DELETE)
+            {
+                result.append(std::format("DELETE FROM {} ", utils::separate_with(from_, ",")));
+            }
+            if (type_ == EST_UPDATE)
+            {
+                std::string set_values;
+                for (int i =0; i< set_pack_.size(); ++i)
+                {
+                    if (i != 0) set_values.append(",");
+                    set_values.append(std::format("`{}` = {}", set_pack_[i].first, set_pack_[i].second.compile()));
+                }
+                result.append(std::format("UPDATE {} SET {} ", utils::separate_with(from_, ","), set_values));
             }
             if (!where_groups_.empty())
             {
                 result.append(std::format("WHERE {}", utils::separate_with(where_groups_ ," OR ")));
             }
+            result.append(";");
             return result;
         }
         explicit builder(const E_STATEMENT_TYPE type): type_(type)
@@ -75,11 +99,24 @@ namespace obelisk::database::query
             return result;
         }
 
+        static builder delete_from(std::initializer_list<table> tables)
+        {
+            builder result(EST_DELETE);
+            result.delete_(tables);
+            return result;
+        }
+
         builder& set(const std::initializer_list<std::pair<std::string, sql_value>>& values)
         {
             if (type_ != EST_UPDATE)
                 throw std::logic_error("server.error.cant_use_set_in_non_update");
             std::ranges::copy(values, std::back_inserter(set_pack_));
+            return *this;
+        }
+
+        builder& inner_join(table join_table, std::vector<condition> conditions)
+        {
+            joins_.emplace_back(std::move(join_table), std::vector<condition>(std::move(conditions)), "INNER JOIN");
             return *this;
         }
 
@@ -161,9 +198,17 @@ namespace obelisk::database::query
             return *this;
         }
 
+        builder& delete_(const std::initializer_list<table>& tables)
+        {
+            std::ranges::move(tables, std::back_inserter(from_));
+            return *this;
+        }
+
         E_STATEMENT_TYPE type_;
         std::vector<table> from_;
         bool distinct_ = false;
+
+        std::vector<join> joins_;
         std::vector<std::pair<std::string, sql_value>> insert_pack_;
         std::vector<std::pair<std::string, sql_value>> set_pack_;
         std::vector<condition_group> where_groups_;

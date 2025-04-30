@@ -19,12 +19,14 @@ public:
     col(std::string name, std::string alias): col_(std::move(name)), alia_(std::move(alias)) { }
     col(const char* name, const char* alia): col(std::string(name), std::string(alia)){}
 
+
     std::string compile() override
     {
+        auto prefix = obelisk::http::config::get<std::string>("database.default.prefix", "");
         bool contains_table_name = boost::algorithm::contains(col_, ".");
         if (contains_table_name)
             boost::algorithm::replace_all(col_, ".", "`.`");
-        return std::format("`{}{}`{}", contains_table_name? obelisk::http::config::get<std::string>("database.default.prefix", ""):"", col_, alia_? " AS " + alia_.value(): "");
+        return std::format("`{}{}`{}", contains_table_name? prefix:"", col_, alia_? " AS " + alia_.value(): "");
     }
 
 private:

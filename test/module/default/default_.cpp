@@ -16,11 +16,13 @@
 #include "migrations/create_sys_permissions_table.h"
 #include "migrations/create_sys_mid_admin_role_table.h"
 #include "migrations/create_sys_mid_role_permission_table.h"
-
+#include "middleware/auth_require.h"
 namespace module {
     void default_module::route(obelisk::http::http_server& server)
     {
-        server.route("/api/backend/login", ::default_::controllers::login)->method({"POST"});
+        server.route("/api/backend/login", ::default_::controllers::backend_login)->method({"POST"});
+        server.route("/api/backend/logout", ::default_::controllers::backend_logout)->method({"PUT"}).middleware(default_::middleware::auth_require("sys_admins",{}));
+        server.route("/api/backend/admin/info", ::default_::controllers::backend_permissions)->method({"GET"}).middleware(default_::middleware::auth_require("sys_admins",{}));
     }
 
     boost::asio::awaitable<void> default_module::migrate(){

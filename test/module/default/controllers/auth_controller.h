@@ -11,7 +11,7 @@
 
 namespace default_::controllers
 {
-    inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> login(obelisk::http::http_request_wrapper&request)
+    inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_login(obelisk::http::http_request_wrapper&request)
     {
         using namespace obelisk::http::validator;
         co_await request.validate({
@@ -45,8 +45,34 @@ namespace default_::controllers
         }));
     }
 
-    inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> permissions(obelisk::http::http_request_wrapper&request)
+    inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_logout(obelisk::http::http_request_wrapper&request)
     {
+        if (!request.headers().contains("Authorization") || !request.headers()["Authorization"].contains("Bearer "))
+            co_return utils::json_response(nullptr);
+
+        const auto authorization_header = request.headers()["Authorization"];
+
+        co_await obelisk::database::db::delete_from({"sys_access_tokens"}).where({
+            {"token", authorization_header.substr(authorization_header.find("Bearer ")+7)},
+            {"fn_target_id", std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_target_id"])},
+            {"target_key", "sys_admins"}
+        }).get();
+        co_return utils::json_response(nullptr);
+    }
+    inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_permissions(obelisk::http::http_request_wrapper&request)
+    {
+        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_target_id"]);
+        std::cout << obelisk::database::db::select({
+            {"sp.code", "code" },
+            {"sp.visible", "visible"}
+        }).from({{"sys_admins", "sa"}})
+        .inner_join({"sys_mid_admin_role", "smar"}, {{"sa.id", "smar.fn_admin_id"} , {"sa.deleted_at", nullptr}})
+        .inner_join({"sys_roles", "sr"}, {{"smar.fn_role_id", "sr.id"}, {"sr.deleted_at", nullptr}})
+        .inner_join({"sys_mid_role_permission", "smrp"}, {{"sr.id", "smrp.fn_role_id"}})
+        .inner_join({"sys_permissions", "sp"}, {{"smrp.fn_permission_id", "sp.id"}})
+        .where({
+            {"sa.id", admin_id}
+        }).compile()<< std::endl;
         co_return nullptr;
     }
 }

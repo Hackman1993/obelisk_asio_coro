@@ -33,11 +33,10 @@
 
 
 namespace obelisk::http {
-    http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx) {
+    http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx), signals_(ctx, SIGINT, SIGTERM) {
         reg_middleware(std::make_unique<middleware::url_params_extract>());
         reg_middleware(std::make_unique<middleware::multipart_extract>());
         reg_middleware(std::make_unique<middleware::json_extract>());
-
     }
 
     std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<obelisk::task<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
@@ -65,6 +64,14 @@ namespace obelisk::http {
     }
 
     obelisk::task<void> http_server::listen_() {
+        signals_.async_wait([&](const boost::system::error_code& ec, int signal_number) {
+            if (!ec) {
+                std::cout << "Received signal: " << signal_number << " (Control+C or termination)" << std::endl;
+                ioctx_.stop(); // 停止 io_context
+            } else {
+                std::cerr << "Error in signal handling: " << ec.message() << std::endl;
+            }
+        });
         while (true) {
             auto [ec, socket] = co_await acceptor_.async_accept(boost::asio::as_tuple(boost::asio::use_awaitable));
             boost::asio::co_spawn(ioctx_, handle_(std::move(socket)), boost::asio::detached);

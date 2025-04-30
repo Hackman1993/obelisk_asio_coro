@@ -8,14 +8,12 @@
 
 #include "base_statement.h"
 
-using table_type_t = std::variant<std::string>;
-
-struct table_compile_visitor
-{
-    std::string operator()(const std::string& s) const {
-        return std::format("`{}{}`", obelisk::http::config::get<std::string>("database.default.prefix", ""), s);
-    }
-};
+// struct table_compile_visitor
+// {
+//     std::string operator()(const std::string& s) const {
+//
+//     }
+// };
 
 class table : public base_statement
 {
@@ -27,11 +25,15 @@ public:
 
     std::string compile() override
     {
-        return std::visit(table_compile_visitor{}, table_);
+        auto prefix = obelisk::http::config::get<std::string>("database.default.prefix", "");
+        std::string val = std::format("`{}{}`", prefix, table_);
+        if (alia_)
+            val.append(std::format(" AS {}{}", prefix, alia_.value()));
+        return val;
     }
 
 private:
-    table_type_t table_;
+    std::string table_;
     std::optional<std::string> alia_;
 };
 #endif //TABLE_H

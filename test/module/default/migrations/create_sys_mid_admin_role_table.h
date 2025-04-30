@@ -14,8 +14,8 @@ namespace module::default_::migrations
         {
             co_await obelisk::database::migration::migration::create("sys_mid_admin_role", [](obelisk::database::migration::table_blueprint& blueprint)
             {
-                blueprint.foreign_id("fn_sys_role_id").references("sys_roles", "id");
-                blueprint.foreign_id("fn_sys_admin_id").references("sys_admins", "id");
+                blueprint.foreign_id("fn_role_id").references("sys_roles", "id");
+                blueprint.foreign_id("fn_admin_id").references("sys_admins", "id");
             });
             co_return;
         };

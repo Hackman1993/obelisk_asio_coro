@@ -57,6 +57,7 @@ namespace obelisk::http {
         static task<void> write_response_(boost::asio::ip::tcp::socket& socket, const std::unique_ptr<core::http_iodata>& response);
 
         boost::asio::io_context& ioctx_;
+        boost::asio::signal_set signals_;
     };
 
 } // obelisk::http
