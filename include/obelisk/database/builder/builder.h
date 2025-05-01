@@ -43,7 +43,7 @@ namespace obelisk::database::query
                         value_names.append(",");
                         value_str.append(",");
                     }
-                    value_names.append(insert_pack_[i].first);
+                    value_names.append(std::format("`{}`",insert_pack_[i].first));
                     value_str.append(insert_pack_[i].second.compile());
                 }
 
@@ -116,7 +116,7 @@ namespace obelisk::database::query
 
         builder& inner_join(table join_table, std::vector<condition> conditions)
         {
-            joins_.emplace_back(std::move(join_table), std::vector<condition>(std::move(conditions)), "INNER JOIN");
+            joins_.emplace_back(std::move(join_table), std::move(conditions), "INNER JOIN");
             return *this;
         }
 
@@ -139,8 +139,11 @@ namespace obelisk::database::query
 
         boost::asio::awaitable<boost::mysql::results> get()
         {
+            auto tp = std::chrono::system_clock::now();
             auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("default");
-            co_return co_await connection->co_query(compile());
+            std::cout << compile() << std::endl;
+            auto result = co_await connection->co_query(compile());
+            co_return result;
         }
 
         // template<typename... Args>

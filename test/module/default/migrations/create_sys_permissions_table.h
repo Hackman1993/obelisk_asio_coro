@@ -17,6 +17,7 @@ namespace module::default_::migrations
                 blueprint.id();
                 blueprint.string("code").unique();
                 blueprint.string("visible").default_value(false);
+                blueprint.boolean("cascading");
                 blueprint.timestamps();
             });
             co_return;

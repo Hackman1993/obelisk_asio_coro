@@ -8,8 +8,10 @@
 #include <obelisk/http/exception/http_exception.h>
 #include <obelisk/http/validator/required_validator.h>
 #include "module/default/utils/utils.h"
+#include <chrono>
+#include <iostream>
 
-namespace default_::controllers
+namespace module::default_::controllers
 {
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_login(obelisk::http::http_request_wrapper&request)
     {
@@ -18,9 +20,9 @@ namespace default_::controllers
             {"login", {required()}},
             {"password", {required()}}
         });
-        auto result = co_await obelisk::database::db::select({"id","username", "password", "phone"}).from({"sys_admins"}).where({
-            { "username", request.params()["login"].get<std::string>()},
-            { "deleted_at", nullptr}
+        const auto result = co_await obelisk::database::db::select({"id","username", "password", "phone"}).from({"sys_admins"}).where({
+            { col("username"), request.params()["login"].get<std::string>()},
+            { col("deleted_at"), nullptr}
         }).get();
         if (result.rows().empty())
             throw obelisk::http::http_exception("server.error.invalid_credential", obelisk::http::EST_UNAUTHORIZED);
@@ -32,7 +34,6 @@ namespace default_::controllers
         }
         if (!sahara::hash::bcrypt::validatePassword(request.params()["password"].get<std::string>(), result.rows()[0][2].as_string()))
             throw obelisk::http::http_exception("server.error.invalid_credential", obelisk::http::EST_UNAUTHORIZED);
-
         auto access_token = sahara::utils::uuid::generate();
         co_await obelisk::database::db::insert("sys_access_tokens").values({
             {"fn_target_id", result.rows()[0][0].as_uint64()},
@@ -66,10 +67,10 @@ namespace default_::controllers
             {"sp.code", "code" },
             {"sp.visible", "visible"}
         }).from({{"sys_admins", "sa"}})
-        .inner_join({"sys_mid_admin_role", "smar"}, {{"sa.id", "smar.fn_admin_id"} , {"sa.deleted_at", nullptr}})
-        .inner_join({"sys_roles", "sr"}, {{"smar.fn_role_id", "sr.id"}, {"sr.deleted_at", nullptr}})
-        .inner_join({"sys_mid_role_permission", "smrp"}, {{"sr.id", "smrp.fn_role_id"}})
-        .inner_join({"sys_permissions", "sp"}, {{"smrp.fn_permission_id", "sp.id"}})
+        .inner_join({"sys_mid_admin_role", "smar"}, {{col("sa.id"), col("smar.fn_admin_id")} , {"sa.deleted_at", nullptr}})
+        .inner_join({"sys_roles", "sr"}, {{col("smar.fn_role_id"), col("sr.id")}, {"sr.deleted_at", nullptr}})
+        .inner_join({"sys_mid_role_permission", "smrp"}, {{col("sr.id"), col("smrp.fn_role_id")}})
+        .inner_join({"sys_permissions", "sp"}, {{col("smrp.fn_permission_id"), col("sp.id")}})
         .where({
             {"sa.id", admin_id}
         }).compile()<< std::endl;

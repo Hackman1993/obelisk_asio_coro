@@ -52,6 +52,11 @@ namespace obelisk::database::migration
             return integer(column, type, is_unsigned, auto_increment);
         }
 
+        column_blueprint& boolean(const std::string& column, const std::string& type = "tinyint(1)")
+        {
+            return integer(column, type, false, false);
+        }
+
         column_blueprint& string(const std::string& column, unsigned int length = 255)
         {
             return *columns_.emplace_back(
