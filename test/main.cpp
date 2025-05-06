@@ -26,9 +26,12 @@
 #include <obelisk/http/framework.h>
 #include <obelisk/core/coroutine/async_mutex.h>
 #include "module/default/default_.h"
+#include "obelisk/http/client/aliyun_request.h"
+#include "obelisk/http/client/request.h"
 using namespace  boost::parser;
 
 int main(int argc, char* argv[]) {
+    obelisk::http::client::aliyun_request req("hTtp://loocalhost:9999?kdacque=1", "GET");
 
     try {
         sahara::log::initialize();
