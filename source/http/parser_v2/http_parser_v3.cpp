@@ -17,7 +17,7 @@ using namespace boost::parser;
 namespace obelisk::http {
     auto ContentTypeParser= no_case[lit("Content-Type")] > ":" > lexeme[*char_-"\r\n"];
     rule<struct MetaParser, core::raw::http_meta_raw> MetaParser= "MetaParser";
-    auto MetaParser_def = +(char_ - char_(" \r\n")) > *ws > +(char_ - char_(" \r\n")) > *ws> +(char_ - char_(" \r\n")) > *lit(" ") > "\r\n";
+    auto MetaParser_def = +(char_ - char_(" \r\n")) > *ws > +(char_ - char_(" \r\n")) > *ws> +(char_ - char_("\r\n")) > *lit(" ") > "\r\n";
     BOOST_PARSER_DEFINE_RULES(MetaParser);
     rule<struct HttpHeaderParser, std::pair<std::string, std::string>> HttpHeaderParser= "HttpHeaderParser";
     auto HttpHeaderParser_def = +(char_ - char_(" :\r\n"))> *lit(" ") > ':' > *ws> +(char_- "\r\n")> "\r\n";
