@@ -33,9 +33,11 @@ using namespace  boost::parser;
 int main(int argc, char* argv[]) {
     obelisk::http::client::aliyun_request req("hTtp://loocalhost:9999?kdacque=1", "GET");
 
+
     try {
         sahara::log::initialize();
         boost::asio::io_context ioctx;
+        boost::asio::co_spawn(ioctx, req.send(), boost::asio::detached);
         obelisk::http::framework::init(ioctx);
         obelisk::http::http_server server(ioctx);
         boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
