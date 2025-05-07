@@ -28,12 +28,13 @@
 #include "obelisk/http/exception/protocol_exception.h"
 #include "obelisk/http/middleware/url_params_extract.h"
 #include "obelisk/http/core/http_iodata_stream_wrapper.h"
+#include "obelisk/http/core/io.h"
 #include "obelisk/http/middleware/json_extract.h"
 #include "obelisk/http/middleware/multipart_extract.h"
 
 
 namespace obelisk::http {
-    http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx), signals_(ctx, SIGINT, SIGTERM) {
+    http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx), signals_(ctx, SIGINT, SIGTERM, SIGABRT) {
         reg_middleware(std::make_unique<middleware::url_params_extract>());
         reg_middleware(std::make_unique<middleware::multipart_extract>());
         reg_middleware(std::make_unique<middleware::json_extract>());
@@ -84,8 +85,8 @@ namespace obelisk::http {
             std::unique_ptr<http_response> response;
             std::unique_ptr<http_request_wrapper> request;
             try {
-                auto header = co_await receive_header_(socket, buffer);;
-                std::unique_ptr<std::iostream> body = co_await receive_body_(socket, buffer, header);
+                auto header = co_await core::io::receive_header_(socket, buffer);;
+                std::unique_ptr<std::iostream> body = co_await core::io::receive_body_(socket, buffer, header);
 
                 // Running Middleware
                 request = std::make_unique<http_request_wrapper>(ioctx_, header, std::move(body));
@@ -167,74 +168,8 @@ namespace obelisk::http {
                     co_await middleware->after_handle(*request, *response);
                 }
                 std::unique_ptr<core::http_iodata> response_data = response->serialize();
-                co_await write_response_(socket, response_data);
+                co_await core::io::write_data_(socket, response_data);
             }
         }
-    }
-
-    obelisk::task<http::core::raw::http_header_raw> http_server::receive_header_(
-        boost::asio::ip::tcp::socket&socket, boost::asio::streambuf&buffer) {
-        core::raw::http_header_raw header{};
-        std::string_view bytes_view;
-        do {
-            const auto [ec, bytes_transferred] = co_await socket.async_read_some(
-                buffer.prepare(1024 * 10), boost::asio::as_tuple(obelisk::use_token));
-            buffer.commit(bytes_transferred);
-            bytes_view = std::string_view(static_cast<const char *>(buffer.data().data()), buffer.size());
-        }
-        while (buffer.size() < 1024 * 10 && !bytes_view.contains("\r\n\r\n"));
-
-        if (!bytes_view.contains("\r\n\r\n"))
-            throw protocol_exception("Header Size Exceed, Shutting Down!");
-
-        bytes_view = std::string_view(bytes_view.data(), bytes_view.find("\r\n\r\n") + 4);
-        if (!parser_v3::parse_http_header(bytes_view, header))
-            throw protocol_exception("Header Parse Failed, Shutting Down!");
-        buffer.consume(bytes_view.size());
-        co_return header;
-    }
-
-    obelisk::task<std::unique_ptr<std::iostream>> http_server::receive_body_(boost::asio::ip::tcp::socket&socket, boost::asio::streambuf&buffer, core::raw::http_header_raw&header) {
-        if (!header.headers_.contains("Content-Length")) {
-            co_return nullptr;
-        }
-        const auto content_length = std::stoul(header.headers_["Content-Length"]);
-        if (content_length == 0) co_return nullptr;
-
-        std::unique_ptr<std::iostream> ret;
-        if (content_length < 1024 * 1024 * 1)
-            ret = std::make_unique<std::stringstream>();
-        else
-            ret = std::make_unique<http_temp_fstream>("./" + sahara::utils::uuid::generate());
-
-        uint32_t total_transferred = 0;
-        if(buffer.size() > 0) {
-            total_transferred = std::min<uint32_t>(buffer.size(), content_length);
-            ret->write(static_cast<const char *>(buffer.data().data()), total_transferred);
-            buffer.consume(total_transferred);
-        }
-        while (total_transferred < content_length) {
-            const auto bytes_wanna_read = std::min<uint32_t>(content_length - total_transferred, 1024 * 10);
-            const auto transferred = co_await socket.async_read_some(buffer.prepare(bytes_wanna_read), obelisk::use_token);
-            buffer.commit(transferred);
-            total_transferred += transferred;
-            ret->write(static_cast<const char *>(buffer.data().data()), transferred);
-            buffer.consume(transferred);
-        }
-
-        ret->flush();
-        co_return ret;
-    }
-
-    obelisk::task<void> http_server::write_response_(boost::asio::ip::tcp::socket&socket, const std::unique_ptr<core::http_iodata>&response) {
-        unsigned char buffer[1024 * 256] = {};
-        while (!response->eof()) {
-            const auto bytes_read = response->read(buffer, 1024 * 256);
-            std::uint64_t bytes_transferred = 0;
-            while (bytes_transferred< bytes_read){
-                bytes_transferred += co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), obelisk::use_token);
-            }
-        }
-        co_return;
     }
 } // http::obelisk

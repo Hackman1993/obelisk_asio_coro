@@ -25,17 +25,26 @@
 #include <sahara/log/log.h>
 #include <obelisk/http/framework.h>
 #include <obelisk/core/coroutine/async_mutex.h>
+#include <obelisk/http/core/http_client.h>
+
 #include "module/default/default_.h"
 #include "obelisk/http/client/aliyun_request.h"
 #include "obelisk/http/client/request.h"
 using namespace  boost::parser;
+boost::asio::awaitable<void> test()
+{
+    obelisk::http::core::http_client client;
+    co_await client.send_request("https://www.baidu.com/", "GET", {}, nullptr);
+}
 
 int main(int argc, char* argv[]) {
-    obelisk::http::client::aliyun_request req("hTtp://loocalhost:9999?kdacque=1", "GET");
+
 
     try {
         sahara::log::initialize();
         boost::asio::io_context ioctx;
+
+        boost::asio::co_spawn(ioctx, test, boost::asio::detached);
         obelisk::http::framework::init(ioctx);
         obelisk::http::http_server server(ioctx);
         boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
