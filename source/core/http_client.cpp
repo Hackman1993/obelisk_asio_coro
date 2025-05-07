@@ -53,6 +53,7 @@ namespace obelisk::http::core {
                 _ssl_context = std::make_unique<ssl::context>(ssl::context::tlsv12_client);
                 _ssl_context->set_verify_mode(ssl::verify_peer);
                 _ssl_context->set_default_verify_paths();
+                _ssl_context->add_verify_path("/etc/ssl/certs/");
             }
 
             ssl::stream<ip::tcp::socket> stream(std::move(socket), *_ssl_context);
