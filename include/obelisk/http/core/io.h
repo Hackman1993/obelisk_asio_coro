@@ -5,6 +5,7 @@
 #ifndef OBELISK_HTTP_CORE_IO_H
 #define OBELISK_HTTP_CORE_IO_H
 #include <iostream>
+#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/asio/awaitable.hpp>
@@ -14,8 +15,9 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <obelisk/http/exception/protocol_exception.h>
 #include <obelisk/http/parser/http_parser_v3.h>
-
+#include <boost/iostreams/filtering_stream.hpp>
 #include "raw.h"
+#include <boost/iostreams/filter/gzip.hpp>
 namespace obelisk::http::core
 {
     using namespace boost::asio;
@@ -30,6 +32,7 @@ namespace obelisk::http::core
                 const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), as_tuple(use_awaitable));
                 buffer.commit(bytes_transferred);
                 bytes_view = std::string_view(static_cast<const char *>(buffer.data().data()), buffer.size());
+                if (ec) break;
             }
             while (buffer.size() < 1024 * 10 && !bytes_view.contains("\r\n\r\n"));
 
@@ -46,7 +49,7 @@ namespace obelisk::http::core
         static awaitable<std::unique_ptr<std::iostream>> receive_body_(StreamType &socket, streambuf& buffer, raw::http_header_raw& header)
         {
             if (header.headers_.contains("Transfer-Encoding") && boost::algorithm::iequals(header.headers_["Transfer-Encoding"], "chunked")) {
-                co_return co_await receive_chunked_body_(socket, buffer);
+                co_return co_await receive_chunked_body_(socket, buffer, header.headers_["Content-Encoding"]);
             }
             if (!header.headers_.contains("Connection") || boost::algorithm::iequals(header.headers_["Connection"], "close")) {
                 co_return co_await receive_until_dead_(socket, buffer);
@@ -98,10 +101,69 @@ namespace obelisk::http::core
 
     private:
         template<typename StreamType>
-        static awaitable<std::unique_ptr<std::iostream>> receive_chunked_body_(StreamType& stream, streambuf& buffer)
+        static awaitable<std::unique_ptr<std::iostream>> receive_chunked_body_(StreamType& stream, streambuf& buffer, const std::string& encoding)
         {
-            std::cout << "Chunked is Not Implemented" << std::endl;
-            co_return nullptr;
+            auto stream_ptr = std::make_unique<http_temp_fstream>("./temp/" + sahara::utils::uuid::generate());
+            boost::iostreams::filtering_ostream out;
+            if (encoding == "gzip")
+                out.push(boost::iostreams::gzip_decompressor());
+            out.push(*stream_ptr);
+
+            do
+            {
+                auto size_pos = co_await receive_until_(stream, buffer, "\r\n");
+                std::string_view size_view(static_cast<const char *>(buffer.data().data()), size_pos);
+                auto content_length = std::stoull(std::string(size_view),nullptr , 16);
+                buffer.consume(size_pos + 2);
+                if (content_length == 0) break;
+
+                std::uint64_t bytes_should_transferred = content_length;
+                do
+                {
+                    std::string_view v1(static_cast<const char *>(buffer.data().data()), buffer.data().size());
+                    auto received = co_await receive_until_(stream, buffer, std::min<uint64_t>(bytes_should_transferred, 1024 * 10));
+                    bytes_should_transferred -= received;
+
+                    out.write(static_cast<const char *>(buffer.data().data()), received);
+                    buffer.consume(received);
+                }while (bytes_should_transferred>0);
+                co_await receive_until_(stream, buffer, 2);
+                buffer.consume(2);
+            }while (true);
+            co_await receive_until_(stream, buffer, 2);
+            buffer.consume(2);
+            co_return stream_ptr;
+        }
+
+        template <typename StreamType>
+        static awaitable<std::uint64_t> receive_until_(StreamType& stream, streambuf& buffer, const std::string& delimiter)
+        {
+            std::string_view bytes_view(static_cast<const char *>(buffer.data().data()), buffer.size());
+            do {
+                if (auto pos = bytes_view.find(delimiter); pos != std::string_view::npos)
+                    co_return pos;
+                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), as_tuple(use_awaitable));
+                buffer.commit(bytes_transferred);
+                bytes_view = std::string_view(static_cast<const char *>(buffer.data().data()), buffer.size());
+                if (ec) break;
+            }while (buffer.size() < 1024 * 10 && !bytes_view.contains(delimiter));
+
+            auto pos = bytes_view.find(delimiter);
+            if (pos == std::string_view::npos)
+                throw protocol_exception("Protocol Error, Shutting Down!");
+            co_return pos;
+        }
+
+        template <typename StreamType>
+        static awaitable<std::uint64_t> receive_until_(StreamType& stream, streambuf& buffer, std::uint64_t size)
+        {
+            if (buffer.size()>=size) co_return std::min(buffer.size(), size);
+            do {
+                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), as_tuple(use_awaitable));
+                buffer.commit(bytes_transferred);
+                if (ec) throw protocol_exception("Protocol Error, Shutting Down!");
+            }while (buffer.size() < std::min<std::uint64_t>(size  , 1024 * 10));
+            co_return std::min(buffer.size(), size);
         }
 
         template<typename StreamType>

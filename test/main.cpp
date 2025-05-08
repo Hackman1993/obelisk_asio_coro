@@ -33,8 +33,13 @@
 using namespace  boost::parser;
 boost::asio::awaitable<void> test()
 {
+    try{
     obelisk::http::core::http_client client;
-    co_await client.send_request("https://www.baidu.com/", "GET", {}, nullptr);
+    co_await client.send_request("http://api.i4u.icu/api", "GET", {}, nullptr);
+    }catch (std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -43,11 +48,10 @@ int main(int argc, char* argv[]) {
     try {
         sahara::log::initialize();
         boost::asio::io_context ioctx;
-
-        boost::asio::co_spawn(ioctx, test, boost::asio::detached);
         obelisk::http::framework::init(ioctx);
+        boost::asio::co_spawn(ioctx, test, boost::asio::detached);
         obelisk::http::http_server server(ioctx);
-        boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
+        //boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
         server.reg_middleware(std::make_unique<middleware::cors>());
 
         server.route("/auth/login", controller::auth_controller::login)->method({"POST"});

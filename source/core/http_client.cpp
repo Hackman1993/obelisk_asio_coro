@@ -34,16 +34,17 @@ namespace obelisk::http::core {
         raw.meta_.p3_ = "HTTP/1.1";
         raw.headers_.emplace("Host", std::format("{}{}", match["domain"].str(), match["port"].matched? ":" + match["port"].str(): ""));
         raw.headers_.emplace("Accept", "*/*");
-        raw.headers_.emplace("Accept-Encoding", "deflate,br");
-
-
+        raw.headers_.emplace("Accept-Encoding", "gzip,deflate,br");
 
         ip::tcp::resolver resolver(executor);
-        auto [ec, endpoints] = co_await resolver.async_resolve(match["domain"].str(), port, boost::asio::as_tuple(boost::asio::use_awaitable));
+
+        auto [ec, endpoints] = co_await resolver.async_resolve(ip::tcp::v4(), match["domain"].str(), port, boost::asio::as_tuple(boost::asio::use_awaitable));
+        if (ec)
+            throw std::logic_error(ec.message());
 
         ip::tcp::socket socket(executor);
         if (auto [connect_ec, ep] = co_await async_connect(socket, endpoints, as_tuple(use_awaitable)); connect_ec)
-            throw std::logic_error(ec.message());
+            throw std::logic_error(connect_ec.message());
 
         auto data  = make_iodata_(raw, std::move(body));
         if (use_ssl)
@@ -53,9 +54,7 @@ namespace obelisk::http::core {
                 _ssl_context = std::make_unique<ssl::context>(ssl::context::tlsv12_client);
                 _ssl_context->set_verify_mode(ssl::verify_peer);
                 _ssl_context->set_default_verify_paths();
-                _ssl_context->add_verify_path("/etc/ssl/certs/");
             }
-
             ssl::stream<ip::tcp::socket> stream(std::move(socket), *_ssl_context);
 
             if (auto [handshake_ec] = co_await stream.async_handshake(ssl::stream_base::client, as_tuple(use_awaitable)); handshake_ec)
