@@ -1,21 +1,28 @@
 #ifndef HTTP_IODATA_STREAM_WRAPPER_H
 #define HTTP_IODATA_STREAM_WRAPPER_H
-#include "http_iodata.h"
+#include "io_data.h"
 namespace obelisk::http::core {
 
-    class http_data_istream_wrapper final : public http_iodata{
+    class http_data_istream_wrapper final : public base_iodata{
     public:
         http_data_istream_wrapper(std::unique_ptr<std::iostream> t, uint64_t length) : value_(std::move(t)), length_(length){};
+        void seekg(std::int64_t pos) override
+        {
+            if (value_)
+                value_->seekg(pos);
+        }
 
         explicit http_data_istream_wrapper(std::unique_ptr<std::iostream> t) : value_(std::move(t))
         {
-            const auto current_pos = value_->tellg();
-            if (current_pos == -1)
-                throw std::runtime_error("Stream is not seekable");
+            if (!value_)
+            {
+                length_ = 0;
+                return;
+            }
             value_->seekg(0, std::ios_base::end);
             const auto end_pos = value_->tellg();
-            length_ = end_pos - current_pos;
-            value_->seekg(current_pos);
+            length_ = end_pos;
+            value_->seekg(std::ios::beg);
         }
 
         ~http_data_istream_wrapper() override;

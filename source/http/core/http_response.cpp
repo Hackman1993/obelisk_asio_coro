@@ -61,7 +61,7 @@ namespace obelisk::http {
         return header_.headers_;
     }
 
-    std::unique_ptr<core::http_iodata> http_response::serialize_header() {
+    std::unique_ptr<core::base_iodata> http_response::serialize_header() {
         auto ss = std::make_unique<std::stringstream>();
         *ss << header_.meta_.p1_ << " " << header_.meta_.p2_ << " " << header_.meta_.p3_ << "\r\n";
         for(auto &header: header_.headers_){
@@ -71,12 +71,12 @@ namespace obelisk::http {
         return std::make_unique<core::http_data_istream_wrapper>(std::move(ss), ss->str().length());
     }
 
-    std::unique_ptr<core::http_iodata> http_response::serialize() {
+    std::unique_ptr<core::base_iodata> http_response::serialize() {
         if(body_)
             header_.headers_.emplace("Content-Length", std::to_string(body_->size()));
         auto header = serialize_header();
 
-        auto result = std::make_unique<core::http_multi_source_iodata>();
+        auto result = std::make_unique<core::multi_stream_iodata>();
         result->append(std::move(header));
         if(body_)
             result->append(std::move(body_));

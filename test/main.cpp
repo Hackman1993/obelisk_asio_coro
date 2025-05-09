@@ -25,17 +25,20 @@
 #include <sahara/log/log.h>
 #include <obelisk/http/framework.h>
 #include <obelisk/core/coroutine/async_mutex.h>
-#include <obelisk/http/core/http_client.h>
+#include <obelisk/http/core/base_client.h>
 
+#include "clients/aliyun_oss_client.h"
 #include "module/default/default_.h"
-#include "obelisk/http/client/aliyun_request.h"
+#include "obelisk/http/client/aliyun_client.h"
 #include "obelisk/http/client/request.h"
 using namespace  boost::parser;
 boost::asio::awaitable<void> test()
 {
     try{
-    obelisk::http::core::http_client client;
-    co_await client.send_request("http://api.i4u.icu/api", "GET", {}, nullptr);
+        std::cout << __cplusplus<< ","<<__cpp_concepts<< std::endl;
+        aliyun_oss_client client("","","cn-chengdu","oss-cn-chengdu.aliyuncs.com","");
+        auto t = co_await client.exists("assets/uploaded/2034041379019_87759aef39.mp4");
+        std::cout << t << std::endl;
     }catch (std::exception& e)
     {
         std::cout << e.what() << std::endl;

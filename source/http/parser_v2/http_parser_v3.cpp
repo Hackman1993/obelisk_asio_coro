@@ -42,6 +42,9 @@ namespace obelisk::http {
 
     BOOST_PARSER_DEFINE_RULES(MultipartMetaNameParser, MultipartMetaFileNameParser, MultipartMetaFormDataParser, MultipartMetaParser)
     auto MultipartBoundaryParser = no_case[lit("multipart/form-data;")] > *ws > no_case[lit("boundary=")] > *ws >> +(char_ - char_("\r\n")) > *ws;
+    rule<struct UrlEncodedDataName, std::pair<std::string, std::string>> UrlEncodedDataParser= "UrlEncodedDataName";
+    auto UrlEncodedDataParser_def = *(char_ - char_("=&")) >> -lit("=") >> *(char_ - char_("&"));
+    BOOST_PARSER_DEFINE_RULES(UrlEncodedDataParser);
 
     //auto ContentTypeParser= no_case[lit("Content-Type")] > ":" > lexeme[*char_-"\r\n"];
     // auto ServerUrlParser = lexeme[(char_("/") > *(char_-char_(" \r\n")))];
@@ -209,24 +212,22 @@ namespace obelisk::http {
         return true;
     }
 
-    bool parser_v3::parse_urlencoded_param(http_request_wrapper &request, std::string_view data) {
+    bool parser_v3::parse_urlencoded_param(std::unordered_map<std::string, nlohmann::json>& params, std::string_view data) {
+        if (!parse(data, UrlEncodedDataParser % '&', params))
+            throw protocol_exception("UrlEncodedData Parse Failed!");
 
-        // std::vector<std::pair<std::string, std::string>> params;
-        // if (!parse(data.begin(), data.end(), UrlEncodedData % '&', params))
-        //     throw protocol_exception("UrlEncodedData Parse Failed!");
-        //
-        // for (auto &[key, val]: params) {
-        //     auto item_key = key.substr(0, key.rfind("[]"));
-        //     bool is_array = key.ends_with("[]");
-        //     if(is_array && !request.request_params_.contains(key)) {
-        //         request.request_params_[key] = boost::json::array{};
-        //     }
-        //     if(is_array) {
-        //         request.request_params_[key].as_array().emplace_back(val);
-        //     } else {
-        //         request.request_params_[key] = boost::json::value(val);
-        //     }
-        // }
+        for (auto &[key, val]: params) {
+            auto item_key = key.substr(0, key.rfind("[]"));
+            bool is_array = key.ends_with("[]");
+            if(is_array && !params.contains(key)) {
+                params[key] = nlohmann::json::array();
+            }
+            if(is_array) {
+                params[key].emplace_back(val);
+            } else {
+                params[key] = val;
+            }
+        }
         return true;
     }
 

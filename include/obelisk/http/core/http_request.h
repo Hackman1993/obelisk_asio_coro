@@ -20,7 +20,7 @@ namespace obelisk::http {
     class parser_v3;
     class http_connection;
 
-    class http_temp_fstream : public std::fstream {
+    class http_temp_fstream final : public std::fstream {
     public:
         explicit http_temp_fstream(std::string path);
         ~http_temp_fstream() override;
@@ -76,7 +76,6 @@ namespace obelisk::http {
 
     protected:
         core::raw::http_header_raw header_;
-        //std::shared_ptr<http_block_data> data_;
         std::string_view path_;
         std::string_view content_type_;
         std::uint64_t content_length_ = 0;
@@ -131,8 +130,8 @@ namespace obelisk::http {
         std::unordered_map<std::string, nlohmann::json> request_params_;
         std::unordered_map<std::string, std::any> additional_data_;
 
-        friend class obelisk::http::parser_v2;
-        friend class obelisk::http::parser_v3;
+        friend class parser_v2;
+        friend class parser_v3;
     };
 } // core
 

@@ -15,7 +15,7 @@ namespace obelisk::http::middleware {
     obelisk::task<std::unique_ptr<http_response>> url_params_extract::pre_handle(http_request_wrapper&request) {
         const auto query = sahara::string_ext::url_decode(request.query_string());
         if (!query.empty()) {
-            if (!parser_v3::parse_urlencoded_param(request, query)) {
+            if (!parser_v3::parse_urlencoded_param(request.params(), query)) {
                 throw protocol_exception("UrlEncodedData Parse Failed!");
             }
         }
@@ -30,7 +30,7 @@ namespace obelisk::http::middleware {
             const std::istream_iterator<unsigned char> beg_itr(*body_stream), end_itr;
             std::copy(beg_itr,end_itr,std::back_inserter(body_str));
             if (!body_str.empty()) {
-                if (!parser_v3::parse_urlencoded_param(request, body_str)) {
+                if (!parser_v3::parse_urlencoded_param(request.params(), body_str)) {
                     throw protocol_exception("UrlEncodedData Parse Failed!");
                 }
             }

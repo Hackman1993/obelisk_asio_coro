@@ -12,15 +12,21 @@ namespace obelisk::http {
     class http_response {
     public:
         explicit http_response(EResponseCode code);
+        explicit http_response(core::raw::http_header_raw header, std::unique_ptr<core::base_iodata> body = nullptr): header_(std::move(header)), body_(std::move(body)) {};
 
         virtual ~http_response() = default;
         virtual std::uint64_t content_length();
         virtual sahara::container::unordered_smap_u<std::string>& headers();
-        virtual std::unique_ptr<core::http_iodata> serialize_header();
-        virtual std::unique_ptr<core::http_iodata> serialize();
+        virtual std::unique_ptr<core::base_iodata> serialize_header();
+        virtual std::unique_ptr<core::base_iodata> serialize();
+        const core::raw::http_header_raw& header_raw(){return header_;}
+        const std::unique_ptr<core::base_iodata>& response_body()
+        {
+            return body_;
+        }
     protected:
-        http_header header_;
-        std::unique_ptr<core::http_iodata> body_;
+        core::raw::http_header_raw header_;
+        std::unique_ptr<core::base_iodata> body_;
         static std::unordered_map<EResponseCode, std::string> resp_status_map_;
     };
 

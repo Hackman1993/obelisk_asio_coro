@@ -54,6 +54,7 @@ namespace obelisk::http::core
             if (!header.headers_.contains("Connection") || boost::algorithm::iequals(header.headers_["Connection"], "close")) {
                 co_return co_await receive_until_dead_(socket, buffer);
             }
+            if (!header.headers_.contains("Content-Length")) co_return nullptr;
             const auto content_length = std::stoul(header.headers_["Content-Length"]);
             if (content_length == 0) co_return nullptr;
 
@@ -84,7 +85,7 @@ namespace obelisk::http::core
         }
 
         template <typename StreamType>
-        static awaitable<void> write_data_(StreamType& socket, const std::unique_ptr<http_iodata>& response)
+        static awaitable<void> write_data_(StreamType& socket, const std::unique_ptr<base_iodata>& response)
         {
             unsigned char buffer[1024 * 256] = {};
             while (!response->eof()) {

@@ -2,7 +2,7 @@
 // Created by Hackman.Lo on 2024/9/23.
 //
 
-#include "obelisk/http/core/http_client.h"
+#include "obelisk/http/core/base_client.h"
 #include "obelisk/http/core/http_response.h"
 #include <iostream>
 #include <sahara/log/log.h>
@@ -17,9 +17,9 @@
 #include "obelisk/http/core/http_iodata_stream_wrapper.h"
 namespace obelisk::http::core {
     using namespace  boost::asio;
-    std::unique_ptr<ssl::context> http_client::_ssl_context = nullptr;
+    std::unique_ptr<ssl::context> base_client::_ssl_context = nullptr;
 
-    awaitable<std::shared_ptr<http_response>>http_client::send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers,std::unique_ptr<http_iodata> body) {
+    awaitable<std::unique_ptr<http_response>>base_client::send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers,std::unique_ptr<base_iodata> body) {
         auto executor = co_await this_coro::executor;
         boost::regex url_regex(R"(^(?<protocol>http|https):\/\/(?<domain>[a-zA-Z0-9.-]+)(?::(?<port>\d+))?(?<path>/[^?]*)?(?:\?(?<query>[^#]*))?$)", boost::regex::icase | boost::regex::no_char_classes);
 
@@ -35,9 +35,13 @@ namespace obelisk::http::core {
         raw.headers_.emplace("Host", std::format("{}{}", match["domain"].str(), match["port"].matched? ":" + match["port"].str(): ""));
         raw.headers_.emplace("Accept", "*/*");
         raw.headers_.emplace("Accept-Encoding", "gzip,deflate,br");
+        for (auto& [fst, snd]: headers)
+            raw.headers_.emplace(fst, snd);
+
+        auto raw_request = raw::http_request_raw{raw, std::move(body)};
+        this->before_send_(raw_request);
 
         ip::tcp::resolver resolver(executor);
-
         auto [ec, endpoints] = co_await resolver.async_resolve(ip::tcp::v4(), match["domain"].str(), port, boost::asio::as_tuple(boost::asio::use_awaitable));
         if (ec)
             throw std::logic_error(ec.message());
@@ -46,7 +50,7 @@ namespace obelisk::http::core {
         if (auto [connect_ec, ep] = co_await async_connect(socket, endpoints, as_tuple(use_awaitable)); connect_ec)
             throw std::logic_error(connect_ec.message());
 
-        auto data  = make_iodata_(raw, std::move(body));
+        auto data  = make_iodata_(raw, std::move(raw_request.body_));
         if (use_ssl)
         {
             if (!_ssl_context)
@@ -54,6 +58,7 @@ namespace obelisk::http::core {
                 _ssl_context = std::make_unique<ssl::context>(ssl::context::tlsv12_client);
                 _ssl_context->set_verify_mode(ssl::verify_peer);
                 _ssl_context->set_default_verify_paths();
+                _ssl_context->add_verify_path("/etc/ssl/certs/");
             }
             ssl::stream<ip::tcp::socket> stream(std::move(socket), *_ssl_context);
 
@@ -62,24 +67,20 @@ namespace obelisk::http::core {
                 std::cout << handshake_ec.message() << std::endl;
                 throw std::logic_error(handshake_ec.message());
             }
-            co_await perform_request_(stream, data);
-        }else
-            co_await perform_request_(socket, data);
-
-        co_return nullptr;
+            co_return co_await perform_request_(stream, data, method);
+        }
+        co_return co_await perform_request_(socket, data, method);
     }
 
-    std::unique_ptr<http_iodata> http_client::make_iodata_(raw::http_header_raw& raw_header, std::unique_ptr<http_iodata> body)
+    std::unique_ptr<base_iodata> base_client::make_iodata_(raw::http_header_raw& raw_header, std::unique_ptr<base_iodata> body)
     {
-        auto result =  std::make_unique<http_multi_source_iodata>();
+        auto result =  std::make_unique<multi_stream_iodata>();
         auto ssp = std::make_unique<std::stringstream>();
         (*ssp) << std::format( "{} {} HTTP/1.1\r\n", raw_header.meta_.p1_, raw_header.meta_.p2_);
         for(auto & [fst, snd]: raw_header.headers_)
             (*ssp) << std::format("{}: {}\r\n", fst, snd);
         (*ssp) << "\r\n";
-        std::cout << ssp->str() << ssp->str().length() << std::endl;
         result->append(std::make_unique<http_data_istream_wrapper>(std::move(ssp)));
-
         if(body)
             result->append(std::move(body));
         return result;

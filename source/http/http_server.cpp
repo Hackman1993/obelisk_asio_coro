@@ -167,7 +167,7 @@ namespace obelisk::http {
                 for (auto&middleware: middlewares_) {
                     co_await middleware->after_handle(*request, *response);
                 }
-                std::unique_ptr<core::http_iodata> response_data = response->serialize();
+                std::unique_ptr<core::base_iodata> response_data = response->serialize();
                 co_await core::io::write_data_(socket, response_data);
             }
         }

@@ -1,15 +1,15 @@
-#include "obelisk/http/core/http_iodata.h"
+#include "obelisk/http/core/io_data.h"
 
 namespace obelisk::http::core {
 
-    void http_multi_source_iodata::append(std::unique_ptr<http_iodata> stream) {
+    void multi_stream_iodata::append(std::unique_ptr<base_iodata> stream) {
         datas_.push_back(std::move(stream));
     }
 
-    http_multi_source_iodata::~http_multi_source_iodata() {
+    multi_stream_iodata::~multi_stream_iodata() {
     }
 
-    std::streamsize http_multi_source_iodata::read(unsigned char* buffer, uint32_t length) {
+    std::streamsize multi_stream_iodata::read(unsigned char* buffer, uint32_t length) {
         if(offset_ >= datas_.size()) return 0;
         std::streamsize total_read = 0;
         do {
@@ -20,7 +20,7 @@ namespace obelisk::http::core {
         return total_read;
     }
 
-    uint64_t http_multi_source_iodata::size() {
+    uint64_t multi_stream_iodata::size() {
         std::uint64_t ret = 0;
         for(auto &s : datas_) {
             ret += s->size();
@@ -28,10 +28,10 @@ namespace obelisk::http::core {
         return ret;
     }
 
-    bool http_multi_source_iodata::eof() {
+    bool multi_stream_iodata::eof() {
         return offset_ >= datas_.size();
     }
-std::streamsize http_multi_source_iodata::write(unsigned char* buffer, uint32_t length) {
+std::streamsize multi_stream_iodata::write(unsigned char* buffer, uint32_t length) {
         return 0;
 }
 } // obelisk
