@@ -28,21 +28,20 @@
 #include <obelisk/http/core/base_client.h>
 
 #include "clients/aliyun_oss_client.h"
+#include "clients/aliyun_sms_client.h"
 #include "module/default/default_.h"
-#include "obelisk/http/client/aliyun_client.h"
 #include "obelisk/http/client/request.h"
 using namespace  boost::parser;
 boost::asio::awaitable<void> test()
 {
     try{
-        std::cout << __cplusplus<< ","<<__cpp_concepts<< std::endl;
-        aliyun_oss_client client("","","cn-chengdu","oss-cn-chengdu.aliyuncs.com","");
-        auto t = co_await client.exists("assets/uploaded/2034041379019_87759aef39.mp4");
-        std::cout << t << std::endl;
+
+        // std::cout << t << std::endl;
     }catch (std::exception& e)
     {
         std::cout << e.what() << std::endl;
     }
+    co_return;
 }
 
 int main(int argc, char* argv[]) {

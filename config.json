@@ -1,4 +1,5 @@
 {
+  "debug": true,
   "network": {
     "addresses": ["0.0.0.0:3308"]
   },
@@ -9,8 +10,23 @@
       "port": 3306,
       "user": "root",
       "password": "hl97005497--",
-      "database": "test",
+      "database": "obelisk",
       "prefix": "t_"
     }
+  },
+  "storage": {
+    "default": {
+      "type": "",
+      "access_key_id":"",
+      "access_key_secret": "",
+      "region": "cn-chengdu",
+      "bucket": ""
+    }
+  },
+  "sms": {
+    "ak_id": "",
+    "ak_secret": "",
+    "sign_name": "",
+    "template": ""
   }
 }
