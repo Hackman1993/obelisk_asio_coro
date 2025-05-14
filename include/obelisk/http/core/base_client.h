@@ -17,19 +17,18 @@
 namespace obelisk::http{
     class http_response;
     namespace core {
-        using namespace boost::asio;
         class base_client {
 
         public:
             explicit base_client() = default;
             explicit base_client(std::unique_ptr<client::signer::base_signer> signer):signer_(std::move(signer)) {}
-            virtual awaitable<std::unique_ptr<http_response>> send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers, std::unique_ptr<base_iodata> body);
+            virtual boost::asio::awaitable<std::unique_ptr<http_response>> send_request(const std::string &uri, const std::string& method, std::unordered_map<std::string, std::string> headers, std::unique_ptr<base_iodata> body);
             virtual ~base_client() = default;
         protected:
             template<typename StreamType>
-            static awaitable<std::unique_ptr<http_response>> perform_request_(StreamType& stream,const std::unique_ptr<base_iodata>& data, const std::string& method) {
+            static boost::asio::awaitable<std::unique_ptr<http_response>> perform_request_(StreamType& stream,const std::unique_ptr<base_iodata>& data, const std::string& method) {
                 co_await io::write_data_(stream, data);
-                streambuf buff;
+                boost::asio::streambuf buff;
                 auto response_header_raw = co_await io::receive_header_(stream, buff);
                 std::unique_ptr<std::iostream> response_body;
                 if (method!="HEAD")
@@ -39,7 +38,7 @@ namespace obelisk::http{
                 co_return std::make_unique<http_response>(response_header_raw, response_body?std::make_unique<http_data_istream_wrapper>(std::move(response_body)):nullptr);
             }
             static std::unique_ptr<base_iodata> make_iodata_(raw::http_request_raw& request);
-            static std::unique_ptr<ssl::context> _ssl_context;
+            static std::unique_ptr<boost::asio::ssl::context> _ssl_context;
             std::unique_ptr<client::signer::base_signer> signer_;
         };
     }

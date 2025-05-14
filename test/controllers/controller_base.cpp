@@ -10,9 +10,6 @@
 #include <sahara/log/log.h>
 #include <boost/mysql.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/asio/as_tuple.hpp>
-
-#include "common/global_configuration.h"
 #include "obelisk/database/mysql/mysql_connection.h"
 #include <nlohmann/json.hpp>
 std::unique_ptr<obelisk::http::http_response> controller_base::json_response(const boost::mysql::results &result,const std::unordered_map<std::string, boost::json::value>& additional_field, obelisk::http::EResponseCode code) {

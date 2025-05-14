@@ -32,28 +32,14 @@
 #include "module/default/default_.h"
 #include "obelisk/http/client/request.h"
 using namespace  boost::parser;
-boost::asio::awaitable<void> test()
-{
-    try{
-
-        // std::cout << t << std::endl;
-    }catch (std::exception& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
-    co_return;
-}
 
 int main(int argc, char* argv[]) {
-
-
     try {
         sahara::log::initialize();
         boost::asio::io_context ioctx;
         obelisk::http::framework::init(ioctx);
-        boost::asio::co_spawn(ioctx, test, boost::asio::detached);
         obelisk::http::http_server server(ioctx);
-        //boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
+        boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
         server.reg_middleware(std::make_unique<middleware::cors>());
 
         server.route("/auth/login", controller::auth_controller::login)->method({"POST"});

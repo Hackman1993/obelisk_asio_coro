@@ -8,13 +8,12 @@
 
 namespace obelisk::http
 {
-    using namespace boost::asio;
     class base_fs {
     public:
         virtual ~base_fs() = default;
-        virtual awaitable<bool> exists(const std::string& path) = 0;
-        virtual awaitable<bool> save(const std::string& path, std::unique_ptr<std::iostream> file) = 0;
-        virtual awaitable<bool> remove(const std::string& path) = 0;
+        virtual boost::asio::awaitable<bool> exists(const std::string& path) = 0;
+        virtual boost::asio::awaitable<bool> save(const std::string& path, std::unique_ptr<std::iostream> file) = 0;
+        virtual boost::asio::awaitable<bool> remove(const std::string& path) = 0;
     };
 
 }

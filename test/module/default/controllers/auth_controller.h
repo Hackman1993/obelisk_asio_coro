@@ -34,7 +34,8 @@ namespace module::default_::controllers
         }
         if (!sahara::hash::bcrypt::validatePassword(request.params()["password"].get<std::string>(), result.rows()[0][2].as_string()))
             throw obelisk::http::http_exception("server.error.invalid_credential", obelisk::http::EST_UNAUTHORIZED);
-        auto access_token = sahara::utils::uuid::generate();
+
+        auto access_token = boost::algorithm::replace_all_copy(sahara::utils::uuid::generate(), "-", "");
         co_await obelisk::database::db::insert("sys_access_tokens").values({
             {"fn_target_id", result.rows()[0][0].as_uint64()},
             {"target_key", "sys_admins"},

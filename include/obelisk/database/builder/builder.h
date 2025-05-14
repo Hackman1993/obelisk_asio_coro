@@ -145,6 +145,11 @@ namespace obelisk::database::query
             auto result = co_await connection->co_query(compile());
             co_return result;
         }
+        boost::asio::awaitable<std::uint64_t> count()
+        {
+            auto result = co_await get();
+            co_return result.rows().size();
+        }
 
         // template<typename... Args>
         // builder& where(Args&&... args) {

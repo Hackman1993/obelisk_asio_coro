@@ -10,7 +10,7 @@ class aliyun_oss_client final : public obelisk::http::base_fs{
 public:
 
     aliyun_oss_client(std::string ak_id, std::string ak_secret, std::string region, std::string bucket):
-        http_client_(std::make_unique<obelisk::http::client::signer::aliyun_oss>(ak_id, ak_secret, region, bucket)),ak_id_(std::move(ak_id)), ak_secret_(std::move(ak_secret)), bucket_(std::move(bucket)), region_(std::move(region))
+        http_client_(std::make_unique<obelisk::http::client::signer::aliyun_oss>(ak_id, ak_secret, region, bucket)), bucket_(std::move(bucket)), region_(std::move(region))
     {
     }
     boost::asio::awaitable<bool> exists(const std::string& path) override
@@ -38,14 +38,7 @@ public:
         throw std::runtime_error(resp->header_raw().meta_.p3_);
     }
 private:
-    void sign_(obelisk::http::core::raw::http_request_raw& raw)
-    {
-
-    }
     obelisk::http::core::base_client http_client_;
-
-    std::string ak_id_;
-    std::string ak_secret_;
     std::string bucket_;
     std::string region_;
 };

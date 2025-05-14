@@ -10,12 +10,11 @@
 #include <obelisk/http/validator/integer_validator.h>
 #include <obelisk/http/validator/required_validator.h>
 
-#include "common/global_configuration.h"
 namespace controller{
     using namespace obelisk::http::validator;
     obelisk::task<std::unique_ptr<http_response>> member_controller::view(http_request_wrapper&request) {
         co_await request.validate({
-            {"page", {integer(), integer()}},
+            {"page", {integer()}},
             {"limit", {integer()}}
         });
 

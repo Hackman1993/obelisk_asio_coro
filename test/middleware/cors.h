@@ -14,7 +14,6 @@ namespace middleware{
     public:
         obelisk::task<void> after_handle(obelisk::http::http_request_wrapper&request, obelisk::http::http_response&response) override {
             response.headers().emplace("Access-Control-Allow-Origin", "http://127.0.0.1:3000");
-
             response.headers().emplace("Access-Control-Allow-Headers", "Content-Type, Authorization");
             response.headers().emplace("Access-Control-Allow-Credentials", "true");
             co_return;

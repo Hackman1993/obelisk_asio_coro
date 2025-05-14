@@ -23,7 +23,15 @@ namespace module::default_
 
         static boost::asio::awaitable<bool> validate_verify_code(const std::string& phone, const std::string& verify_code, const std::string& type)
         {
-            co_return true;
+            const auto count = co_await obelisk::database::db::select({"id"}).from({"sys_verify_codes"}).where({
+                {col{"phone"}, phone},
+                {col{"code"}, verify_code},
+                {col{"type"}, type},
+                {col{"expires_at"}, ">", std::chrono::system_clock::now()},
+                {col{"deleted_at"}, nullptr}
+            }).count();
+
+            co_return static_cast<bool>(count);
         }
 
         static boost::asio::awaitable<void> register_permission(std::string code, bool cascade)

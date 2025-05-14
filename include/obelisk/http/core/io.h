@@ -20,16 +20,15 @@
 #include <boost/iostreams/filter/gzip.hpp>
 namespace obelisk::http::core
 {
-    using namespace boost::asio;
     class io {
     public:
         template <typename StreamType>
-        static awaitable<raw::http_header_raw> receive_header_(StreamType& stream, streambuf &buffer)
+        static boost::asio::awaitable<raw::http_header_raw> receive_header_(StreamType& stream, boost::asio::streambuf &buffer)
         {
             raw::http_header_raw header{};
             std::string_view bytes_view;
             do {
-                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), as_tuple(use_awaitable));
+                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), boost::asio::as_tuple(boost::asio::use_awaitable));
                 buffer.commit(bytes_transferred);
                 bytes_view = std::string_view(static_cast<const char *>(buffer.data().data()), buffer.size());
                 if (ec) break;
@@ -46,7 +45,7 @@ namespace obelisk::http::core
             co_return header;
         }
         template <typename StreamType>
-        static awaitable<std::unique_ptr<std::iostream>> receive_body_(StreamType &socket, streambuf& buffer, raw::http_header_raw& header)
+        static boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_body_(StreamType &socket, boost::asio::streambuf& buffer, raw::http_header_raw& header)
         {
             if (header.headers_.contains("Transfer-Encoding") && boost::algorithm::iequals(header.headers_["Transfer-Encoding"], "chunked")) {
                 co_return co_await receive_chunked_body_(socket, buffer, header.headers_["Content-Encoding"]);
@@ -72,7 +71,7 @@ namespace obelisk::http::core
             }
             while (total_transferred < content_length) {
                 const auto bytes_wanna_read = std::min<uint32_t>(content_length - total_transferred, 1024 * 10);
-                const auto [ec,transferred] = co_await async_read(socket, buffer.prepare(bytes_wanna_read), as_tuple(use_token));
+                const auto [ec,transferred] = co_await async_read(socket, buffer.prepare(bytes_wanna_read), boost::asio::as_tuple(use_token));
                 buffer.commit(transferred);
                 total_transferred += transferred;
                 ret->write(static_cast<const char *>(buffer.data().data()), transferred);
@@ -85,14 +84,14 @@ namespace obelisk::http::core
         }
 
         template <typename StreamType>
-        static awaitable<void> write_data_(StreamType& socket, const std::unique_ptr<base_iodata>& response)
+        static boost::asio::awaitable<void> write_data_(StreamType& socket, const std::unique_ptr<base_iodata>& response)
         {
             unsigned char buffer[1024 * 256] = {};
             while (!response->eof()) {
                 const auto bytes_read = response->read(buffer, 1024 * 256);
                 std::uint64_t bytes_transferred = 0;
                 while (bytes_transferred< bytes_read){
-                    auto [ec, transferred] =co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), as_tuple(use_token));
+                    auto [ec, transferred] =co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), boost::asio::as_tuple(use_token));
                     if (ec) throw std::runtime_error(ec.message());
                     bytes_transferred += transferred;
                 }
@@ -102,7 +101,7 @@ namespace obelisk::http::core
 
     private:
         template<typename StreamType>
-        static awaitable<std::unique_ptr<std::iostream>> receive_chunked_body_(StreamType& stream, streambuf& buffer, const std::string& encoding)
+        static boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_chunked_body_(StreamType& stream, boost::asio::streambuf& buffer, const std::string& encoding)
         {
             auto stream_ptr = std::make_unique<http_temp_fstream>("./temp/" + sahara::utils::uuid::generate());
             boost::iostreams::filtering_ostream out;
@@ -137,13 +136,13 @@ namespace obelisk::http::core
         }
 
         template <typename StreamType>
-        static awaitable<std::uint64_t> receive_until_(StreamType& stream, streambuf& buffer, const std::string& delimiter)
+        static boost::asio::awaitable<std::uint64_t> receive_until_(StreamType& stream, boost::asio::streambuf& buffer, const std::string& delimiter)
         {
             std::string_view bytes_view(static_cast<const char *>(buffer.data().data()), buffer.size());
             do {
                 if (auto pos = bytes_view.find(delimiter); pos != std::string_view::npos)
                     co_return pos;
-                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), as_tuple(use_awaitable));
+                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), boost::asio::as_tuple(boost::asio::use_awaitable));
                 buffer.commit(bytes_transferred);
                 bytes_view = std::string_view(static_cast<const char *>(buffer.data().data()), buffer.size());
                 if (ec) break;
@@ -156,11 +155,11 @@ namespace obelisk::http::core
         }
 
         template <typename StreamType>
-        static awaitable<std::uint64_t> receive_until_(StreamType& stream, streambuf& buffer, std::uint64_t size)
+        static boost::asio::awaitable<std::uint64_t> receive_until_(StreamType& stream, boost::asio::streambuf& buffer, std::uint64_t size)
         {
             if (buffer.size()>=size) co_return std::min(buffer.size(), size);
             do {
-                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), as_tuple(use_awaitable));
+                const auto [ec, bytes_transferred] = co_await stream.async_read_some(buffer.prepare(1024 * 10), boost::asio::as_tuple(boost::asio::use_awaitable));
                 buffer.commit(bytes_transferred);
                 if (ec) throw protocol_exception("Protocol Error, Shutting Down!");
             }while (buffer.size() < std::min<std::uint64_t>(size  , 1024 * 10));
@@ -168,12 +167,12 @@ namespace obelisk::http::core
         }
 
         template<typename StreamType>
-        static awaitable<std::unique_ptr<std::iostream>> receive_until_dead_(StreamType& stream, streambuf& buffer)
+        static boost::asio::awaitable<std::unique_ptr<std::iostream>> receive_until_dead_(StreamType& stream, boost::asio::streambuf& buffer)
         {
             std::filesystem::create_directories("./temp");
             auto ret = std::make_unique<http_temp_fstream>("./temp/" + sahara::utils::uuid::generate());
             while (true) {
-                const auto [ec,transferred] = co_await async_read(stream, buffer.prepare(1024 * 10), as_tuple(use_token));
+                const auto [ec,transferred] = co_await async_read(stream, buffer.prepare(1024 * 10), boost::asio::as_tuple(use_token));
                 buffer.commit(transferred);
                 ret->write(static_cast<const char *>(buffer.data().data()), transferred);
                 buffer.consume(transferred);
