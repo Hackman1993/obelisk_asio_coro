@@ -58,6 +58,7 @@ namespace obelisk::database::query
                         join.append("\n\t");
                     join.append(joins_[i].compile());
                 }
+                join.append(" ");
                 result.append(std::format("SELECT {}{} FROM {} {}", distinct_? "DISTINCT ": "", utils::separate_with(select_columns_, ","), utils::separate_with(from_, ","), join));
             }
             if (type_ == EST_DELETE)
@@ -137,14 +138,16 @@ namespace obelisk::database::query
             return *this;
         }
 
-        boost::asio::awaitable<boost::mysql::results> get()
+        template <typename ResultType = boost::mysql::results>
+        boost::asio::awaitable<ResultType> get()
         {
             auto tp = std::chrono::system_clock::now();
             auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("default");
             std::cout << compile() << std::endl;
-            auto result = co_await connection->co_query(compile());
+            auto result = co_await connection->template co_query<ResultType>(compile());
             co_return result;
         }
+
         boost::asio::awaitable<std::uint64_t> count()
         {
             auto result = co_await get();

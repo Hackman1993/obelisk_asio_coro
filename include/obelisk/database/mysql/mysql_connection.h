@@ -31,10 +31,10 @@ public:
         boost::mysql::throw_on_error(ec, diagnostics);
     };
 
-    template <typename T>
-    boost::asio::awaitable<boost::mysql::results> co_query(const T& query)
+    template <typename ResultType = boost::mysql::results>
+    boost::asio::awaitable<ResultType> co_query(const std::string& query)
     {
-        boost::mysql::results results;
+        ResultType results;
         boost::mysql::diagnostics diagnostics;
         if (auto [ec] = co_await boost::mysql::any_connection::async_execute(query, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
         {

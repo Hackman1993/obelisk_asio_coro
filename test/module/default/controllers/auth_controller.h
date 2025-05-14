@@ -4,12 +4,14 @@
 
 #ifndef AUTH_CONTROLLER_H
 #define AUTH_CONTROLLER_H
-#include <sahara/hash/bcrypt.h>
+#include "sahara/hash/bcrypt.h"
 #include <obelisk/http/exception/http_exception.h>
 #include <obelisk/http/validator/required_validator.h>
 #include "module/default/utils/utils.h"
 #include <chrono>
 #include <iostream>
+#include <boost/mysql/pfr.hpp>
+#include <module/default/model/backend_user_info.h>
 
 namespace module::default_::controllers
 {
@@ -45,6 +47,29 @@ namespace module::default_::controllers
         co_return utils::json_response(nlohmann::json::object({
             {"access_token", access_token}
         }));
+    }
+
+    inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_user_info(obelisk::http::http_request_wrapper&request)
+    {
+        struct user_info
+        {
+            std::uint64_t id{};
+            std::string username;
+            std::string organization_name;
+            std::uint64_t organization_id{};
+        };
+        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
+        auto result = co_await obelisk::database::db::select({
+            col{"sa.id", "id"}, col{"sa.username", "username"}, col{"so.name", "organization_name"}, col{"sa.fn_organization_id", "organization_id"}
+        }).from({{"sys_admins", "sa"}}).inner_join({"sys_organizations", "so"},{
+            {col{"sa.fn_organization_id"}, col{"so.id"}}, {col{"so.deleted_at"}, nullptr}
+        }).where({
+            {col{"sa.id"}, admin_id},
+            {col{"sa.deleted_at"}, nullptr }
+        }).get<boost::mysql::static_results<boost::mysql::pfr_by_name<user_info>>>();
+        if (result.rows().empty())
+            co_return utils::json_response(nullptr);
+        co_return utils::json_response(utils::to_json(result.rows()[0]));
     }
 
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_logout(obelisk::http::http_request_wrapper&request)

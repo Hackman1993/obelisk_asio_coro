@@ -24,9 +24,11 @@ public:
     {
         auto prefix = obelisk::http::config::get<std::string>("database.default.prefix", "");
         bool contains_table_name = boost::algorithm::contains(col_, ".");
+        auto column_name = col_;
         if (contains_table_name)
-            boost::algorithm::replace_all(col_, ".", "`.`");
-        return std::format("`{}{}`{}", contains_table_name? prefix:"", col_, alia_? " AS " + alia_.value(): "");
+            boost::algorithm::replace_all(column_name, ".", "`.`");
+        std::string result = std::format("`{}{}`{}", contains_table_name? prefix:"", column_name, alia_? " AS " + alia_.value(): "");
+        return result;
     }
 
 private:

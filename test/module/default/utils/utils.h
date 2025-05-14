@@ -7,12 +7,22 @@
 #include <boost/asio/awaitable.hpp>
 #include <nlohmann/json.hpp>
 #include <obelisk/http/response/json_response.h>
-
+#include <boost/pfr.hpp>
 namespace module::default_
 {
     class utils
     {
     public:
+        template<typename T>
+        static nlohmann::json::object_t to_json(T& t)
+        {
+            nlohmann::json::object_t result;
+            boost::pfr::for_each_field(t, [&](const auto& field, auto index){
+                result.emplace(boost::pfr::get_name<index, T>(), field);
+            });
+            return result;
+        }
+
         static std::unique_ptr<obelisk::http::json_response> json_response(const nlohmann::json& json, const obelisk::http::EResponseCode code = obelisk::http::EST_OK)
         {
             return std::make_unique<obelisk::http::json_response>(nlohmann::json{

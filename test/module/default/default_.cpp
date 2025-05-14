@@ -20,8 +20,8 @@ namespace module {
     void default_module::route(obelisk::http::http_server& server)
     {
         server.route("/api/backend/login", default_::controllers::backend_login)->method({"POST"});
-        server.route("/api/backend/logout", default_::controllers::backend_logout)->method({"PUT"}).middleware(default_::middleware::backend_auth("sys_admins",{}));
-        server.route("/api/backend/admin/info", default_::controllers::backend_permissions)->method({"GET"}).middleware(default_::middleware::backend_auth("sys_admins",{}));
+        server.route("/api/backend/logout", default_::controllers::backend_logout)->method({"PUT"}).middleware(default_::middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/current/info", default_::controllers::backend_user_info)->method({"GET"}).middleware(default_::middleware::backend_auth("sys_admins"));
 
     }
 

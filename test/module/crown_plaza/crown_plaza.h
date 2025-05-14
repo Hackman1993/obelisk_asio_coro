@@ -11,8 +11,8 @@ namespace module
     class template_module final : public obelisk::http::module::base_module
     {
     public:
-        void route(obelisk::http::http_server& server) override;
-        boost::asio::awaitable<void> migrate() override;
+        void route(obelisk::http::http_server& server) override{}
+        boost::asio::awaitable<void> migrate() override{ co_return; }
     };
 } // module
 

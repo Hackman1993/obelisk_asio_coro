@@ -38,8 +38,7 @@ public:
 
     [[nodiscard]] bool is_null() const
     {
-        auto& v = std::get<sql_value>(var_);
-        return var_.index() == 1 && v.index() == 0;
+        return var_.index() == 1 && std::get<sql_value>(var_).index() == 0;
     }
 
 private:

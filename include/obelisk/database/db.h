@@ -47,7 +47,7 @@ namespace obelisk::database
             const auto connection = co_await db_pool::get_connection<mysql_connection>("default");
             // Check if migrations table exists
             {
-                auto query = boost::mysql::with_params("SHOW TABLES LIKE {};", prefix + "migrations");
+                auto query = std::format("SHOW TABLES LIKE '{}';", prefix + "migrations");
                 boost::mysql::results results = co_await connection->co_query(query);
                 if (results.rows().empty())
                 {
@@ -58,7 +58,7 @@ namespace obelisk::database
             // Get Max Branch
             std::int64_t batch = 1;
             {
-                auto query = boost::mysql::with_params("select MAX(batch) from {:i};", prefix+"migrations");
+                auto query = std::format("select MAX(batch) from `{}`;", prefix+"migrations");
                 boost::mysql::results results = co_await connection->co_query(query);
                 if (!results.rows().empty())
                 {
@@ -70,7 +70,7 @@ namespace obelisk::database
                 try
                 {
                     auto migration_name = migration->migration_name();
-                    auto query = boost::mysql::with_params("SELECT id, batch, migration FROM {:i} WHERE migration={}", prefix + "migrations", migration_name);
+                    auto query = std::format("SELECT id, batch, migration FROM `{}` WHERE migration='{}'", prefix + "migrations", migration_name);
                     if (boost::mysql::results results = co_await connection->co_query(query); results.rows().empty()){
                         LOG_TRACE("Running migration {} ...", migration_name);
                         co_await migration->up();

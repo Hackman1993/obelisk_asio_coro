@@ -21,6 +21,10 @@
 #include <controllers/member_controller.h>
 #include <controllers/user_controller.h>
 #include <middleware/cors.h>
+#include <module/default/controllers/auth_controller.h>
+#include <module/default/controllers/auth_controller.h>
+#include <module/default/controllers/auth_controller.h>
+#include <module/default/controllers/auth_controller.h>
 #include <obelisk/database/database.h>
 #include <sahara/log/log.h>
 #include <obelisk/http/framework.h>
@@ -31,6 +35,7 @@
 #include "clients/aliyun_sms_client.h"
 #include "module/default/default_.h"
 #include "obelisk/http/client/request.h"
+#include <sahara/hash/bcrypt.h>
 using namespace  boost::parser;
 
 int main(int argc, char* argv[]) {

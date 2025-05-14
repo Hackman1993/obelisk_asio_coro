@@ -43,7 +43,7 @@ namespace obelisk::http {
     BOOST_PARSER_DEFINE_RULES(MultipartMetaNameParser, MultipartMetaFileNameParser, MultipartMetaFormDataParser, MultipartMetaParser)
     auto MultipartBoundaryParser = no_case[lit("multipart/form-data;")] > *ws > no_case[lit("boundary=")] > *ws >> +(char_ - char_("\r\n")) > *ws;
     rule<struct UrlEncodedDataName, std::pair<std::string, std::string>> UrlEncodedDataParser= "UrlEncodedDataName";
-    auto UrlEncodedDataParser_def = *(char_ - char_("=&")) >> -lit("=") >> *(char_ - char_("&"));
+    auto UrlEncodedDataParser_def = *(char_ -'&'-'=') >> -lit("=") >> *(char_ -'&');
     BOOST_PARSER_DEFINE_RULES(UrlEncodedDataParser);
 
     //auto ContentTypeParser= no_case[lit("Content-Type")] > ":" > lexeme[*char_-"\r\n"];
@@ -213,10 +213,11 @@ namespace obelisk::http {
     }
 
     bool parser_v3::parse_urlencoded_param(std::unordered_map<std::string, nlohmann::json>& params, std::string_view data) {
-        if (!parse(data, UrlEncodedDataParser % '&', params))
+        std::vector<std::pair<std::string,std::string>> parsed_params;
+        if (!parse(data, UrlEncodedDataParser % '&', parsed_params))
             throw protocol_exception("UrlEncodedData Parse Failed!");
 
-        for (auto &[key, val]: params) {
+        for (auto &[key, val]: parsed_params) {
             auto item_key = key.substr(0, key.rfind("[]"));
             bool is_array = key.ends_with("[]");
             if(is_array && !params.contains(key)) {
@@ -225,7 +226,7 @@ namespace obelisk::http {
             if(is_array) {
                 params[key].emplace_back(val);
             } else {
-                params[key] = val;
+                params[key] = val.erase(val.find_last_not_of('\0') + 1);;
             }
         }
         return true;
