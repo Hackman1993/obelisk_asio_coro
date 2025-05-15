@@ -8,18 +8,39 @@
 #include <nlohmann/json.hpp>
 #include <obelisk/http/response/json_response.h>
 #include <boost/pfr.hpp>
+#include <clients/aliyun_sms_client.h>
+#include <obelisk/http/exception/http_exception.h>
 namespace module::default_
 {
     class utils
     {
     public:
-        template<typename T>
+        template<typename T, typename = std::enable_if_t<
+            boost::pfr::is_implicitly_reflectable_v<T, struct t>
+        >>
         static nlohmann::json::object_t to_json(T& t)
         {
             nlohmann::json::object_t result;
             boost::pfr::for_each_field(t, [&](const auto& field, auto index){
                 result.emplace(boost::pfr::get_name<index, T>(), field);
             });
+            return result;
+        }
+        template<typename T, typename = std::enable_if_t<
+            boost::pfr::is_implicitly_reflectable_v<T, struct t>
+        >>
+        static nlohmann::json to_json(boost::mysql::static_results<boost::mysql::pfr_by_name<T>>& t)
+        {
+            nlohmann::json::array_t result;
+            for(auto &val: t.rows())
+            {
+                nlohmann::json::object_t obj;
+                boost::pfr::for_each_field(val, [&](const auto& field, auto index){
+                    obj.emplace(boost::pfr::get_name<index, T>(), field);
+                });
+                result.push_back(obj);
+            }
+
             return result;
         }
 
@@ -29,6 +50,25 @@ namespace module::default_
                 {"data", json},
                 {"code", code}
             }, code);
+        }
+
+        static boost::asio::awaitable<void> send_sms_by_channel(const std::string& channel, const std::string&phone, const nlohmann::json& data)
+        {
+            using namespace obelisk::http;
+            const std::string& channel_prefix = std::format("sms.channel.{}", channel);
+            const std::string& channel_type = config::get<std::string>(channel_prefix+".provider", "aliyun");
+            const auto& template_code = config::get<std::string>(channel_prefix+".template_code", "");
+            const auto& sign_name = config::get<std::string>(channel_prefix+".sign_name", "");
+            if (channel_type == "aliyun")
+            {
+                const auto &ak_id = config::get<std::string>(channel_prefix+".aliyun_ak_id", "");
+                const auto &ak_secret = config::get<std::string>(channel_prefix+".aliyun_ak_secret", "");
+                aliyun_sms_client sms_client(ak_id, ak_secret);
+                co_await sms_client.send_sms(phone, sign_name, template_code, data.dump());
+            }else
+            {
+                throw http_exception("server.error.sms_provider_not_supported", EST_INTERNAL_SERVER_ERROR);
+            }
         }
 
         static boost::asio::awaitable<bool> validate_verify_code(const std::string& phone, const std::string& verify_code, const std::string& type)
@@ -49,6 +89,11 @@ namespace module::default_
             using namespace obelisk::database;
             co_await _insert_permission(code, cascade);
             co_return;
+        }
+
+        static boost::asio::awaitable<bool> can(std::uint64_t sys_admin_id, std::uint64_t org_id, const std::string& code)
+        {
+            co_return true;
         }
 
     private:

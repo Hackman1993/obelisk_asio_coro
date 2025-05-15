@@ -46,10 +46,9 @@ namespace obelisk::database::migration
             return *ref;
         }
 
-        column_blueprint& bigint(const std::string& column, const std::string& type = "bigint",
-                                 const bool is_unsigned = false, const bool auto_increment = false)
+        column_blueprint& bigint(const std::string& column, const bool is_unsigned = false, const bool auto_increment = false)
         {
-            return integer(column, type, is_unsigned, auto_increment);
+            return integer(column, "bigint", is_unsigned, auto_increment);
         }
 
         column_blueprint& boolean(const std::string& column, const std::string& type = "tinyint(1)")

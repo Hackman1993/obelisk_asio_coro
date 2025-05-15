@@ -37,6 +37,7 @@ namespace obelisk::http {
             {EST_REQUESTED_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable"},
             {EST_EXPECTATION_FAILED, "Expectation Failed"},
             {EST_UNPROCESSABLE_CONTENT, "Unprocessable Content"},
+            {EST_TOO_MANY_REQUEST, "Too Many Requests"},
             {EST_INTERNAL_SERVER_ERROR, "Internal Server Error"},
             {EST_NOT_IMPLEMENTED, "Not Implemented"},
             {EST_BAD_GATEWAY, "Bad Gateway"},

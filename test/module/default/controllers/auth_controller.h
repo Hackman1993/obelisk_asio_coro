@@ -10,9 +10,14 @@
 #include "module/default/utils/utils.h"
 #include <chrono>
 #include <iostream>
+#include <bits/random.h>
 #include <boost/mysql/pfr.hpp>
+#include <clients/aliyun_sms_client.h>
 #include <module/default/model/backend_user_info.h>
 
+#include "obelisk/http/validator/in_validator.h"
+#include <boost/random.hpp>
+#include <boost/random/random_device.hpp>
 namespace module::default_::controllers
 {
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_login(obelisk::http::http_request_wrapper&request)
@@ -59,14 +64,14 @@ namespace module::default_::controllers
             std::uint64_t organization_id{};
         };
         auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
-        auto result = co_await obelisk::database::db::select({
+        const auto result = co_await obelisk::database::db::select({
             col{"sa.id", "id"}, col{"sa.username", "username"}, col{"so.name", "organization_name"}, col{"sa.fn_organization_id", "organization_id"}
         }).from({{"sys_admins", "sa"}}).inner_join({"sys_organizations", "so"},{
             {col{"sa.fn_organization_id"}, col{"so.id"}}, {col{"so.deleted_at"}, nullptr}
         }).where({
             {col{"sa.id"}, admin_id},
             {col{"sa.deleted_at"}, nullptr }
-        }).get<boost::mysql::static_results<boost::mysql::pfr_by_name<user_info>>>();
+        }).get<user_info>();
         if (result.rows().empty())
             co_return utils::json_response(nullptr);
         co_return utils::json_response(utils::to_json(result.rows()[0]));
@@ -79,28 +84,77 @@ namespace module::default_::controllers
 
         const auto authorization_header = request.headers()["Authorization"];
 
+        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
         co_await obelisk::database::db::delete_from({"sys_access_tokens"}).where({
             {"token", authorization_header.substr(authorization_header.find("Bearer ")+7)},
-            {"fn_target_id", std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_target_id"])},
+            {"fn_target_id", admin_id},
             {"target_key", "sys_admins"}
         }).get();
         co_return utils::json_response(nullptr);
     }
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_permissions(obelisk::http::http_request_wrapper&request)
     {
-        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_target_id"]);
-        std::cout << obelisk::database::db::select({
+        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
+        auto organization_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_organization_id"]);
+        struct  permission_model
+        {
+            std::uint64_t id{};
+            std::string code;
+            bool is_cascade{};
+            bool is_grant{};
+        };
+        auto query = obelisk::database::db::select({
+            {"sp.id", "id"},
             {"sp.code", "code" },
-            {"sp.visible", "visible"}
+            {"smrp.cascade", "is_cascade"},
+            {"smrp.grant", "is_grant"}
         }).from({{"sys_admins", "sa"}})
-        .inner_join({"sys_mid_admin_role", "smar"}, {{col("sa.id"), col("smar.fn_admin_id")} , {"sa.deleted_at", nullptr}})
-        .inner_join({"sys_roles", "sr"}, {{col("smar.fn_role_id"), col("sr.id")}, {"sr.deleted_at", nullptr}})
+        .inner_join({"sys_mid_admin_role", "smar"}, {{col("sa.id"), col("smar.fn_admin_id")}, {col("sa.fn_organization_id"), organization_id}, {col("sa.deleted_at"), nullptr}})
+        .inner_join({"sys_roles", "sr"}, {{col("smar.fn_role_id"), col("sr.id")}, {col("sr.fn_organization_id"), organization_id}, {col("sr.deleted_at"), nullptr}})
         .inner_join({"sys_mid_role_permission", "smrp"}, {{col("sr.id"), col("smrp.fn_role_id")}})
         .inner_join({"sys_permissions", "sp"}, {{col("smrp.fn_permission_id"), col("sp.id")}})
         .where({
-            {"sa.id", admin_id}
-        }).compile()<< std::endl;
-        co_return nullptr;
+            {col("sa.id"), admin_id}
+        });
+
+        auto result = co_await query.get<permission_model>();
+
+
+        co_return utils::json_response(utils::to_json(result));
+    }
+
+    inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> send_sms(obelisk::http::http_request_wrapper&request)
+    {
+        using namespace obelisk::http::validator;
+        auto avail_type = obelisk::http::config::get<std::vector<std::string>>("sms.channel.verify_code.available_type", {});
+        co_await request.validate({
+            {"phone", {required()}},
+            {"reason", {required(), in(avail_type)}}
+        });
+
+        const std::string& phone = request.params()["phone"].get<std::string>();
+        const std::string& type = request.params()["reason"].get<std::string>();
+        auto query = obelisk::database::db::select({"id"}).from({"sys_verify_codes"}).where({
+            {col("phone"), phone},
+            {col("type"), type},
+            {col("created_at"), ">", std::chrono::system_clock::now() - std::chrono::seconds(55)}
+        });
+
+        if (co_await query.count() >= 1)
+            throw obelisk::http::http_exception("server.error.verify_code_too_frequent", obelisk::http::EST_TOO_MANY_REQUEST);
+
+        boost::random::random_device rng;
+        boost::random::uniform_int_distribution<> index_dist(0, 999999);
+        std::string verify_code = std::format("{:06d}", index_dist(rng));
+        auto insert = obelisk::database::db::insert("sys_verify_codes").values({
+            {"phone", phone},
+            {"type", type},
+            {"code", verify_code},
+            {"expires_at", std::chrono::system_clock::now() + std::chrono::seconds(300)}
+        });
+        co_await insert.get();
+        co_await utils::send_sms_by_channel("verify_code", phone, nlohmann::json::object_t{{"code", verify_code}});
+        co_return utils::json_response(nullptr);
     }
 }
 

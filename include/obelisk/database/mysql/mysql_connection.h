@@ -31,7 +31,9 @@ public:
         boost::mysql::throw_on_error(ec, diagnostics);
     };
 
-    template <typename ResultType = boost::mysql::results>
+    template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
+        !std::is_same_v<ResultType, void>
+    >>
     boost::asio::awaitable<ResultType> co_query(const std::string& query)
     {
         ResultType results;
@@ -42,6 +44,12 @@ public:
             throw std::logic_error(message);
         }
         co_return results;
+    }
+
+    boost::asio::awaitable<void> co_query_v(const std::string& query)
+    {
+        co_await co_query(query);
+        co_return;
     }
 
     void refresh() override;

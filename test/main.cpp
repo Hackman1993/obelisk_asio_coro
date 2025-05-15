@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
         sahara::log::initialize();
         boost::asio::io_context ioctx;
         obelisk::http::framework::init(ioctx);
+
         obelisk::http::http_server server(ioctx);
         boost::asio::co_spawn(ioctx,server.module(module::default_module{}) ,boost::asio::detached);
         server.reg_middleware(std::make_unique<middleware::cors>());

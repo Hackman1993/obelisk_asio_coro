@@ -4,6 +4,7 @@
 
 #ifndef BUILDER_H
 #define BUILDER_H
+#include <boost/mysql/pfr.hpp>
 #include <boost/mysql/results.hpp>
 #include <obelisk/database/db_pool.h>
 #include <obelisk/http/framework/config.h>
@@ -36,18 +37,28 @@ namespace obelisk::database::query
             {
                 std::string value_names;
                 std::string value_str;
-                for (int i =0; i< insert_pack_.size(); ++i)
+                for (int i =0; i< insert_columns_.size(); ++i)
                 {
-                    if (i != 0)
+                    if (i > 0) value_names.append(",");
+                    value_names.append(std::format("`{}`",insert_columns_[i]));
+                }
+                for (int i=0; i< insert_values_.size(); ++i)
+                {
+                    if (i > 0) value_str.append(",");
+                    auto& values = insert_values_[i];
+                    if (values.size() != insert_columns_.size())
+                        throw std::logic_error("insert pack size not match");
+                    std::string value_pack_str = "(";
+                    for (int j=0; j< values.size(); ++j)
                     {
-                        value_names.append(",");
-                        value_str.append(",");
+                        if (j > 0) value_pack_str.append(",");
+                        value_pack_str.append(values[j].compile());
                     }
-                    value_names.append(std::format("`{}`",insert_pack_[i].first));
-                    value_str.append(insert_pack_[i].second.compile());
+                    value_pack_str.append(")");
+                    value_str.append(value_pack_str);
                 }
 
-                return std::format("INSERT INTO {}({}) VALUES({});" ,from_.empty()? "": from_[0].compile(), value_names, value_str);
+                return std::format("INSERT INTO {}({}) VALUES {};" ,from_.empty()? "": from_[0].compile(), value_names, value_str);
             }
             if (type_ == EST_QUERY)
             {
@@ -121,9 +132,25 @@ namespace obelisk::database::query
             return *this;
         }
 
-        builder& values(const std::initializer_list<std::pair<std::string, sql_value>>& value_pack)
+        builder& values(const std::vector<std::pair<std::string, sql_value>>& value_pack)
         {
-            std::ranges::copy(value_pack.begin(), value_pack.end(), std::back_inserter(insert_pack_));
+            insert_values_.clear();
+            std::vector<std::string> insert_columns;
+            std::vector<sql_value> insert_value;
+            for (auto&[first, second]: value_pack)
+            {
+                insert_columns.emplace_back(first);
+                insert_value.emplace_back(second);
+            }
+            insert_columns_ = std::move(insert_columns);
+            insert_values_.emplace_back(std::move(insert_value));
+            return *this;
+        }
+
+        builder& values(std::vector<std::string> columns, std::vector<std::vector<sql_value>> values)
+        {
+            insert_columns_ = std::move(columns);
+            insert_values_ = std::move(values);
             return *this;
         }
         static builder select(std::initializer_list<col> args) {
@@ -138,13 +165,51 @@ namespace obelisk::database::query
             return *this;
         }
 
-        template <typename ResultType = boost::mysql::results>
+        template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
+            std::is_same_v<boost::mysql::results, ResultType>
+        >>
         boost::asio::awaitable<ResultType> get()
         {
             auto tp = std::chrono::system_clock::now();
             auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("default");
             std::cout << compile() << std::endl;
             auto result = co_await connection->template co_query<ResultType>(compile());
+            co_return result;
+        }
+
+        template <typename ResultType, typename=std::enable_if_t<
+            !std::is_same_v<boost::mysql::results, ResultType> &&
+            boost::pfr::is_implicitly_reflectable_v<ResultType, struct t>
+        >>
+        boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get()
+        {
+            auto tp = std::chrono::system_clock::now();
+            auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("default");
+            std::cout << compile() << std::endl;
+            auto result = co_await connection->template co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(compile());
+            co_return result;
+        }
+
+        template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
+            std::is_same_v<boost::mysql::results, ResultType>
+        >>
+        boost::asio::awaitable<ResultType> get(const std::shared_ptr<mysql_connection> connection)
+        {
+            auto tp = std::chrono::system_clock::now();
+            std::cout << compile() << std::endl;
+            auto result = co_await connection->template co_query<ResultType>(compile());
+            co_return result;
+        }
+
+        template <typename ResultType, typename=std::enable_if_t<
+            !std::is_same_v<boost::mysql::results, ResultType> &&
+            boost::pfr::is_implicitly_reflectable_v<ResultType, struct t>
+        >>
+        boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get(const std::shared_ptr<mysql_connection> connection)
+        {
+            auto tp = std::chrono::system_clock::now();
+            std::cout << compile() << std::endl;
+            auto result = co_await connection->template co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(compile());
             co_return result;
         }
 
@@ -220,7 +285,8 @@ namespace obelisk::database::query
         bool distinct_ = false;
 
         std::vector<join> joins_;
-        std::vector<std::pair<std::string, sql_value>> insert_pack_;
+        std::vector<std::string> insert_columns_;
+        std::vector<std::vector<sql_value>> insert_values_;
         std::vector<std::pair<std::string, sql_value>> set_pack_;
         std::vector<condition_group> where_groups_;
         std::vector<col> select_columns_;

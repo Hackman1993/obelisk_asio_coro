@@ -2,6 +2,7 @@
 #define DB_H
 #include <vector>
 #include <iostream>
+#include <boost/redis/connection.hpp>
 #include <obelisk/database/mysql/mysql_connection.h>
 #include <sahara/log/log.h>
 
@@ -11,7 +12,6 @@
 
 namespace obelisk::database
 {
-
     class db {
     public:
         db(const db&) = delete;
@@ -39,6 +39,28 @@ namespace obelisk::database
         static query::builder delete_from(const std::initializer_list<table>& tables)
         {
             return query::builder::delete_from(tables);
+        }
+
+        static boost::asio::awaitable<void> transaction(std::function<boost::asio::awaitable<void> (std::shared_ptr<mysql_connection> connection)> func)
+        {
+            const auto connection = co_await db_pool::get_connection<mysql_connection>("default");
+            co_await connection->co_query_v("SET AUTOCOMMIT=0;");
+            co_await connection->co_query_v("START TRANSACTION");
+            std::optional<std::string> exceptional;
+            try
+            {
+                co_await func(connection);
+            }catch (std::exception& e)
+            {
+                exceptional = e.what();
+            }
+            if (exceptional.has_value())
+                co_await connection->co_query_v("ROLLBACK;");
+            else
+                co_await connection->co_query_v("COMMIT;");
+            co_await connection->co_query_v("SET AUTOCOMMIT=1;");
+            if (exceptional.has_value())
+                throw std::logic_error(exceptional.value());
         }
 
         static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::base_migration>> migrations)

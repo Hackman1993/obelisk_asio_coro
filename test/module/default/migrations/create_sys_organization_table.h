@@ -22,15 +22,26 @@ namespace module::default_::migrations
                 blueprint.string("emergency_name").nullable().comment("紧急联系人");
                 blueprint.string("emergency_phone").nullable().comment("应急联系电话");
                 blueprint.string("address").nullable().comment("联系地址");
-                blueprint.integer("_lft", "int", true).default_value(0);
-                blueprint.integer("_rgt", "int", true).default_value(0);
-                blueprint.integer("parent_id", "bigint", true).nullable();
-                blueprint.index({"_lft", "_rgt", "parent_id"});
+                blueprint.timestamps();
+                blueprint.soft_delete();
+            });
+
+            co_await obelisk::database::migration::migration::create("sys_organization_hierarchy", [](obelisk::database::migration::table_blueprint& blueprint)
+            {
+                blueprint.id();
+
+                blueprint.bigint("fn_ancestor_id", true).index().references("sys_organizations", "id", "fk_sys_organization_hierarchy_ancestor_id");
+                blueprint.bigint("fn_descendant_id", true).index().references("sys_organizations", "id", "fk_sys_organization_hierarchy_descendant_id");
+                blueprint.integer("path_length", "int", true);
                 blueprint.timestamps();
                 blueprint.soft_delete();
             });
             co_await obelisk::database::db::insert("sys_organizations").values({
                 {"name", "Root"}
+            }).get();
+            co_await obelisk::database::db::insert("sys_organization_hierarchy").values({
+                {"fn_ancestor_id", 1},
+                {"fn_descendant_id", 1}
             }).get();
             co_return;
         };

@@ -8,6 +8,7 @@
 #include <obelisk/http/http_server.h>
 
 #include "controllers/auth_controller.h"
+#include "controllers/sys_organization_controller.h"
 #include "migrations/create_sys_access_tokens_table.h"
 #include "migrations/create_sys_admin_table.h"
 #include "migrations/create_sys_organization_table.h"
@@ -19,9 +20,15 @@
 namespace module {
     void default_module::route(obelisk::http::http_server& server)
     {
-        server.route("/api/backend/login", default_::controllers::backend_login)->method({"POST"});
-        server.route("/api/backend/logout", default_::controllers::backend_logout)->method({"PUT"}).middleware(default_::middleware::backend_auth("sys_admins"));
-        server.route("/api/backend/current/info", default_::controllers::backend_user_info)->method({"GET"}).middleware(default_::middleware::backend_auth("sys_admins"));
+        using namespace default_;
+        server.route("/api/send_sms", controllers::send_sms)->method({"POST"});
+        server.route("/api/backend/login", controllers::backend_login)->method({"POST"});
+        server.route("/api/backend/logout", controllers::backend_logout)->method({"PUT"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/current/info", controllers::backend_user_info)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/current/permissions", controllers::backend_permissions)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+
+        server.route("/api/backend/organization/create", sys_organization_controller::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+
 
     }
 

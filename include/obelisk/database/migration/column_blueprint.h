@@ -18,7 +18,17 @@
 
 namespace obelisk::database::migration
 {
-    class column_blueprint
+
+    struct column_reference
+    {
+        std::string table_;
+        std::string column_;
+        std::string on_update_;
+        std::string on_delete_;
+        std::string index_name_;
+    };
+
+    class column_blueprint final
     {
     public:
         virtual ~column_blueprint() = default;
@@ -40,7 +50,7 @@ namespace obelisk::database::migration
             return *this;
         }
 
-        virtual column_blueprint& auto_increment(int start = 1)
+        column_blueprint& auto_increment(int start = 1)
         {
             auto_increment_ = start;
             return *this;
@@ -77,7 +87,7 @@ namespace obelisk::database::migration
             return index(name, true);
         }
 
-        virtual column_blueprint& nullable(const bool value = true)
+        column_blueprint& nullable(const bool value = true)
         {
             nullable_ = value;
             return *this;
@@ -90,7 +100,7 @@ namespace obelisk::database::migration
         }
 
 
-        virtual column_blueprint& set_unsigned(const bool value = true)
+        column_blueprint& set_unsigned(const bool value = true)
         {
             unsigned_ = value;
             return *this;
@@ -108,9 +118,10 @@ namespace obelisk::database::migration
             return *this;
         }
 
-        virtual void references(const std::string& reference_table , const std::string& reference_column)
+        void references(const std::string& reference_table , const std::string& reference_column, const std::string& index_name = "", const std::string& on_update = "NO ACTION", const std::string & on_delete = "NO ACTION")
         {
-            reference_ = {reference_table, reference_column};
+            reference_ = {reference_table, reference_column, on_update, on_delete};
+            reference_->index_name_ = index_name.empty()? std::format("fk_{}_{}_{}_{}", table_, column_, reference_.value().table_, reference_.value().column_): index_name;
         }
 
         [[nodiscard]] bool is_update() const
@@ -179,13 +190,13 @@ namespace obelisk::database::migration
             if (reference_)
             {
                 auto prefix = http::config::get<std::string>("database.default.prefix", "");
-                const std::string foreign_key_name = std::format("fk_{}_{}_{}_{}", table_, column_, reference_.value().first, reference_.value().second);
+
                 if (update_)
                 {
-                    commands.emplace_back(std::format("ALTER TABLE {} DROP FOREIGN KEY {};", table_, foreign_key_name), false);
+                    commands.emplace_back(std::format("ALTER TABLE {} DROP FOREIGN KEY {};", table_, reference_->index_name_), false);
                 }
 
-                commands.emplace_back(std::format("ALTER TABLE {} ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES `{}{}`(`{}`);", table_,foreign_key_name, column_, prefix, reference_.value().first, reference_.value().second));
+                commands.emplace_back(std::format("ALTER TABLE {} ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES `{}{}`(`{}`) ON UPDATE {} ON DELETE {};", table_,reference_->index_name_, column_, prefix, reference_.value().table_, reference_.value().column_, reference_.value().on_update_, reference_.value().on_delete_));
 
             }
         }
@@ -201,7 +212,7 @@ namespace obelisk::database::migration
         bool is_primary_ : 1 = false;
         bool table_creation_ : 1 = false;
         bool use_current_on_update_ : 1 = false;
-        std::optional<std::pair<std::string, std::string>> reference_;
+        std::optional<column_reference> reference_;
         std::optional<int> auto_increment_;
         std::optional<bool> index_unique_;
         std::optional<std::string> index_name_;
