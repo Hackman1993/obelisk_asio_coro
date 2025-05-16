@@ -22,6 +22,7 @@ namespace module::default_::migrations
                 blueprint.string("emergency_name").nullable().comment("紧急联系人");
                 blueprint.string("emergency_phone").nullable().comment("应急联系电话");
                 blueprint.string("address").nullable().comment("联系地址");
+                blueprint.foreign_id("parent_id").nullable().references("sys_organizations","id").comment("父级ID");
                 blueprint.timestamps();
                 blueprint.soft_delete();
             });
@@ -41,7 +42,8 @@ namespace module::default_::migrations
             }).get();
             co_await obelisk::database::db::insert("sys_organization_hierarchy").values({
                 {"fn_ancestor_id", 1},
-                {"fn_descendant_id", 1}
+                {"fn_descendant_id", 1},
+                {"path_length", 0}
             }).get();
             co_return;
         };

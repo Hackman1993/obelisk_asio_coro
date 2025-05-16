@@ -20,19 +20,40 @@ namespace module::default_
     public:
         static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_view(obelisk::http::http_request_wrapper&request)
         {
-            // SELECT
-            //     t.id,
-            //     t.name,
-            //     tp.path_length,
-            //     p.id AS parent_id,
-            //     p.name AS parent_name
-            // FROM t_sys_organizations t
-            //          JOIN t_sys_organization_hierarchy tp ON t.id = tp.fn_descendant_id
-            //          LEFT JOIN t_sys_organization_hierarchy tp_parent ON t.id = tp_parent.fn_descendant_id AND tp_parent.path_length = 1
-            //          LEFT JOIN t_sys_organizations p ON tp_parent.fn_ancestor_id = p.id
-            // WHERE tp.fn_ancestor_id = 1
-            // ORDER BY tp.path_length, t.name;
-            co_return utils::json_response(nullptr);
+            struct organization_model
+            {
+                std::uint64_t id{};
+                std::string name;
+                std::optional<std::string> director_name;
+                std::optional<std::string> director_phone;
+                std::optional<std::string> emergency_name;
+                std::optional<std::string> emergency_phone;
+                std::optional<std::string> address;
+                std::optional<std::uint64_t> path_length;
+                std::optional<std::uint64_t> parent_id;
+            };
+
+            auto org_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_organization_id"]);
+            auto query = obelisk::database::db::select({
+                col{"so.id", "id"},
+                col{"so.name", "name"},
+                col{"so.director_name", "director_name"},
+                col{"so.director_phone", "director_phone"},
+                col{"so.emergency_name", "emergency_name"},
+                col{"so.emergency_phone", "emergency_phone"},
+                col{"so.address", "address"},
+                col{"soh.path_length"},
+                col{"sop.id", "parent_id"},
+            }).from({{"sys_organizations", "so"}})
+            .inner_join({"sys_organization_hierarchy", "soh"}, {{col("so.id"),col("soh.fn_descendant_id")}})
+            .left_join({"sys_organization_hierarchy", "sohp"}, {{col("so.id"), col("sohp.fn_descendant_id")}, {col("sohp.path_length"), 1}})
+            .left_join({"sys_organizations", "sop"}, {{col("sohp.fn_ancestor_id"), col("sop.id")}})
+            .where({
+                {col("soh.fn_ancestor_id"), org_id}
+            }).order_by({"soh.path_length", "so.name"});
+
+            auto result = co_await query.get<organization_model>();
+            co_return utils::json_response(utils::to_json(result));
         }
 
         static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_create(obelisk::http::http_request_wrapper&request)
@@ -52,6 +73,7 @@ namespace module::default_
 
             auto& params = request.params();
             std::vector<std::pair<std::string, sql_value>> values{{"name", request.params()["name"].get<std::string>()}};
+            try_emplace<std::uint64_t>("parent_id", values, params);
             try_emplace<std::string>("director_name", values, params);
             try_emplace<std::string>("director_phone", values, params);
             try_emplace<std::string>("emergency_name", values, params);
@@ -68,6 +90,51 @@ namespace module::default_
                 co_return;
             });
             co_return utils::json_response(nullptr);
+        }
+
+        static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_update(obelisk::http::http_request_wrapper&request)
+        {
+            using namespace obelisk::http::validator;
+            co_await request.validate({
+                {"id", {required(), integer(false)}},
+            });
+            std::uint64_t target_id = request.params()["id"].get<std::uint64_t>();
+            auto check_query = obelisk::database::db::select({"id"}).from({"sys_organizations"}).where({
+                {col("id"), target_id},
+                {col("deleted_at"), nullptr}
+            });
+            if (co_await check_query.count() == 0)
+                throw obelisk::http::http_exception("server.error.target_not_exists", obelisk::http::EST_UNPROCESSABLE_CONTENT);
+
+            auto& params = request.params();
+            std::vector<std::pair<std::string, sql_value>> values;
+            try_emplace<std::string>("name", values, params);
+            try_emplace<std::string>("director_name", values, params);
+            try_emplace<std::string>("director_phone", values, params);
+            try_emplace<std::string>("emergency_name", values, params);
+            try_emplace<std::string>("emergency_phone", values, params);
+            try_emplace<std::string>("address", values, params);
+            co_await obelisk::database::db::update({"sys_organizations"}).values(values).where({
+                {col("id"), target_id}
+            }).get();
+            co_return nullptr;
+        }
+
+        static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_delete(obelisk::http::http_request_wrapper&request)
+        {
+            auto target_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_organization_id"]);
+            co_await obelisk::database::db::transaction([target_id](auto connection)->boost::asio::awaitable<void>
+            {
+                co_await obelisk::database::db::delete_from({"sys_organization_hierarchy"}).where({
+                    {col("fn_ancestor_id"), target_id}
+                }).or_where({
+                    {col("fn_descendant_id"), target_id}
+                }).get();
+                co_await obelisk::database::db::update({"sys_organizations"}).where({
+                    {col("id"), target_id}
+                }).set({{"deleted_at", std::chrono::system_clock::now()}}).get();
+            });
+            co_return nullptr;
         }
 
 

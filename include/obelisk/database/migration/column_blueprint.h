@@ -118,10 +118,11 @@ namespace obelisk::database::migration
             return *this;
         }
 
-        void references(const std::string& reference_table , const std::string& reference_column, const std::string& index_name = "", const std::string& on_update = "NO ACTION", const std::string & on_delete = "NO ACTION")
+        column_blueprint& references(const std::string& reference_table , const std::string& reference_column, const std::string& index_name = "", const std::string& on_update = "NO ACTION", const std::string & on_delete = "NO ACTION")
         {
             reference_ = {reference_table, reference_column, on_update, on_delete};
             reference_->index_name_ = index_name.empty()? std::format("fk_{}_{}_{}_{}", table_, column_, reference_.value().table_, reference_.value().column_): index_name;
+            return *this;
         }
 
         [[nodiscard]] bool is_update() const

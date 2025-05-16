@@ -28,6 +28,9 @@ namespace module {
         server.route("/api/backend/current/permissions", controllers::backend_permissions)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
 
         server.route("/api/backend/organization/create", sys_organization_controller::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/organization/view", sys_organization_controller::backend_view)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/organization/update", sys_organization_controller::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/organization/delete", sys_organization_controller::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
 
 
     }

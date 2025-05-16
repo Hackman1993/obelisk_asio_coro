@@ -12,6 +12,12 @@
 #include <obelisk/http/exception/http_exception.h>
 namespace module::default_
 {
+    template <typename T>
+    struct is_optional: std::false_type{};
+
+    template <typename T>
+    struct is_optional<std::optional<T>> : std::true_type{};
+
     class utils
     {
     public:
@@ -22,10 +28,23 @@ namespace module::default_
         {
             nlohmann::json::object_t result;
             boost::pfr::for_each_field(t, [&](const auto& field, auto index){
-                result.emplace(boost::pfr::get_name<index, T>(), field);
+                result.emplace(boost::pfr::get_name<index, T>(), to_json_val(field));
             });
             return result;
         }
+
+        template<typename T>
+        static nlohmann::json to_json_val(const T& value)
+        {
+            if constexpr (is_optional<T>::value){
+                if (value.has_value())
+                    return value.value();
+                return nullptr;
+            }
+            else
+                return value;
+        }
+
         template<typename T, typename = std::enable_if_t<
             boost::pfr::is_implicitly_reflectable_v<T, struct t>
         >>
@@ -36,9 +55,9 @@ namespace module::default_
             {
                 nlohmann::json::object_t obj;
                 boost::pfr::for_each_field(val, [&](const auto& field, auto index){
-                    obj.emplace(boost::pfr::get_name<index, T>(), field);
+                    obj.emplace(boost::pfr::get_name<index, T>(), to_json_val(field));
                 });
-                result.push_back(obj);
+                result.emplace_back(obj);
             }
 
             return result;

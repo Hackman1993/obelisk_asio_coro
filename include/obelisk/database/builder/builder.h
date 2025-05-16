@@ -88,7 +88,11 @@ namespace obelisk::database::query
             }
             if (!where_groups_.empty())
             {
-                result.append(std::format("WHERE {}", utils::separate_with(where_groups_ ," OR ")));
+                result.append(std::format("WHERE {} ", utils::separate_with(where_groups_ ," OR ")));
+            }
+            if (order_by_.has_value() && type_ == EST_QUERY)
+            {
+                result.append(std::format("ORDER BY {} {}", utils::separate_with(order_by_.value(), ","), order_));
             }
             result.append(";");
             return result;
@@ -132,6 +136,17 @@ namespace obelisk::database::query
             return *this;
         }
 
+        builder& left_join(table join_table, std::vector<condition> conditions)
+        {
+            joins_.emplace_back(std::move(join_table), std::move(conditions), "LEFT JOIN");
+            return *this;
+        }
+        builder& right_join(table join_table, std::vector<condition> conditions)
+        {
+            joins_.emplace_back(std::move(join_table), std::move(conditions), "RIGHT JOIN");
+            return *this;
+        }
+
         builder& values(const std::vector<std::pair<std::string, sql_value>>& value_pack)
         {
             insert_values_.clear();
@@ -151,6 +166,13 @@ namespace obelisk::database::query
         {
             insert_columns_ = std::move(columns);
             insert_values_ = std::move(values);
+            return *this;
+        }
+
+        builder& order_by(std::vector<col> cols, std::string order = "ASC")
+        {
+            order_by_ = std::move(cols);
+            order_ = std::move(order);
             return *this;
         }
         static builder select(std::initializer_list<col> args) {
@@ -237,6 +259,14 @@ namespace obelisk::database::query
             std::ranges::copy(conditions,std::back_inserter( where));
             return *this;
         }
+
+        builder& or_where(const std::initializer_list<condition>& conditions)
+        {
+            where_groups_.emplace_back();
+            auto &where = where_groups_.back();
+            std::ranges::copy(conditions,std::back_inserter( where));
+            return *this;
+        }
         // builder& where(std::vector<condition>& conditions)
         // {
         //     if (where_groups_.empty())
@@ -290,6 +320,8 @@ namespace obelisk::database::query
         std::vector<std::pair<std::string, sql_value>> set_pack_;
         std::vector<condition_group> where_groups_;
         std::vector<col> select_columns_;
+        std::optional<std::vector<col>> order_by_;
+        std::string order_;
     };
 } // obelisk::database::query
 #endif //BUILDER_H
