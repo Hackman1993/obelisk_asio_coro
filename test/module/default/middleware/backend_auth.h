@@ -15,6 +15,7 @@ namespace module::default_::middleware{
         {
         }
         boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> pre_handle(obelisk::http::http_request_wrapper&request) override {
+            using namespace obelisk::database::builder::detail;
             if (!request.headers().contains("authorization"))
                 throw obelisk::http::http_exception("server.error.access_forbidden", obelisk::http::EST_FORBIDDEN);
 
@@ -25,16 +26,16 @@ namespace module::default_::middleware{
             auto token = authorization_header.substr(authorization_header.find("Bearer ") + 7);
 
             const boost::mysql::results results = co_await obelisk::database::db::select({
-				{"so.id", "organization_id"},
-				{"sa.id", "admin_id"},
-                {"sat.id", "token_id"},
+				{col("so.id"), "organization_id"},
+				{col("sa.id"), "admin_id"},
+                {col("sat.id"), "token_id"},
 			}).from({{"sys_access_tokens", "sat"}})
             // Join sys_admins table
-            .inner_join({"sys_admins", "sa"}, {
+            .join({"sys_admins", "sa"}, {
 				{{col{"sa.id"},col{"sat.fn_target_id"}}, {col{"sa.deleted_at"}, nullptr}}
 			})
             // Join sys_organization table
-            .inner_join({"sys_organizations", "so"}, {
+            .join({"sys_organizations", "so"}, {
                 {{col{"sa.fn_organization_id"}, col{"so.id"}}, {col{"so.deleted_at"}, nullptr}}
             })
             .where({

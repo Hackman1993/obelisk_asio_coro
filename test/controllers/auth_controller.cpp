@@ -5,17 +5,16 @@
 #include "obelisk/database/mysql/mysql_connection.h"
 #include "obelisk/http/validator/validator.h"
 #include "obelisk/database/database.h"
-#include "obelisk/database/builder/builder.h"
 
 namespace controller{
     using namespace obelisk::http::validator;
-obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::login1(obelisk::http::http_request_wrapper &request) {
+    obelisk::task<std::unique_ptr<http_response> > auth_controller::login1(http_request_wrapper &request) {
     co_await request.validate({
         {"login", {required()}},
         {"password", {required()}}
     });
-    using namespace obelisk::database::query;
-    const auto result = co_await builder::select({"id", "username", "password"}).from({"t_sys_admins"}).where({
+    using namespace obelisk::database::builder::detail;
+    const auto result = co_await obelisk::database::db::select({col("id"), col("username"), col("password")}).from({"t_sys_admins"}).where({
         {"username", request.params()["login"].get<std::string>()}
     }).get();
 
@@ -58,7 +57,7 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::l
     co_return nullptr;
 }
 
-obelisk::task<std::unique_ptr<obelisk::http::http_response> > auth_controller::login(
+obelisk::task<std::unique_ptr<http_response> > auth_controller::login(
     obelisk::http::http_request_wrapper &request) {
     co_await request.validate({
         {"login", {required()}},

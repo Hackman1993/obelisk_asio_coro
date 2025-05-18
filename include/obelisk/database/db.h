@@ -7,7 +7,11 @@
 #include <sahara/log/log.h>
 
 #include "db_pool.h"
-#include "builder/builder.h"
+#include "builder/select_statement.h"
+#include "builder/insert_statement.h"
+#include "builder/update_statement.h"
+#include "builder/delete_statement.h"
+#include "builder/detail/query.h"
 #include "migration/migration.h"
 
 namespace obelisk::database
@@ -21,31 +25,41 @@ namespace obelisk::database
             return instance;
         }
 
-        static query::builder select(std::initializer_list<col> tables)
+        static builder::select_statement select(const std::initializer_list<builder::detail::selectable_t>& selectables)
         {
-            return query::builder::select(tables);
+            builder::select_statement select;
+            select.select(selectables);
+            return select;
         }
 
-        static query::builder insert(std::string tables)
+        static builder::insert_statement insert(const std::string& table)
         {
-            return query::builder::insert(std::move(tables));
+            builder::insert_statement statement{table};
+            return statement;
+        }
+        static builder::insert_statement insert(const std::string& table, const std::vector<builder::detail::col>& cols)
+        {
+            builder::insert_statement statement{table, cols};
+            return statement;
         }
 
-        static query::builder update(const std::initializer_list<table>& tables)
+        static builder::update_statement update(const std::vector<builder::detail::table>& tables)
         {
-            return query::builder::update(tables);
+            builder::update_statement statement{tables};
+            return statement;
         }
 
-        static query::builder delete_from(const std::initializer_list<table>& tables)
+        static builder::delete_statement delete_from(const std::vector<builder::detail::table>& tables)
         {
-            return query::builder::delete_from(tables);
+            builder::delete_statement statement{tables};
+            return statement;
         }
 
         static boost::asio::awaitable<void> transaction(std::function<boost::asio::awaitable<void> (std::shared_ptr<mysql_connection> connection)> func)
         {
             const auto connection = co_await db_pool::get_connection<mysql_connection>("default");
-            co_await connection->co_query_v("SET AUTOCOMMIT=0;");
-            co_await connection->co_query_v("START TRANSACTION");
+            co_await connection->co_query<void>("SET AUTOCOMMIT=0;");
+            co_await connection->co_query<void>("START TRANSACTION");
             std::optional<std::string> exceptional;
             try
             {
@@ -55,10 +69,10 @@ namespace obelisk::database
                 exceptional = e.what();
             }
             if (exceptional.has_value())
-                co_await connection->co_query_v("ROLLBACK;");
+                co_await connection->co_query<void>("ROLLBACK;");
             else
-                co_await connection->co_query_v("COMMIT;");
-            co_await connection->co_query_v("SET AUTOCOMMIT=1;");
+                co_await connection->co_query<void>("COMMIT;");
+            co_await connection->co_query<void>("SET AUTOCOMMIT=1;");
             if (exceptional.has_value())
                 throw std::logic_error(exceptional.value());
         }

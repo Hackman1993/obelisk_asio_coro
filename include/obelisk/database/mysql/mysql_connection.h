@@ -10,6 +10,8 @@
 #include <boost/asio/use_awaitable.hpp>
 #include <obelisk/database/core/db_connection_base.h>
 
+#include "obelisk/database/core/common.h"
+
 class mysql_connection : public obelisk::database::db_connection_base, public boost::mysql::any_connection{
 public:
     mysql_connection(boost::asio::io_context& ioctx, const std::string& server, const std::uint16_t port, const std::string& username,const std::string& password,const std::string& database):
@@ -46,10 +48,25 @@ public:
         co_return results;
     }
 
-    boost::asio::awaitable<void> co_query_v(const std::string& query)
+    template <typename ResultType>
+    requires std::is_same_v<ResultType, void>
+    boost::asio::awaitable<void> co_query(const std::string& query)
     {
-        co_await co_query(query);
+        boost::mysql::results results;
+        boost::mysql::diagnostics diagnostics;
+        if (auto [ec] = co_await boost::mysql::any_connection::async_execute(query, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
+        {
+            const auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
+            throw std::logic_error(message);
+        }
         co_return;
+    }
+
+    template <typename Rt, typename T>
+    requires std::is_base_of_v<obelisk::database::core::base_statement, T>
+    boost::asio::awaitable<Rt> co_query(T& builder)
+    {
+        co_return co_await co_query<Rt>(builder.compile());
     }
 
     void refresh() override;

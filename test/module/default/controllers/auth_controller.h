@@ -2,8 +2,8 @@
 // Created by hackman on 4/29/25.
 //
 
-#ifndef AUTH_CONTROLLER_H
-#define AUTH_CONTROLLER_H
+#ifndef MODULE_DEFAULT_CONTROLLER_AUTH_CONTROLLER_H
+#define MODULE_DEFAULT_CONTROLLER_AUTH_CONTROLLER_H
 #include "sahara/hash/bcrypt.h"
 #include <obelisk/http/exception/http_exception.h>
 #include <obelisk/http/validator/required_validator.h>
@@ -18,16 +18,20 @@
 #include "obelisk/http/validator/in_validator.h"
 #include <boost/random.hpp>
 #include <boost/random/random_device.hpp>
+#include <obelisk/database/db.h>
+#include <obelisk/database/builder/detail/condition.h>
+
 namespace module::default_::controllers
 {
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_login(obelisk::http::http_request_wrapper&request)
     {
         using namespace obelisk::http::validator;
+        using namespace obelisk::database::builder::detail;
         co_await request.validate({
             {"login", {required()}},
             {"password", {required()}}
         });
-        const auto result = co_await obelisk::database::db::select({"id","username", "password", "phone"}).from({"sys_admins"}).where({
+        const auto result = co_await obelisk::database::db::select({col("id"),col("username"), col("password"), col("phone")}).from({"sys_admins"}).where({
             { col("username"), request.params()["login"].get<std::string>()},
             { col("deleted_at"), nullptr}
         }).get();
@@ -56,6 +60,7 @@ namespace module::default_::controllers
 
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_user_info(obelisk::http::http_request_wrapper&request)
     {
+        using namespace obelisk::database::builder::detail;
         struct user_info
         {
             std::uint64_t id{};
@@ -65,8 +70,8 @@ namespace module::default_::controllers
         };
         auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
         const auto result = co_await obelisk::database::db::select({
-            col{"sa.id", "id"}, col{"sa.username", "username"}, col{"so.name", "organization_name"}, col{"sa.fn_organization_id", "organization_id"}
-        }).from({{"sys_admins", "sa"}}).inner_join({"sys_organizations", "so"},{
+            {col("sa.id"), "id"}, {col("sa.username"), "username"}, {col("so.name"), "organization_name"}, {col("sa.fn_organization_id"), "organization_id"}
+        }).from({{"sys_admins", "sa"}}).join({table{"sys_organizations"}, "so"},{
             {col{"sa.fn_organization_id"}, col{"so.id"}}, {col{"so.deleted_at"}, nullptr}
         }).where({
             {col{"sa.id"}, admin_id},
@@ -94,6 +99,7 @@ namespace module::default_::controllers
     }
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_permissions(obelisk::http::http_request_wrapper&request)
     {
+        using namespace obelisk::database::builder::detail;
         auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
         auto organization_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_organization_id"]);
         struct  permission_model
@@ -104,15 +110,15 @@ namespace module::default_::controllers
             bool is_grant{};
         };
         auto query = obelisk::database::db::select({
-            {"sp.id", "id"},
-            {"sp.code", "code" },
-            {"smrp.cascade", "is_cascade"},
-            {"smrp.grant", "is_grant"}
+            {col("sp.id"), "id"},
+            {col("sp.code"), "code" },
+            {col("smrp.cascade"), "is_cascade"},
+            {col("smrp.grant"), "is_grant"}
         }).from({{"sys_admins", "sa"}})
-        .inner_join({"sys_mid_admin_role", "smar"}, {{col("sa.id"), col("smar.fn_admin_id")}, {col("sa.fn_organization_id"), organization_id}, {col("sa.deleted_at"), nullptr}})
-        .inner_join({"sys_roles", "sr"}, {{col("smar.fn_role_id"), col("sr.id")}, {col("sr.fn_organization_id"), organization_id}, {col("sr.deleted_at"), nullptr}})
-        .inner_join({"sys_mid_role_permission", "smrp"}, {{col("sr.id"), col("smrp.fn_role_id")}})
-        .inner_join({"sys_permissions", "sp"}, {{col("smrp.fn_permission_id"), col("sp.id")}})
+        .join({"sys_mid_admin_role", "smar"}, {{col("sa.id"), col("smar.fn_admin_id")}, {col("sa.fn_organization_id"), organization_id}, {col("sa.deleted_at"), nullptr}})
+        .join({"sys_roles", "sr"}, {{col("smar.fn_role_id"), col("sr.id")}, {col("sr.fn_organization_id"), organization_id}, {col("sr.deleted_at"), nullptr}})
+        .join({"sys_mid_role_permission", "smrp"}, {{col("sr.id"), col("smrp.fn_role_id")}})
+        .join({"sys_permissions", "sp"}, {{col("smrp.fn_permission_id"), col("sp.id")}})
         .where({
             {col("sa.id"), admin_id}
         });
@@ -126,6 +132,7 @@ namespace module::default_::controllers
     inline boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> send_sms(obelisk::http::http_request_wrapper&request)
     {
         using namespace obelisk::http::validator;
+        using namespace obelisk::database::builder::detail;
         auto avail_type = obelisk::http::config::get<std::vector<std::string>>("sms.channel.verify_code.available_type", {});
         co_await request.validate({
             {"phone", {required()}},
@@ -134,7 +141,7 @@ namespace module::default_::controllers
 
         const std::string& phone = request.params()["phone"].get<std::string>();
         const std::string& type = request.params()["reason"].get<std::string>();
-        auto query = obelisk::database::db::select({"id"}).from({"sys_verify_codes"}).where({
+        auto query = obelisk::database::db::select({col("id")}).from({"sys_verify_codes"}).where({
             {col("phone"), phone},
             {col("type"), type},
             {col("created_at"), ">", std::chrono::system_clock::now() - std::chrono::seconds(55)}
@@ -158,4 +165,4 @@ namespace module::default_::controllers
     }
 }
 
-#endif //AUTH_CONTROLLER_H
+#endif //MODULE_DEFAULT_CONTROLLER_AUTH_CONTROLLER_H

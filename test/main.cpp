@@ -36,7 +36,13 @@
 #include "module/default/default_.h"
 #include "obelisk/http/client/request.h"
 #include <sahara/hash/bcrypt.h>
+#include <obelisk/database/core/common.h>
+
+#include "obelisk/database/builder/insert_statement.h"
+#include "obelisk/database/builder/update_statement.h"
+#include "obelisk/database/builder/select_statement.h"
 using namespace  boost::parser;
+
 
 int main(int argc, char* argv[]) {
     try {

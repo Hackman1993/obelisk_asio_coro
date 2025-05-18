@@ -7,9 +7,12 @@
 #include <boost/asio/awaitable.hpp>
 #include <nlohmann/json.hpp>
 #include <obelisk/http/response/json_response.h>
-#include <boost/pfr.hpp>
+#include <boost/mysql/pfr.hpp>
 #include <clients/aliyun_sms_client.h>
 #include <obelisk/http/exception/http_exception.h>
+#include <obelisk/http/framework/config.h>
+#include <obelisk/database/builder/detail/col.h>
+#include <obelisk/database/db.h>
 namespace module::default_
 {
     template <typename T>
@@ -92,7 +95,8 @@ namespace module::default_
 
         static boost::asio::awaitable<bool> validate_verify_code(const std::string& phone, const std::string& verify_code, const std::string& type)
         {
-            const auto count = co_await obelisk::database::db::select({"id"}).from({"sys_verify_codes"}).where({
+            using namespace obelisk::database::builder::detail;
+            const auto count = co_await obelisk::database::db::select({col("id")}).from({"sys_verify_codes"}).where({
                 {col{"phone"}, phone},
                 {col{"code"}, verify_code},
                 {col{"type"}, type},
@@ -110,7 +114,7 @@ namespace module::default_
             co_return;
         }
 
-        static boost::asio::awaitable<bool> can(std::uint64_t sys_admin_id, std::uint64_t org_id, const std::string& code)
+        static boost::asio::awaitable<bool> can(const std::string& code,std::uint64_t sys_admin_id, std::uint64_t org_id, std::uint64_t target_org_id)
         {
             co_return true;
         }
@@ -118,13 +122,13 @@ namespace module::default_
     private:
         static boost::asio::awaitable<void> _insert_permission(const std::string& code, bool cascade)
         {
-            using namespace obelisk::database;
+            using namespace obelisk::database::builder::detail;
             std::uint64_t permission_id;
-            auto result = co_await db::select({"id", "code"}).from({"sys_permissions"}).where({{"code", code}}).get();
+            auto result = co_await obelisk::database::db::select({col("id"), col("code")}).from({"sys_permissions"}).where({{"code", code}}).get();
 
             if (result.rows().empty())
             {
-                permission_id = (co_await db::insert("sys_permissions").values({
+                permission_id = (co_await obelisk::database::db::insert("sys_permissions").values({
                     {"code", code},
                     {"visible", true},
                     {"cascading", cascade}
@@ -133,13 +137,13 @@ namespace module::default_
             else
                 permission_id = result.rows()[0][0].as_uint64();
 
-            result = co_await db::select({"fn_role_id", "fn_permission_id"}).from({"sys_mid_role_permission"}).where({
+            result = co_await obelisk::database::db::select({col("fn_role_id"), col("fn_permission_id")}).from({"sys_mid_role_permission"}).where({
                 {"fn_role_id", 1},
                 {"fn_permission_id", permission_id}
             }).get();
             if (result.rows().empty())
             {
-                co_await db::insert("sys_mid_role_permission").values({
+                co_await obelisk::database::db::insert("sys_mid_role_permission").values({
                     {"fn_role_id", 1},
                     {"fn_permission_id", permission_id},
                     {"cascade", cascade},
@@ -148,7 +152,7 @@ namespace module::default_
             }
             else
             {
-                co_await db::update({"sys_mid_role_permission"}).set({
+                co_await obelisk::database::db::update({"sys_mid_role_permission"}).set({
                     {"cascade", cascade},
                     {"grant", true}
                 }).where({
