@@ -8,20 +8,16 @@
 #include <obelisk/http/core/http_request.h>
 #include <obelisk/http/core/http_response.h>
 
+#include "controller.h"
+
 namespace module::default_::controllers
 {
-    class sys_admin_controller{
+    class sys_admin_controller : public controller{
     public:
-        static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_view(obelisk::http::http_request_wrapper&request)
-        {
-            obelisk::database::db::select({"id", "username", "phone"}).from({"sys_admins", "sa"})
-            .inner_join({"sys_mid_admin_role", "smar"}, {{col{"smar.fn_admin_id"}, col{"sa.id"}}, {col{"sa.deleted_at"}, nullptr}})
-            .inner_join({"sys_roles", "sr"}, {"sr.id", "smar.fn_role_id"})
-            .where({
-                {col("sa.deleted_at"), nullptr}
-            }).get<obelisk::http::http_response>();
-            co_return nullptr;
-        }
+        static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_view(obelisk::http::http_request_wrapper&request);
+        static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_create(obelisk::http::http_request_wrapper&request);
+        static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_update(obelisk::http::http_request_wrapper&request);
+        static boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> backend_delete(obelisk::http::http_request_wrapper&request);
     };
 }
 

@@ -1,5 +1,6 @@
 #include "member_controller.h"
 
+#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include "obelisk/obelisk.h"
@@ -26,11 +27,11 @@ namespace controller{
         std::uint64_t total = 0;
 
         if(request.params().contains("page")) {
-            auto val = request.params()["page"].get<std::uint64_t>();
+            auto val = boost::lexical_cast<std::uint64_t>(request.params()["page"].get<std::string>());
             page = val > 0? val : page;
         }
         if(request.params().contains("limit")) {
-            auto val = request.params()["limit"].get<std::uint64_t>();
+            auto val = boost::lexical_cast<std::uint64_t>(request.params()["limit"].get<std::string>());
             limit = val > 0? val : limit;
         }
         if(request.params().contains("search")) {

@@ -7,10 +7,10 @@ namespace obelisk::http::validator {
     class confirmed_validator : public validator_base{
 
     public:
-      obelisk::task<void> validate(const std::string &name, http_request_wrapper &request) override;
+      boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) override;
     };
 
-    std::shared_ptr<confirmed_validator> confirmed();
+    inline std::shared_ptr<confirmed_validator> confirmed(){ return std::make_shared<confirmed_validator>();}
 } // obelisk::http::validator
 
 #endif //OBELISK_CONFIRMED_VALIDATOR_H

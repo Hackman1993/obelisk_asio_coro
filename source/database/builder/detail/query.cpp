@@ -6,19 +6,23 @@ namespace obelisk::database::builder::detail
 {
     std::string query::compile()
     {
-        std::string result = std::format("SELECT {}\n\t",distinct_? "DISTINCT ": "");
+        std::string result = sub_query_? "(":"";
+        result.append(std::format("SELECT {}\n\t",distinct_? "DISTINCT ": ""));
         result.append(std::format("{} ", utils::separate_with(selects_, ",\n\t")));
         if (!from_.empty())
             result.append(std::format("FROM {}\n", utils::separate_with(from_, ",")));
         if (!joins_.empty())
             result.append(std::format("\t {} ", utils::separate_with(joins_, "\n\t")));
-        if (!this->where_groups_.empty())
-            result.append(std::format("WHERE {} ", utils::separate_with(this->where_groups_ ," OR ")));
+        result.append(compile_where());
+        if (!group_by_.empty())
+            result.append(std::format("GROUP BY {} ", utils::separate_with(group_by_ ,",")));
         if (order_by_)
             result.append(std::format("ORDER BY {} ", order_by_.value().compile()));
         if (!unions_.empty())
             result.append(std::format("UNION {} ", utils::separate_with(unions_, "\nUNION ")));
-        result.append(";");
+        if (limit_)
+            result.append(std::format("{} ", limit_.value().compile()));
+        result.append(sub_query_?")":"");
         return result;
     }
 

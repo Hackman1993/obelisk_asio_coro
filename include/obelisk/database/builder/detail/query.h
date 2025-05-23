@@ -5,9 +5,14 @@
 #ifndef OBELISK_DATABASE_BUILDER_DETAIL_QUERY_H
 #define OBELISK_DATABASE_BUILDER_DETAIL_QUERY_H
 #include <string>
+
 #include "common.h"
 #include "join.h"
 #include "condition.h"
+#include "count.h"
+#include "group_by.h"
+#include "group_concat.h"
+#include "limit.h"
 #include "order_by_.h"
 #include "table.h"
 #include "query.h"
@@ -15,13 +20,13 @@
 
 namespace obelisk::database::builder::detail
 {
-    using selectable_t = alia<col, core::sql_value, raw>;
-    using from_t = alia<table, raw>;
+    class query;
+    using selectable_t = alia<col, core::sql_value, raw, count_t, group_concat>;
+    using from_t = alia<table, raw, query>;
 
     class query: public base_builder_statement,public enable_where_condition<query>
     {
     public:
-
         std::string compile() override;
         query& join(join_ join);
 
@@ -48,6 +53,7 @@ namespace obelisk::database::builder::detail
 
         query& select(std::initializer_list<selectable_t> selections)
         {
+            selects_.clear();
             std::ranges::copy(selections, std::back_insert_iterator(selects_));
             return *this;
         }
@@ -58,13 +64,49 @@ namespace obelisk::database::builder::detail
             return *this;
         }
 
+        query& limit(std::uint64_t lm, std::uint64_t offset = 0)
+        {
+            limit_ ={lm, offset};
+            return *this;
+        }
+
+        query& group_by(const col& cl)
+        {
+            group_by_.emplace_back(cl);
+            return *this;
+        }
+
+        query& group_by(const std::initializer_list<col>& cl)
+        {
+            std::ranges::copy(cl, std::back_inserter(group_by_));
+            return *this;
+        }
+
+        [[nodiscard]] query as_sub_query() const
+        {
+            query q = *this;
+            q.sub_query_ = true;
+            return q;
+        }
+
+        boost::asio::awaitable<std::uint64_t> count()
+        {
+            query q;
+            q.select({count_t(1)}).from({{this->as_sub_query(), "count"}});
+            auto result = co_await q.get();
+            co_return result.rows()[0][0].as_int64();
+        }
+
     private:
+        bool sub_query_ = false;
         bool distinct_ = false;
         std::vector<selectable_t> selects_;
         std::vector<from_t> from_;
         std::vector<join_> joins_;
         std::optional<order_by_> order_by_;
         std::vector<union_> unions_;
+        std::optional<limit_t> limit_;
+        std::vector<col> group_by_;
     };
 
 }

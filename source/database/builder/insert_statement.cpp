@@ -19,6 +19,7 @@ namespace obelisk::database::builder
         }
 
 
+        result.append(";");
         return result;
     }
 }

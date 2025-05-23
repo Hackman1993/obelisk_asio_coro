@@ -8,7 +8,7 @@ namespace obelisk::http::validator {
     obelisk::task<void> string_min_length_validator::validate(const std::string&name,
                                                                     http_request_wrapper&request) {
         if (request.params().contains(name)) {
-            const auto&value = request.params()[std::string(name)];
+            const auto&value = request.params()[name];
             auto success = true;
             if (
                 (value.is_string() && value.get<std::string>().size() < length_) ||

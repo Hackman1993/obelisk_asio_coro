@@ -59,7 +59,7 @@ namespace obelisk::database
         {
             const auto connection = co_await db_pool::get_connection<mysql_connection>("default");
             co_await connection->co_query<void>("SET AUTOCOMMIT=0;");
-            co_await connection->co_query<void>("START TRANSACTION");
+            co_await connection->co_query<void>("START TRANSACTION;");
             std::optional<std::string> exceptional;
             try
             {

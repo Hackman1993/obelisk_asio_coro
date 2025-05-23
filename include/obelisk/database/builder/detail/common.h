@@ -23,9 +23,7 @@ public:
         boost::asio::awaitable<ResultType> get()
         {
             auto connection = co_await db_pool::get_connection<mysql_connection>("default");
-            const auto sql = compile();
-            std::cout << sql << std::endl;
-            auto result = co_await connection->template co_query<ResultType>(sql);
+            auto result = co_await connection->template co_query<ResultType>(this->compile());
             co_return result;
         }
 
@@ -34,9 +32,7 @@ public:
         boost::asio::awaitable<void> get()
         {
             auto connection = co_await db_pool::get_connection<mysql_connection>("default");
-            const auto sql = compile();
-            std::cout << sql << std::endl;
-            co_await connection->co_query<ResultType>(sql);
+            co_await connection->co_query<ResultType>(this->compile());
             co_return;
         }
 
@@ -47,39 +43,31 @@ public:
         boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get()
         {
             auto connection = co_await db_pool::get_connection<mysql_connection>("default");
-            const auto sql = compile();
-            std::cout << sql << std::endl;
-            auto result = co_await connection->template co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(sql);
+            auto result = co_await connection->template co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(this->compile());
             co_return result;
         }
 
-        template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
-            std::is_same_v<boost::mysql::results, ResultType>
-        >>
-        boost::asio::awaitable<ResultType> get(const std::shared_ptr<mysql_connection>& connection)
+        template <typename ResultType = boost::mysql::results>
+        std::enable_if_t<std::is_same_v<boost::mysql::results, ResultType>, boost::asio::awaitable<ResultType>> get(const std::shared_ptr<mysql_connection>& connection)
         {
-            const auto sql = compile();
-            std::cout << sql << std::endl;
-            auto result = co_await connection->co_query<ResultType>(sql);
+            auto result = co_await connection->co_query<ResultType>(this->compile());
             co_return result;
         }
 
-        template <typename ResultType, typename=std::enable_if_t<
-            !std::is_same_v<boost::mysql::results, ResultType> &&
-            boost::pfr::is_implicitly_reflectable_v<ResultType, t>
-        >>
+        template <typename ResultType>
+        std::enable_if_t<std::is_same_v<ResultType, void>, boost::asio::awaitable<void>> get(const std::shared_ptr<mysql_connection>& connection)
+        {
+            boost::mysql::results results;
+            auto result = co_await connection->co_query(this->compile());
+            co_return;
+        }
+
+        template <typename ResultType>
+        requires (!std::is_same_v<boost::mysql::results, ResultType> && !std::is_same_v<void, ResultType> && boost::pfr::is_implicitly_reflectable_v<ResultType, t>)
         boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get(const std::shared_ptr<mysql_connection>& connection)
         {
-            const auto sql = compile();
-            std::cout << sql << std::endl;
-            auto result = co_await connection->co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(sql);
+            auto result = co_await connection->co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(this->compile());
             co_return result;
-        }
-
-        boost::asio::awaitable<std::uint64_t> count()
-        {
-            auto result = co_await get();
-            co_return result.rows().size();
         }
     };
 
@@ -104,8 +92,36 @@ public:
             return static_cast<T&>(*this);
         }
 
+        T& global_where(const std::initializer_list<condition>& conditions)
+        {
+            std::ranges::copy(conditions,std::back_inserter( global_where_));
+            return static_cast<T&>(*this);
+        }
+
+        std::string compile_where()
+        {
+            std::string result;
+            if (!where_groups_.empty() || !global_where_.empty())
+                result.append("WHERE ");
+            if (!where_groups_.empty()){
+                if (global_where_.empty() || where_groups_.size() == 1)
+                    result.append(std::format("{}", utils::separate_with(where_groups_, " OR ")));
+                else
+                    result.append(std::format("({}) ", utils::separate_with(where_groups_, " OR ")));
+            }
+            if (!global_where_.empty())
+            {
+                if (!where_groups_.empty())
+                    result.append("AND ");
+                result.append(std::format("({}) ", utils::separate_with(global_where_, " AND ")));
+            }
+            return result;
+        }
+
+
     protected:
         std::vector<condition_group> where_groups_;
+        std::vector<condition> global_where_;
     };
 }
 

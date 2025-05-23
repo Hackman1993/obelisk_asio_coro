@@ -18,6 +18,7 @@ namespace obelisk::database::builder
         {
             result.append(std::format("WHERE {} ", utils::separate_with(where_groups_ ," OR ")));
         }
+        result.append(";");
         return result;
     }
 

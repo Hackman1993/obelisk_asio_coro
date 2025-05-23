@@ -8,7 +8,9 @@
 #include <obelisk/http/http_server.h>
 
 #include "controllers/auth_controller.h"
+#include "controllers/sys_admin_controller.h"
 #include "controllers/sys_organization_controller.h"
+#include "controllers/sys_role.h"
 #include "migrations/create_sys_access_tokens_table.h"
 #include "migrations/create_sys_admin_table.h"
 #include "migrations/create_sys_organization_table.h"
@@ -27,12 +29,20 @@ namespace module {
         server.route("/api/backend/current/info", controllers::backend_user_info)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/current/permissions", controllers::backend_permissions)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
 
-        server.route("/api/backend/organization/create", sys_organization_controller::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
-        server.route("/api/backend/organization/view", sys_organization_controller::backend_view)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
-        server.route("/api/backend/organization/update", sys_organization_controller::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
-        server.route("/api/backend/organization/delete", sys_organization_controller::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/organization/create", controllers::sys_organization_controller::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/organization/view", controllers::sys_organization_controller::backend_view)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/organization/update", controllers::sys_organization_controller::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/organization/delete", controllers::sys_organization_controller::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
 
+        server.route("/api/backend/admin/view", controllers::sys_admin_controller::backend_view)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/admin/create", controllers::sys_admin_controller::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/admin/update", controllers::sys_admin_controller::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/admin/delete", controllers::sys_admin_controller::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
 
+        server.route("/api/backend/role/view", controllers::sys_role::backend_view)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/role/create", controllers::sys_role::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/role/update", controllers::sys_role::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/role/delete", controllers::sys_role::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
     }
 
     boost::asio::awaitable<void> default_module::migrate(){

@@ -38,9 +38,11 @@ public:
     >>
     boost::asio::awaitable<ResultType> co_query(const std::string& query)
     {
+        std::string sql = query.ends_with(";")? query:query+";";
+        std::cout << sql << std::endl;
         ResultType results;
         boost::mysql::diagnostics diagnostics;
-        if (auto [ec] = co_await boost::mysql::any_connection::async_execute(query, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
+        if (auto [ec] = co_await any_connection::async_execute(sql, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
         {
             const auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
             throw std::logic_error(message);
@@ -52,9 +54,11 @@ public:
     requires std::is_same_v<ResultType, void>
     boost::asio::awaitable<void> co_query(const std::string& query)
     {
+        std::string sql = query.ends_with(";")? query:query+";";
+        std::cout << sql << std::endl;
         boost::mysql::results results;
         boost::mysql::diagnostics diagnostics;
-        if (auto [ec] = co_await boost::mysql::any_connection::async_execute(query, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
+        if (auto [ec] = co_await async_execute(sql, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
         {
             const auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
             throw std::logic_error(message);
@@ -66,7 +70,7 @@ public:
     requires std::is_base_of_v<obelisk::database::core::base_statement, T>
     boost::asio::awaitable<Rt> co_query(T& builder)
     {
-        co_return co_await co_query<Rt>(builder.compile());
+        co_return co_await co_query<Rt>(&builder->compile());
     }
 
     void refresh() override;

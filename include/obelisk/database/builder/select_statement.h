@@ -11,7 +11,8 @@ namespace obelisk::database::builder
 {
 
     class select_statement : public detail::query, public detail::enable_execute{
-
+    public:
+        std::string compile() override;
     };
 
 }
