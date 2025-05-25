@@ -69,7 +69,7 @@ namespace module::default_::controllers
             throw obelisk::http::http_exception("server.error.target_not_exists", obelisk::http::EST_UNPROCESSABLE_CONTENT);
 
         auto& params = request.params();
-        std::vector<std::pair<col, core::sql_value>> values{{"name", request.params()["name"].get<std::string>()}};
+        std::vector<std::pair<col, sql_value>> values{{"name", request.params()["name"].get<std::string>()}};
         try_emplace<std::uint64_t>("parent_id", values, params);
         try_emplace<std::string>("director_name", values, params);
         try_emplace<std::string>("director_phone", values, params);
@@ -113,7 +113,7 @@ namespace module::default_::controllers
             throw obelisk::http::http_exception("server.error.target_not_exists", obelisk::http::EST_UNPROCESSABLE_CONTENT);
 
         auto& params = request.params();
-        std::vector<std::pair<col, core::sql_value>> values;
+        std::vector<std::pair<col, sql_value>> values;
         try_emplace<std::string>("name", values, params);
         try_emplace<std::string>("director_name", values, params);
         try_emplace<std::string>("director_phone", values, params);

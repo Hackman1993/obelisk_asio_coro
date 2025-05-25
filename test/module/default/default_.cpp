@@ -38,11 +38,14 @@ namespace module {
         server.route("/api/backend/admin/create", controllers::sys_admin_controller::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/admin/update", controllers::sys_admin_controller::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/admin/delete", controllers::sys_admin_controller::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/admin/assignable_roles", controllers::sys_admin_controller::backend_assignable_role)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
 
         server.route("/api/backend/role/view", controllers::sys_role::backend_view)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/role/create", controllers::sys_role::backend_create)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/role/update", controllers::sys_role::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/role/delete", controllers::sys_role::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/role/assignable_permissions", controllers::sys_role::backend_assignable_permission)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+
     }
 
     boost::asio::awaitable<void> default_module::migrate(){

@@ -31,7 +31,7 @@ namespace module::default_::controllers
 
     protected:
         template<typename As>
-        static void try_emplace(const std::string& key, std::vector<std::pair<col, core::sql_value>>& values, nlohmann::json params)
+        static void try_emplace(const std::string& key, std::vector<std::pair<col, sql_value>>& values, nlohmann::json params)
         {
             if (params.contains(key))
                 values.emplace_back(key, params[key].get<As>());
@@ -96,7 +96,8 @@ namespace module::default_::controllers
             });
         }
 
-        static awaitable<bool> can(const std::string& code,obelisk::http::http_request_wrapper& request, std::uint64_t target_org_id);
+        static awaitable<std::uint64_t> can(const std::string& code, obelisk::http::http_request_wrapper& request, const std::string& model, std::uint64_t target_id);
+        static awaitable<bool> can(const std::string& code, obelisk::http::http_request_wrapper& request, std::uint64_t target_org_id);
     };
 
 }

@@ -12,8 +12,8 @@
 
 namespace obelisk::database::builder::detail
 {
-  using join_t = alia<table,raw>;
-  class join_ : public core::base_statement
+  using join_t = alia<table,raw, sub_query>;
+  class join_ : public base_statement
   {
   public:
     join_(join_t table, std::vector<condition> conditions, std::string join_type = "INNER") : table_(std::move(table)), join_type_(std::move(join_type)), conditions_(std::move(conditions)) {}

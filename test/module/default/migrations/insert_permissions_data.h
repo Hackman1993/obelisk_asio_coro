@@ -16,11 +16,22 @@ namespace module::default_::migrations
             co_await utils::register_permission("permission.sys_admin.update", true);
             co_await utils::register_permission("permission.sys_admin.create", true);
             co_await utils::register_permission("permission.sys_admin.delete", true);
+            co_await utils::register_permission("permission.sys_admin.create", true);
+            co_await utils::register_permission("permission.sys_admin.assign_role", true);
+            co_await utils::register_permission("permission.sys_admin.reset_password", true);
+
 
             co_await utils::register_permission("permission.sys_role.view", true);
             co_await utils::register_permission("permission.sys_role.update", true);
             co_await utils::register_permission("permission.sys_role.create", true);
             co_await utils::register_permission("permission.sys_role.delete", true);
+            co_await utils::register_permission("permission.sys_role.assign_permission", true);
+
+
+            co_await utils::register_permission("permission.sys_organization.view", true);
+            co_await utils::register_permission("permission.sys_organization.update", true);
+            co_await utils::register_permission("permission.sys_organization.create", true);
+            co_await utils::register_permission("permission.sys_organization.delete", true);
 
 
             co_return;

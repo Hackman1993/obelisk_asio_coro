@@ -4,17 +4,62 @@
 
 #ifndef OBELISK_DATABASE_BUILDER_DETAIL_COMMON_H
 #define OBELISK_DATABASE_BUILDER_DETAIL_COMMON_H
-#include <obelisk/database/core/common.h>
-#include "condition_group.h"
 #include <boost/mysql.hpp>
 #include <obelisk/database/db_pool.h>
 #include <boost/mysql/pfr.hpp>
 #include <obelisk/database/mysql/mysql_connection.h>
+#include "utils.h"
 class mysql_connection;
 namespace obelisk::database::builder::detail
 {
+    using sql_value_t = std::variant<std::nullptr_t, double, bool, std::int64_t, std::string, std::uint64_t, std::chrono::system_clock::time_point>;
+    class base_statement
+    {
+    public:
+        virtual ~base_statement() = default;
+        virtual std::string compile() = 0;
+    };
 
-    class base_builder_statement: public core::base_statement
+    struct general_visitor {
+        template <typename T, typename = std::enable_if_t<std::is_base_of_v<base_statement, T>>>
+        std::string operator()(T& c) const {
+            return c.compile();
+        }
+        std::string operator()(std::string& c) const {
+            return std::format("'{}'", c);
+        }
+        std::string operator()(sql_value_t& c) const {
+            return std::visit(*this, c);
+        }
+        template <typename T, typename = std::enable_if_t<std::is_base_of_v<base_statement, T>>>
+        std::string operator()(std::vector<T>& c) const {
+            return std::format("({})", utils::separate_with(c,","));
+        }
+        std::string operator()(std::chrono::system_clock::time_point& c) const
+        {
+            return std::format("'{:%F %T}'", c);
+        }
+        template <typename T, typename=std::enable_if_t<!std::is_class_v<T>>>
+        std::string operator()(T c) const {
+            return std::format("{}", c);
+        }
+        std::string operator()(std::nullptr_t) const {
+            return "NULL";
+        }
+    };
+
+
+    class sql_value : public sql_value_t, base_statement
+    {
+    public:
+        using sql_value_t::variant;
+        std::string compile() override
+        {
+            return std::visit(general_visitor{}, *this);
+        }
+    };
+
+    class base_builder_statement: public base_statement
     {
 public:
         template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
@@ -71,58 +116,7 @@ public:
         }
     };
 
-    template <typename T>
-    class enable_where_condition
-    {
-    public:
-        T& where(const std::initializer_list<condition>& conditions) {
-            if (where_groups_.empty())
-                where_groups_.emplace_back();
 
-            auto &where = where_groups_.back();
-            std::ranges::copy(conditions,std::back_inserter( where));
-            return static_cast<T&>(*this);
-        }
-
-        T& or_where(const std::initializer_list<condition>& conditions)
-        {
-            where_groups_.emplace_back();
-            auto &where = where_groups_.back();
-            std::ranges::copy(conditions,std::back_inserter( where));
-            return static_cast<T&>(*this);
-        }
-
-        T& global_where(const std::initializer_list<condition>& conditions)
-        {
-            std::ranges::copy(conditions,std::back_inserter( global_where_));
-            return static_cast<T&>(*this);
-        }
-
-        std::string compile_where()
-        {
-            std::string result;
-            if (!where_groups_.empty() || !global_where_.empty())
-                result.append("WHERE ");
-            if (!where_groups_.empty()){
-                if (global_where_.empty() || where_groups_.size() == 1)
-                    result.append(std::format("{}", utils::separate_with(where_groups_, " OR ")));
-                else
-                    result.append(std::format("({}) ", utils::separate_with(where_groups_, " OR ")));
-            }
-            if (!global_where_.empty())
-            {
-                if (!where_groups_.empty())
-                    result.append("AND ");
-                result.append(std::format("({}) ", utils::separate_with(global_where_, " AND ")));
-            }
-            return result;
-        }
-
-
-    protected:
-        std::vector<condition_group> where_groups_;
-        std::vector<condition> global_where_;
-    };
 }
 
 #endif //OBELISK_DATABASE_BUILDER_DETAIL_COMMON_H

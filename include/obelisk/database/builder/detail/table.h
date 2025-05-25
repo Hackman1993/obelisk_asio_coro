@@ -5,11 +5,11 @@
 #ifndef OBELISK_DATABASE_BUILDER_TABLE_H
 #define OBELISK_DATABASE_BUILDER_TABLE_H
 
-#include <obelisk/database/core/common.h>
+#include "common.h"
 
 namespace obelisk::database::builder::detail
 {
-    class table final : public core::base_statement
+    class table final : public base_statement
     {
     public:
         table() = default;

@@ -5,14 +5,12 @@
 #ifndef OBELISK_DATABASE_BUILDER_DETAIL_GROUP_BY_H
 #define OBELISK_DATABASE_BUILDER_DETAIL_GROUP_BY_H
 #include "col.h"
-#include <obelisk/database/core/common.h>
+#include "common.h"
 #include "utils.h"
-
-#include "raw.h"
 
 namespace obelisk::database::builder::detail
 {
-    class group_by_t : public core::base_statement{
+    class group_by_t : public base_statement{
     public:
         group_by_t(const col& col):source_({col}){}
         group_by_t(const std::initializer_list<col>& col):source_(col){}

@@ -4,8 +4,8 @@
 
 #ifndef INSERT_STATEMENT_H
 #define INSERT_STATEMENT_H
+#include "detail/col.h"
 #include "detail/common.h"
-#include "detail/enable_execute.h"
 #include "detail/sub_query.h"
 #include "detail/table.h"
 #include "detail/values.h"
@@ -13,7 +13,7 @@
 namespace obelisk::database::builder
 {
 
-    class insert_statement : public detail::base_builder_statement, public detail::enable_execute
+    class insert_statement : public detail::base_builder_statement
     {
     public:
         insert_statement() = default;
@@ -26,7 +26,7 @@ namespace obelisk::database::builder
             insert_columns_ = std::move(columns);
             return *this;
         }
-        insert_statement& values(const std::vector<std::pair<detail::col, core::sql_value>>& value_pack)
+        insert_statement& values(const std::vector<std::pair<detail::col, detail::sql_value>>& value_pack)
         {
             insert_columns_.clear();
 

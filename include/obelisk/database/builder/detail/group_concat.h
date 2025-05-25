@@ -5,8 +5,6 @@
 #ifndef GROUP_CONCAT_H
 #define GROUP_CONCAT_H
 #include "col.h"
-#include <obelisk/database/core/common.h>
-
 #include "raw.h"
 
 namespace obelisk::database::builder::detail
@@ -14,7 +12,7 @@ namespace obelisk::database::builder::detail
 
     using group_concat_t = std::variant<col, raw>;
 
-    class group_concat : public core::base_statement{
+    class group_concat : public base_statement{
     public:
         template<typename T>
         requires std::is_convertible_v<T, group_concat_t>
@@ -32,7 +30,7 @@ namespace obelisk::database::builder::detail
 
         std::string compile() override
         {
-            std::string result = std::format("GROUP_CONCAT({}{}", distinct_? "DISTINCT ":"", std::visit(core::general_visitor{}, source_));
+            std::string result = std::format("GROUP_CONCAT({}{}", distinct_? "DISTINCT ":"", std::visit(general_visitor{}, source_));
             if (separator_)
                 result.append(std::format("SEPARATOR {}", separator_.value()));
             result.append(") ");

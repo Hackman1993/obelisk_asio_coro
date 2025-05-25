@@ -12,6 +12,7 @@
 #include "count.h"
 #include "group_by.h"
 #include "group_concat.h"
+#include "if_format.h"
 #include "limit.h"
 #include "order_by_.h"
 #include "table.h"
@@ -21,7 +22,7 @@
 namespace obelisk::database::builder::detail
 {
     class query;
-    using selectable_t = alia<col, core::sql_value, raw, count_t, group_concat>;
+    using selectable_t = alia<col, sql_value, raw, count_t, group_concat, if_format>;
     using from_t = alia<table, raw, query>;
 
     class query: public base_builder_statement,public enable_where_condition<query>
@@ -37,6 +38,12 @@ namespace obelisk::database::builder::detail
         }
         query& right_join(join_t join_table, std::vector<condition> conditions){
             joins_.emplace_back(std::move(join_table), std::move(conditions), "RIGHT");
+            return *this;
+        }
+
+        query& distinct()
+        {
+            distinct_ = true;
             return *this;
         }
 
@@ -58,7 +65,7 @@ namespace obelisk::database::builder::detail
             return *this;
         }
 
-        query& u_nion(union_ target)
+        query& u_nion(const union_& target)
         {
             unions_.push_back(target);
             return *this;
@@ -82,17 +89,17 @@ namespace obelisk::database::builder::detail
             return *this;
         }
 
-        [[nodiscard]] query as_sub_query() const
+        [[nodiscard]] query& as_sub_query()
         {
-            query q = *this;
-            q.sub_query_ = true;
-            return q;
+            sub_query_ = true;
+            return *this;
         }
 
         boost::asio::awaitable<std::uint64_t> count()
         {
             query q;
-            q.select({count_t(1)}).from({{this->as_sub_query(), "count"}});
+            query cp = *this;
+            q.select({count_t(1)}).from({{cp.as_sub_query(), "count"}});
             auto result = co_await q.get();
             co_return result.rows()[0][0].as_int64();
         }

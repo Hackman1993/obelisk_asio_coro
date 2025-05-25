@@ -5,16 +5,16 @@
 #ifndef OBELISK_DATABASE_BUILDER_DETAIL_SUB_QUERY_H
 #define OBELISK_DATABASE_BUILDER_DETAIL_SUB_QUERY_H
 #include <functional>
-#include <obelisk/database/core/common.h>
+#include "common.h"
 namespace obelisk::database::builder::detail
 {
     class query;
 
 
-    class sub_query : public core::base_statement
+    class sub_query : public base_statement
     {
     public:
-        sub_query(const std::function<void(query&)>& builder): builder_(std::move(builder)){}
+        sub_query(const std::function<void(query&)>& builder): builder_(builder){}
         std::string compile() override;
 
     private:

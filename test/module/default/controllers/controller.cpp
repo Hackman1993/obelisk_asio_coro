@@ -5,6 +5,7 @@
 #include "controller.h"
 
 #include <boost/lexical_cast.hpp>
+#include <obelisk/http/exception/http_exception.h>
 
 namespace module::default_::controllers
 {
@@ -35,6 +36,26 @@ namespace module::default_::controllers
         }, code);
     }
 
+    awaitable<std::uint64_t> controller::can(const std::string& code, obelisk::http::http_request_wrapper& request, const std::string& model, std::uint64_t target_id)
+    {
+        using namespace obelisk::database::builder::detail;
+        struct model_struct
+        {
+            std::uint64_t fn_organization_id;
+        };
+        auto models = co_await db::select({col("fn_organization_id")}).from({std::format("{}s", model)}).where({
+            {col("id"), target_id},
+            {col("deleted_at"), nullptr}
+        }).get<model_struct>();
+        if (models.rows().empty())
+            throw obelisk::http::http_exception("server.error.not_found", obelisk::http::EST_NOT_FOUND);
+
+        auto target_org_id = models.rows()[0].fn_organization_id;
+        if (co_await can(code, request, models.rows()[0].fn_organization_id))
+            co_return target_org_id;
+        throw obelisk::http::http_exception("server.error.permission_denied", obelisk::http::EST_UNAUTHORIZED);
+    }
+
     awaitable<bool> controller::can(const std::string& code, obelisk::http::http_request_wrapper& request, std::uint64_t target_org_id)
     {
         using namespace obelisk::database::builder::detail;
@@ -63,6 +84,7 @@ namespace module::default_::controllers
             co_return result.rows()[0][1].as_int64() == 1;
         co_return true;
     }
+
 
     awaitable<pagination_uniformed> controller::pagination_uniform(builder::detail::query statement, obelisk::http::http_request_wrapper& request)
     {

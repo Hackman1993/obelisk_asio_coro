@@ -5,7 +5,7 @@
 #ifndef OBELISK_DATABASE_BUILDER_DETAIL_LIMIT_H
 #define OBELISK_DATABASE_BUILDER_DETAIL_LIMIT_H
 #include <obelisk/database/builder/base_statement.h>
-#include <obelisk/database/core/common.h>
+#include "common.h"
 namespace obelisk::database::builder::detail
 {
 

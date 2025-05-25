@@ -9,13 +9,13 @@ namespace obelisk::database::builder::detail
     struct alia_compile_visitor
     {
         template<typename T>
-        requires std::is_base_of_v<core::base_statement, T>
+        requires std::is_base_of_v<base_statement, T>
         std::string operator()(T& c)
         {
             return c.compile();
         }
         template<typename T>
-        requires (!(std::is_base_of_v<core::base_statement, T>))
+        requires (!(std::is_base_of_v<base_statement, T>))
         std::string operator()(T& c)
         {
             return c.compile();
@@ -30,22 +30,22 @@ namespace obelisk::database::builder::detail
     inline constexpr bool contains_type_v = std::disjunction_v<std::is_same<T, Args>...>;
 
     template <typename... Args>
-    class alia :public core::base_statement
+    class alia :public base_statement
     {
     public:
         template<typename T>
         alia(T tar, std::string alia): source_(tar), alia_(alia){ }
         template<typename T>
-        requires (std::is_base_of_v<base_statement, T> || !contains_type_v<core::sql_value, Args...>)
+        requires (std::is_base_of_v<base_statement, T> || !contains_type_v<sql_value, Args...>)
         alia(const T& tar): source_(std::move(tar)){ }
         // template<typename T>
-        // requires (contains_type_v<core::sql_value, Args...> && !std::is_base_of_v<base_statement, T>)
-        // alia(T tar): source_(core::sql_value(tar)){ }
+        // requires (contains_type_v<sql_value, Args...> && !std::is_base_of_v<base_statement, T>)
+        // alia(T tar): source_(sql_value(tar)){ }
         // template<typename T>
         // alia(const std::enable_if_t<std::is_base_of_v<base_statement, T>,T&> tar): source_(tar){ }
         template<typename T>
-        requires (!std::is_base_of_v<base_statement, T> && contains_type_v<core::sql_value, Args...>)
-        alia(const T& tar): source_(core::sql_value(tar)){ }
+        requires (!std::is_base_of_v<base_statement, T> && contains_type_v<sql_value, Args...>)
+        alia(const T& tar): source_(sql_value(tar)){ }
 
         std::string compile() override
         {

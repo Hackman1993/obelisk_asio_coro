@@ -40,13 +40,13 @@ public:
     virtual std::string compile() = 0;
 };
 
-class sql_value : public sql_value_t
-{
-public:
-    using sql_value_t::variant;
-    std::string compile()
-    {
-        return std::visit(value_compile_visitor{}, *this);
-    }
-};
+// class sql_value : public sql_value_t
+// {
+// public:
+//     using sql_value_t::variant;
+//     std::string compile()
+//     {
+//         return std::visit(value_compile_visitor{}, *this);
+//     }
+// };
 #endif //BASE_STATEMENT_H

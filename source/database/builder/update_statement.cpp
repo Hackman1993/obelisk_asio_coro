@@ -22,7 +22,7 @@ namespace obelisk::database::builder
         return result;
     }
 
-    update_statement& update_statement::set(const std::vector<std::pair<detail::col, core::sql_value>>& values)
+    update_statement& update_statement::set(const std::vector<std::pair<detail::col, detail::sql_value>>& values)
     {
         std::ranges::copy(values, std::back_inserter(set_));
         return *this;

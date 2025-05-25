@@ -6,7 +6,6 @@
 #define OBELISK_DATABASE_BUILDER_DETAIL_UTILS_H
 #include <string>
 #include <vector>
-#include <obelisk/database/core/common.h>
 namespace obelisk::database::builder::detail
 {
     class utils

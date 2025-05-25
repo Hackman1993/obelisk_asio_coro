@@ -5,13 +5,13 @@
 #ifndef DELETE_STATEMENT_H
 #define DELETE_STATEMENT_H
 #include "detail/common.h"
-#include "detail/enable_execute.h"
+#include "detail/enable_where_condition.h"
 #include "detail/table.h"
 
 namespace obelisk::database::builder
 {
 
-    class delete_statement : public detail::enable_where_condition<delete_statement>, public detail::base_builder_statement, public detail::enable_execute
+    class delete_statement : public detail::enable_where_condition<delete_statement>, public detail::base_builder_statement
     {
     public:
         std::string compile() override;

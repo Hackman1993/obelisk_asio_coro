@@ -8,14 +8,10 @@
 #include <vector>
 #include <format>
 #include <optional>
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/replace.hpp>
 #include <obelisk/http/framework/config.h>
 
 #include "basic_action.h"
-#include "obelisk/database/builder/base_statement.h"
-
+#include "obelisk/database/builder/detail/common.h"
 namespace obelisk::database::migration
 {
 
@@ -68,7 +64,7 @@ namespace obelisk::database::migration
             return *this;
         }
 
-        virtual column_blueprint& default_value(sql_value value)
+        virtual column_blueprint& default_value(builder::detail::sql_value value)
         {
             default_value_ = value.compile();
             return *this;

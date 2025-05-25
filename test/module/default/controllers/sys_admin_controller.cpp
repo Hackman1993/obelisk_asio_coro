@@ -7,6 +7,7 @@
 #include <obelisk/http/validator/confirmed_validator.h>
 #include <obelisk/http/validator/required_validator.h>
 #include <obelisk/http/validator/integer_validator.h>
+#include <obelisk/http/validator/array_validator.h>
 
 #include "auth_controller.h"
 
@@ -69,6 +70,8 @@ namespace module::default_::controllers
 
 
 
+
+
     awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_create(http_request_wrapper&request)
     {
         using namespace obelisk::http::validator;
@@ -86,7 +89,7 @@ namespace module::default_::controllers
         if (!co_await can("permission.sys_admin.create", request, fn_organization_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
 
-        std::vector<std::pair<col, obelisk::database::core::sql_value>> values;
+        std::vector<std::pair<col, sql_value>> values;
         values.emplace_back("fn_organization_id", fn_organization_id);
         try_emplace<std::string>("username", values, request.params());
         values.emplace_back("password", sahara::hash::bcrypt::generateHash(request.params()["password"].get<std::string>()));
@@ -106,15 +109,10 @@ namespace module::default_::controllers
              {"phone", {required()}},
         });
         auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
-        auto result  = co_await db::select({col("fn_organization_id")}).from({"sys_admins"}).where({
-            {col("id"), target_id},
-            {col("deleted_at"), nullptr}
-        }).get();
-        if (result.rows().empty())
-            throw http_exception("server.error.not_found", EST_NOT_FOUND);
-        if (!co_await can("permission.sys_admin.update", request, result.rows()[0][0].as_uint64()))
+        if (!co_await can("permission.sys_admin.update", request, "sys_admin", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
-        std::vector<std::pair<col, obelisk::database::core::sql_value>> values;
+
+        std::vector<std::pair<col, sql_value>> values;
         try_emplace<std::string>("real_name", values, request.params());
         try_emplace<std::string>("phone", values, request.params());
         co_await db::update({"sys_admins"}).set(values).where({
@@ -129,17 +127,47 @@ namespace module::default_::controllers
             {"id", {required(), integer(false)}},
        });
         auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
-        auto result  = co_await db::select({col("fn_organization_id")}).from({"sys_admins"}).where({
-            {col("id"), target_id},
-            {col("deleted_at"), nullptr}
-        }).get();
-        if (result.rows().empty())
-            throw http_exception("server.error.not_found", EST_NOT_FOUND);
-        if (!co_await can("permission.sys_admin.delete", request, result.rows()[0][0].as_uint64()))
+        if (!co_await can("permission.sys_admin.delete", request, "sys_admin", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
-        co_await db::update({"sys_admins"}).where({
+        co_await db::update({"sys_admins"}).set({
             {col("deleted_at"), std::chrono::system_clock::now()}
+        }).where({
+            {col("id"), target_id}
         }).get();
         co_return json_response(nullptr);
+    }
+
+    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_assignable_role(http_request_wrapper&request)
+    {
+        co_await request.validate({
+            {"id", {required(), integer(false)}}
+        });
+        struct role_model
+        {
+            std::uint64_t id{};
+            std::string name;
+            //std::optional<std::string> description;
+            std::uint64_t fn_organization_id{};
+            std::int64_t already_own{};
+        };
+
+        auto target_org_id = co_await can("permission.sys_admin.assign_roles", request, "sys_admin", boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>()));
+        auto query = db::select({
+            {col("r.id"), "id"},
+            {col("r.name"), "name"},
+            {col("r.fn_organization_id"), "fn_organization_id"},
+            {if_format(0,1).where({{col("ar.fn_admin_id"), nullptr}}), "already_own"}
+        }).from({{"sys_roles", "r"}})
+        .join({"sys_organizations", "o"}, {
+            {col("r.fn_organization_id"), col("o.id")},
+            {col("o.deleted_at"), nullptr}
+        }).left_join({"sys_mid_admin_role", "ar"}, {{col("r.id"), col("ar.fn_role_id")},
+        }).where({
+            {col("r.fn_organization_id"), target_org_id},
+            {col("r.deleted_at"), nullptr},
+        }).group_by({"r.id", "r.name", "r.fn_organization_id", "already_own"}).order_by({{"r.id"}});
+
+        auto result_data = co_await query.get<role_model>();
+        co_return json_response(to_json(result_data));
     }
 }

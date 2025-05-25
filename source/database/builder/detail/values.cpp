@@ -7,7 +7,7 @@
 
 namespace obelisk::database::builder::detail
 {
-    values_t::values_t(std::initializer_list<core::sql_value> values)
+    values_t::values_t(std::initializer_list<sql_value> values)
     {
         std::ranges::copy(values, std::back_inserter(values_));
     }

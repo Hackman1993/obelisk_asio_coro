@@ -7,6 +7,7 @@
 #include <obelisk/http/validator/confirmed_validator.h>
 #include <obelisk/http/validator/required_validator.h>
 #include <obelisk/http/validator/integer_validator.h>
+#include <obelisk/http/validator/array_validator.h>
 
 #include "auth_controller.h"
 
@@ -38,7 +39,7 @@ namespace module::default_::controllers
             {col("o.name"), "organization_name"},
             {count_t(col("ar.fn_admin_id")).distinct(), "user_count"}
         }).from({{"sys_roles", "r"}})
-        .join({"sys_organization_hierarchy", "oh"}, {{col("r.fn_organization_id"), col("r.fn_organization_id")}})
+        .join({"sys_organization_hierarchy", "oh"}, {{col("r.fn_organization_id"), col("oh.fn_descendant_id")}})
         .join({"sys_organizations", "o"}, {
             {col("r.fn_organization_id"), col("o.id")},
             {col("o.deleted_at"), nullptr}
@@ -55,30 +56,24 @@ namespace module::default_::controllers
             std::string search = request.params()["search"];
             query.or_where({{col("r.name"), "like", search + "%"}});
         }
-        auto result = co_await query.get<role_model>();
         co_return co_await pagination<role_model>(query, co_await pagination_uniform(query, request));
     }
-
-
 
     awaitable<std::unique_ptr<http_response>> sys_role::backend_create(http_request_wrapper&request)
     {
         using namespace obelisk::http::validator;
         co_await request.validate({
-            {"username", {required()}},
-            {"fn_organization_id", {integer(false)}},
-            {"password", {required(), confirmed()}},
-            {"real_name", {required()}},
-            {"phone", {required()}},
+            {"name", {required()}},
+            {"fn_organization_id", {integer(false)}}
         });
 
         auto fn_organization_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_organization_id"]);
         if (request.params().contains("fn_organization_id"))
             fn_organization_id = request.params()["fn_organization_id"];
-        if (!co_await can("permission.role.create", request, fn_organization_id))
+        if (!co_await can("permission.sys_role.create", request, fn_organization_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
 
-        std::vector<std::pair<col, obelisk::database::core::sql_value>> values;
+        std::vector<std::pair<col, sql_value>> values;
         values.emplace_back("fn_organization_id", fn_organization_id);
         try_emplace<std::string>("name", values, request.params());
         //try_emplace<std::string>("description", values, request.params());
@@ -93,15 +88,9 @@ namespace module::default_::controllers
              {"name", {required()}}
         });
         auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
-        auto result  = co_await db::select({col("fn_organization_id")}).from({"sys_roles"}).where({
-            {col("id"), target_id},
-            {col("deleted_at"), nullptr}
-        }).get();
-        if (result.rows().empty())
-            throw http_exception("server.error.not_found", EST_NOT_FOUND);
-        if (!co_await can("permission.roles.update", request, result.rows()[0][0].as_uint64()))
+        if (!co_await can("permission.sys_role.update", request, "sys_role", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
-        std::vector<std::pair<col, obelisk::database::core::sql_value>> values;
+        std::vector<std::pair<col, sql_value>> values;
         try_emplace<std::string>("name", values, request.params());
         try_emplace<std::string>("description", values, request.params());
         co_await db::update({"sys_roles"}).set(values).where({
@@ -116,17 +105,58 @@ namespace module::default_::controllers
             {"id", {required(), integer(false)}},
        });
         auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
-        auto result  = co_await db::select({col("fn_organization_id")}).from({"sys_roles"}).where({
-            {col("id"), target_id},
-            {col("deleted_at"), nullptr}
-        }).get();
-        if (result.rows().empty())
-            throw http_exception("server.error.not_found", EST_NOT_FOUND);
-        if (!co_await can("permission.sys_role.delete", request, result.rows()[0][0].as_uint64()))
+        if (!co_await can("permission.sys_role.delete", request, "sys_role", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
-        co_await db::update({"sys_roles"}).where({
+        co_await db::update({"sys_roles"}).set({
             {col("deleted_at"), std::chrono::system_clock::now()}
+        }).where({
+            {col("id"), target_id}
         }).get();
         co_return json_response(nullptr);
+    }
+
+    awaitable<std::unique_ptr<http_response>> sys_role::backend_assignable_permission(http_request_wrapper&request)
+    {
+        co_await request.validate({
+            {"id", {required(), integer(false)}},
+        });
+        struct permission_model
+        {
+            std::uint64_t id{};
+            std::string code;
+            std::int64_t already_own{};
+            std::int64_t is_grant{};
+            std::int64_t is_cascade{};
+            std::int64_t can_grant{};
+            std::int64_t can_cascade{};
+        };
+
+        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        if (!co_await can("permission.sys_role.assign_permissions", request, "sys_role", target_id))
+            throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
+
+        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
+        auto query = db::select({
+            {col("p.id"), "id"},
+            {col("p.code"), "code"},
+            {if_format(0,1).where({{col("rp.fn_role_id"), nullptr}}), "already_own"},
+            {if_format(0,1).where({{col("rp.grant"),nullptr}}).or_where({{col("rp.grant"),0}}), "is_grant"},
+            {if_format(0,1).where({{col("rp.cascade"),nullptr}}).or_where({{col("rp.cascade"),0}}), "is_cascade"},
+            {if_format(0,1).where({{col("ap.id"),nullptr}}), "can_grant"},
+            {if_format(0,1).where({{col("ap.cascade"),nullptr}}).or_where({{col("ap.cascade"),0}}), "can_cascade"}
+        }).from({{"sys_permissions", "p"}})
+        .left_join({"sys_mid_role_permission", "rp"}, {{col("p.id"), col("rp.fn_permission_id")}, {col("rp.fn_role_id"), target_id}})
+        .left_join({sub_query{[admin_id](auto& builder){
+            builder.select({
+                {col("rp.fn_permission_id"), "id"},
+                {col{"rp.cascade"}, "cascade"}
+            })
+            .from({{"sys_mid_role_permission", "rp"}})
+            .join({"sys_mid_admin_role", "ar"}, {{col("rp.fn_role_id"), col("ar.fn_role_id")},{col("ar.fn_admin_id"), admin_id}})
+            .join({"sys_roles", "r"}, {{col("ar.fn_role_id"), col("r.id")}, {col("r.deleted_at"), nullptr}})
+            .where({{col("rp.grant"), 1}});
+        }}, "ap"}, {{col("ap.id"), col("p.id")}}).order_by({{"p.code", "p.id"}});
+        auto resp_data = co_await query.get<permission_model>();
+        co_return json_response(to_json(resp_data));
     }
 }

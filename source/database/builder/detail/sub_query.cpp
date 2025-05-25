@@ -8,7 +8,7 @@ namespace obelisk::database::builder::detail
         query query;
         if (builder_)
         {
-            builder_.value()(query);
+            builder_.value()(query.as_sub_query());
         }
         return query.compile();
     }

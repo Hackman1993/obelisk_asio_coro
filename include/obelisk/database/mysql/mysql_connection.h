@@ -10,7 +10,10 @@
 #include <boost/asio/use_awaitable.hpp>
 #include <obelisk/database/core/db_connection_base.h>
 
-#include "obelisk/database/core/common.h"
+namespace obelisk::database::builder::detail
+{
+    class base_statement;
+}
 
 class mysql_connection : public obelisk::database::db_connection_base, public boost::mysql::any_connection{
 public:
@@ -67,7 +70,7 @@ public:
     }
 
     template <typename Rt, typename T>
-    requires std::is_base_of_v<obelisk::database::core::base_statement, T>
+    requires std::is_base_of_v<obelisk::database::builder::detail::base_statement, T>
     boost::asio::awaitable<Rt> co_query(T& builder)
     {
         co_return co_await co_query<Rt>(&builder->compile());

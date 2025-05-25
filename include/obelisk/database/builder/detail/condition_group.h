@@ -9,7 +9,7 @@
 
 namespace obelisk::database::builder::detail
 {
-    class condition_group : public core::base_statement
+    class condition_group : public base_statement
     {
     public:
         condition_group() = default;
