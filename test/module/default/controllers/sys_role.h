@@ -19,6 +19,7 @@ namespace module::default_::controllers
         static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_update(obelisk::http::http_request_wrapper&request);
         static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_delete(obelisk::http::http_request_wrapper&request);
         static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_assignable_permission(obelisk::http::http_request_wrapper&request);
+        static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_assign_permission(obelisk::http::http_request_wrapper&request);
     };
 
 }

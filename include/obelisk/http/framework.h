@@ -39,7 +39,7 @@ namespace obelisk::http
         {
             const auto database = config::get<std::string>("database.default.database", "default");
             const auto host = config::get<std::string>("database.default.host", "127.0.0.1");
-            const auto username = config::get<std::string>("database.default.username", "root");
+            const auto username = config::get<std::string>("database.default.user", "root");
             const auto password = config::get<std::string>("database.default.password", "password");
             const auto port = config::get<std::uint16_t>("database.default.port", 3306);
             database::db_pool::make_pool<mysql_connection>(io_context, "default", host, port, username, password, database);

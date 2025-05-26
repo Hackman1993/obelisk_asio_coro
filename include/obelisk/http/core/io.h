@@ -50,9 +50,9 @@ namespace obelisk::http::core
             if (header.headers_.contains("Transfer-Encoding") && boost::algorithm::iequals(header.headers_["Transfer-Encoding"], "chunked")) {
                 co_return co_await receive_chunked_body_(socket, buffer, header.headers_["Content-Encoding"]);
             }
-            if (!header.headers_.contains("Connection") || boost::algorithm::iequals(header.headers_["Connection"], "close")) {
-                co_return co_await receive_until_dead_(socket, buffer);
-            }
+            // if (!header.headers_.contains("Connection") || boost::algorithm::iequals(header.headers_["Connection"], "close")) {
+            //     co_return co_await receive_until_dead_(socket, buffer);
+            // }
             if (!header.headers_.contains("Content-Length")) co_return nullptr;
             const auto content_length = std::stoul(header.headers_["Content-Length"]);
             if (content_length == 0) co_return nullptr;

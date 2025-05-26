@@ -159,4 +159,56 @@ namespace module::default_::controllers
         auto resp_data = co_await query.get<permission_model>();
         co_return json_response(to_json(resp_data));
     }
+
+    awaitable<std::unique_ptr<http_response>> sys_role::backend_assign_permission(http_request_wrapper&request)
+    {
+        co_await request.validate({
+            {"id", {required(), integer(false)}},
+            {"permissions", {required()}}
+        });
+        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        if (!co_await can("permission.sys_role.assign_permissions", request, "sys_role", target_id))
+            throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
+
+
+        struct permission_model
+        {
+            std::uint64_t id{};
+            std::string code;
+            std::int64_t already_own{};
+            std::int64_t is_grant{};
+            std::int64_t is_cascade{};
+            std::int64_t can_grant{};
+            std::int64_t can_cascade{};
+        };
+        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
+        auto query = db::select({
+            {col("p.id"), "id"},
+            {col("p.code"), "code"},
+            {if_format(0,1).where({{col("rp.fn_role_id"), nullptr}}), "already_own"},
+            {if_format(0,1).where({{col("rp.grant"),nullptr}}).or_where({{col("rp.grant"),0}}), "is_grant"},
+            {if_format(0,1).where({{col("rp.cascade"),nullptr}}).or_where({{col("rp.cascade"),0}}), "is_cascade"},
+            {if_format(0,1).where({{col("ap.id"),nullptr}}), "can_grant"},
+            {if_format(0,1).where({{col("ap.cascade"),nullptr}}).or_where({{col("ap.cascade"),0}}), "can_cascade"}
+        }).from({{"sys_permissions", "p"}})
+        .left_join({"sys_mid_role_permission", "rp"}, {{col("p.id"), col("rp.fn_permission_id")}, {col("rp.fn_role_id"), target_id}})
+        .left_join({sub_query{[admin_id](auto& builder){
+            builder.select({
+                {col("rp.fn_permission_id"), "id"},
+                {col{"rp.cascade"}, "cascade"}
+            })
+            .from({{"sys_mid_role_permission", "rp"}})
+            .join({"sys_mid_admin_role", "ar"}, {{col("rp.fn_role_id"), col("ar.fn_role_id")},{col("ar.fn_admin_id"), admin_id}})
+            .join({"sys_roles", "r"}, {{col("ar.fn_role_id"), col("r.id")}, {col("r.deleted_at"), nullptr}})
+            .where({{col("rp.grant"), 1}});
+        }}, "ap"}, {{col("ap.id"), col("p.id")}})
+        .where({{col("can_grant"), 1}})
+        .order_by({{"p.code", "p.id"}});
+        auto operatable_permissions = co_await query.get<permission_model>();
+        std::map<std::uint64_t, permission_model> permissions;
+        for (auto model: operatable_permissions.rows())
+            permissions.emplace(model.id, model);
+
+        co_return json_response(nullptr);
+    }
 }

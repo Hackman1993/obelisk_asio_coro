@@ -45,6 +45,7 @@ namespace module {
         server.route("/api/backend/role/update", controllers::sys_role::backend_update)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/role/delete", controllers::sys_role::backend_delete)->method({"DELETE"}).middleware(middleware::backend_auth("sys_admins"));
         server.route("/api/backend/role/assignable_permissions", controllers::sys_role::backend_assignable_permission)->method({"GET"}).middleware(middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/role/assign_permissions", controllers::sys_role::backend_assignable_permission)->method({"POST"}).middleware(middleware::backend_auth("sys_admins"));
 
     }
 

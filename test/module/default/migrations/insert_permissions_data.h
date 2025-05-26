@@ -16,7 +16,6 @@ namespace module::default_::migrations
             co_await utils::register_permission("permission.sys_admin.update", true);
             co_await utils::register_permission("permission.sys_admin.create", true);
             co_await utils::register_permission("permission.sys_admin.delete", true);
-            co_await utils::register_permission("permission.sys_admin.create", true);
             co_await utils::register_permission("permission.sys_admin.assign_role", true);
             co_await utils::register_permission("permission.sys_admin.reset_password", true);
 
