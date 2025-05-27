@@ -10,6 +10,7 @@
 #include <obelisk/http/validator/array_validator.h>
 
 #include "auth_controller.h"
+#include "obelisk/http/validator/exists_validator.h"
 
 namespace module::default_::controllers
 {
@@ -42,11 +43,11 @@ namespace module::default_::controllers
             {col("so.name"), "organization_name"},
             {group_concat("sr.name").distinct(), "roles"}
         }).from({{"sys_admins", "sa"}})
-        .join({"sys_mid_admin_role", "smar"}, {{col("smar.fn_admin_id"), col("sa.id")}})
-        .join({"sys_roles", "sr"}, {
+        .left_join({"sys_mid_admin_role", "smar"}, {{col("smar.fn_admin_id"), col("sa.id")}})
+        .left_join({"sys_roles", "sr"}, {
             {col("smar.fn_role_id"), col("sr.id")},
             {col("sr.deleted_at"), nullptr}
-        }).join({"sys_organization_hierarchy", "soh"}, {{col("sa.fn_organization_id"), col("soh.fn_descendant_id")},
+        }).left_join({"sys_organization_hierarchy", "soh"}, {{col("sa.fn_organization_id"), col("soh.fn_descendant_id")},
         }).join({"sys_organizations", "so"}, {
             {col("soh.fn_descendant_id"), col("so.id")},
             {col("so.deleted_at"), nullptr}
@@ -79,7 +80,6 @@ namespace module::default_::controllers
             {"username", {required()}},
             {"fn_organization_id", {integer(false)}},
             {"password", {required(), confirmed()}},
-            {"real_name", {required()}},
             {"phone", {required()}},
         });
 
@@ -102,13 +102,9 @@ namespace module::default_::controllers
     awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_update(http_request_wrapper&request)
     {
          co_await request.validate({
-             {"id", {required(), integer(false)}},
-             {"username", {required()}},
-             {"password", {confirmed()}},
-             {"real_name", {required()}},
-             {"phone", {required()}},
+             {"id", {required(), integer(false), exists("sys_admins")}}
         });
-        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        auto target_id = request.params()["id"].get<std::uint64_t>();
         if (!co_await can("permission.sys_admin.update", request, "sys_admin", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
 
@@ -124,9 +120,9 @@ namespace module::default_::controllers
     awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_delete(http_request_wrapper&request)
     {
         co_await request.validate({
-            {"id", {required(), integer(false)}},
+            {"id", {required(), integer(false), exists("sys_admins")}},
        });
-        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        auto target_id = request.params()["id"].get<std::uint64_t>();
         if (!co_await can("permission.sys_admin.delete", request, "sys_admin", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
         co_await db::update({"sys_admins"}).set({
@@ -150,9 +146,8 @@ namespace module::default_::controllers
     awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_assignable_role(http_request_wrapper&request)
     {
         co_await request.validate({
-            {"id", {required(), integer(false)}}
+            {"id", {required(), integer(false), exists("sys_admins")}}
         });
-
 
         auto target_org_id = co_await can("permission.sys_admin.assign_roles", request, "sys_admin", request.params()["id"].get<std::uint64_t>());
         auto query = db::select({
@@ -177,7 +172,7 @@ namespace module::default_::controllers
     awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_assign_role(http_request_wrapper&request)
     {
         co_await request.validate({
-            {"id", {required(), integer(false)}},
+            {"id", {required(), integer(false), exists("sys_admins")}},
             {"assign_ids", {array()}},
             {"remove_ids", {array()}}
         });

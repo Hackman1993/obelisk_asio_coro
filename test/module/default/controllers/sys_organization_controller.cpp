@@ -4,6 +4,9 @@
 #include <obelisk/http/validator/integer_validator.h>
 #include <obelisk/http/validator/required_validator.h>
 #include <obelisk/database/core/common.h>
+
+#include "obelisk/http/validator/exists_validator.h"
+
 namespace module::default_::controllers
 {
     using namespace obelisk::database::builder::detail;
@@ -51,8 +54,6 @@ namespace module::default_::controllers
 
     awaitable<std::unique_ptr<obelisk::http::http_response>> sys_organization_controller::backend_create(obelisk::http::http_request_wrapper&request)
     {
-        using namespace obelisk::http::validator;
-        using namespace obelisk::database::builder::detail;
         co_await request.validate({
             {"parent_id", {required(), integer(false)}},
             {"name", {required()}},
@@ -99,9 +100,9 @@ namespace module::default_::controllers
         using namespace obelisk::database::builder::detail;
         using namespace obelisk::http::validator;
         co_await request.validate({
-            {"id", {required(), integer(false)}},
+            {"id", {required(), integer(false), exists("sys_organizations")}},
         });
-        std::uint64_t target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        auto target_id = request.params()["id"].get<std::uint64_t>();
         auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
         if (!co_await utils::can("permission.sys_organization.update", admin_id, target_id))
             throw obelisk::http::http_exception("server.error.permission_denied", obelisk::http::EST_UNAUTHORIZED);
@@ -128,10 +129,15 @@ namespace module::default_::controllers
 
     awaitable<std::unique_ptr<obelisk::http::http_response>> sys_organization_controller::backend_delete(obelisk::http::http_request_wrapper&request)
     {
-        using namespace obelisk::database::builder::detail;
-        auto target_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_organization_id"]);
-        auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
-        if (!co_await utils::can("permission.sys_organization.delete", admin_id, target_id))
+        co_await request.validate({
+            {"id", {required(), integer(false), exists("sys_organizations")}},
+        });
+        auto target_id = request.params()["id"].get<std::uint64_t>();
+        auto parent_result = co_await db::select({col("parent_id")}).from({"sys_organizations"}).where({{col("id"), target_id}}).get();
+        if (parent_result.rows().empty())
+            throw obelisk::http::http_exception("server.error.target_not_exists", obelisk::http::EST_UNPROCESSABLE_CONTENT);
+        auto target_parent_id = parent_result.rows()[0][0].as_uint64();
+        if (!co_await can("permission.sys_organization.delete", request, target_parent_id))
             throw obelisk::http::http_exception("server.error.permission_denied", obelisk::http::EST_UNAUTHORIZED);
         co_await db::transaction([target_id](auto connection)->awaitable<void>
         {

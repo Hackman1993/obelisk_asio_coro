@@ -131,7 +131,7 @@ namespace module::default_::controllers
             std::int64_t can_cascade{};
         };
 
-        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        auto target_id = request.params()["id"].get<std::uint64_t>();
         if (!co_await can("permission.sys_role.assign_permissions", request, "sys_role", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
 
