@@ -212,7 +212,7 @@ namespace obelisk::http {
         return true;
     }
 
-    bool parser_v3::parse_urlencoded_param(std::unordered_map<std::string, nlohmann::json>& params, std::string_view data) {
+    bool parser_v3::parse_urlencoded_param(nlohmann::json::object_t& params, std::string_view data) {
         std::vector<std::pair<std::string,std::string>> parsed_params;
         if (!parse(data, UrlEncodedDataParser % '&', parsed_params))
             throw protocol_exception("UrlEncodedData Parse Failed!");

@@ -87,7 +87,6 @@ namespace obelisk::http {
             try {
                 auto header = co_await core::io::receive_header_(socket, buffer);;
                 std::unique_ptr<std::iostream> body = co_await core::io::receive_body_(socket, buffer, header);
-
                 // Running Middleware
                 request = std::make_unique<http_request_wrapper>(ioctx_, header, std::move(body));
                 for (auto&before_middleware: middlewares_) {

@@ -21,7 +21,7 @@ namespace obelisk::http {
 
         static bool parse_multipart_body(http_request_wrapper &request, const std::string& boundary);
 
-        static bool parse_urlencoded_param(std::unordered_map<std::string, nlohmann::json>& params, std::string_view data);
+        static bool parse_urlencoded_param(nlohmann::json::object_t& params, std::string_view data);
 
         static std::unique_ptr<url_parts> parse_split_url(const std::string& uri);
     };

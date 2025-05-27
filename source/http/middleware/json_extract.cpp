@@ -20,7 +20,10 @@ namespace obelisk::http::middleware {
         }
 
         nlohmann::json json = nlohmann::json::parse(*request.raw_body());
-        request.additional_data().emplace("__json_body", json);
+        for (auto &item: json.items())
+        {
+            request.params().emplace(item.key(), item.value());
+        }
         co_return nullptr;
     }
 } // obelisk::http::middleware

@@ -137,21 +137,24 @@ namespace module::default_::controllers
         co_return json_response(nullptr);
     }
 
+
+    struct role_model
+    {
+        std::uint64_t id{};
+        std::string name;
+        //std::optional<std::string> description;
+        std::uint64_t fn_organization_id{};
+        std::int64_t already_own{};
+    };
+
     awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_assignable_role(http_request_wrapper&request)
     {
         co_await request.validate({
             {"id", {required(), integer(false)}}
         });
-        struct role_model
-        {
-            std::uint64_t id{};
-            std::string name;
-            //std::optional<std::string> description;
-            std::uint64_t fn_organization_id{};
-            std::int64_t already_own{};
-        };
 
-        auto target_org_id = co_await can("permission.sys_admin.assign_roles", request, "sys_admin", boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>()));
+
+        auto target_org_id = co_await can("permission.sys_admin.assign_roles", request, "sys_admin", request.params()["id"].get<std::uint64_t>());
         auto query = db::select({
             {col("r.id"), "id"},
             {col("r.name"), "name"},
@@ -170,4 +173,47 @@ namespace module::default_::controllers
         auto result_data = co_await query.get<role_model>();
         co_return json_response(to_json(result_data));
     }
+
+    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_assign_role(http_request_wrapper&request)
+    {
+        co_await request.validate({
+            {"id", {required(), integer(false)}},
+            {"assign_ids", {array()}},
+            {"remove_ids", {array()}}
+        });
+        auto target_id = request.params()["id"].get<std::uint64_t>();
+        auto target_org_id = co_await can("permission.sys_role.assign_permissions", request, "sys_role", target_id);
+
+        if (request.params().contains("assign_ids") && !request.params()["assign_ids"].empty())
+        {
+            std::vector<sql_value> assign_ids;
+            for (const auto &id: request.params()["assign_ids"].get<std::vector<std::int64_t>>())
+                assign_ids.emplace_back(id);
+            co_await db::insert("sys_mid_admin_role").cols({"fn_role_id", "fn_admin_id"}).values({[target_id, target_org_id, assign_ids](auto& builder){
+                builder.select({
+                    col("id"),target_id
+                }).from({{"sys_roles"}}).where({
+                    {col("fn_organization_id"), target_org_id},
+                    {col("id"), "IN", assign_ids}
+                });
+            }}).ignore().get();
+        }
+        if (request.params().contains("remove_ids") && !request.params()["remove_ids"].empty())
+        {
+            std::vector<sql_value> remove_ids;
+            for (const auto &id: request.params()["remove_ids"].get<std::vector<std::int64_t>>())
+                remove_ids.emplace_back(id);
+            co_await db::delete_from({"sys_mid_admin_role"}).where({
+                {col("fn_admin_id"), target_id},
+                {col("fn_role_id"), "IN", sub_query{[target_org_id, remove_ids](auto& builder){
+                    builder.select({col("id")}).from({"sys_roles"}).where({
+                        {col("fn_organization_id"), target_org_id},
+                        {col("id"), "IN", remove_ids}
+                    });
+                }}},
+            }).get();
+        }
+        co_return json_response(nullptr);
+    }
+
 }

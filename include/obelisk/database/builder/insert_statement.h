@@ -26,6 +26,12 @@ namespace obelisk::database::builder
             insert_columns_ = std::move(columns);
             return *this;
         }
+
+        insert_statement& ignore(bool val = true)
+        {
+            ignore_ = val;
+            return *this;
+        }
         insert_statement& values(const std::vector<std::pair<detail::col, detail::sql_value>>& value_pack)
         {
             insert_columns_.clear();
@@ -55,6 +61,7 @@ namespace obelisk::database::builder
 
     private:
         detail::table table_;
+        bool ignore_ = false;
         std::optional<detail::sub_query> sub_query_;
         std::vector<detail::col> insert_columns_;
         std::vector<detail::values_t> insert_values_;

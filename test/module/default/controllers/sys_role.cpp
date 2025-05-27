@@ -164,12 +164,12 @@ namespace module::default_::controllers
     {
         co_await request.validate({
             {"id", {required(), integer(false)}},
-            {"permissions", {required()}}
+            {"permissions", {required(), array()}},
+            {"ungrant_permissions", {array()}}
         });
-        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        auto target_id = request.params()["id"].get<std::uint64_t>();
         if (!co_await can("permission.sys_role.assign_permissions", request, "sys_role", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
-
 
         struct permission_model
         {
@@ -192,7 +192,7 @@ namespace module::default_::controllers
             {if_format(0,1).where({{col("ap.cascade"),nullptr}}).or_where({{col("ap.cascade"),0}}), "can_cascade"}
         }).from({{"sys_permissions", "p"}})
         .left_join({"sys_mid_role_permission", "rp"}, {{col("p.id"), col("rp.fn_permission_id")}, {col("rp.fn_role_id"), target_id}})
-        .left_join({sub_query{[admin_id](auto& builder){
+        .join({sub_query{[admin_id](auto& builder){
             builder.select({
                 {col("rp.fn_permission_id"), "id"},
                 {col{"rp.cascade"}, "cascade"}
@@ -202,12 +202,68 @@ namespace module::default_::controllers
             .join({"sys_roles", "r"}, {{col("ar.fn_role_id"), col("r.id")}, {col("r.deleted_at"), nullptr}})
             .where({{col("rp.grant"), 1}});
         }}, "ap"}, {{col("ap.id"), col("p.id")}})
-        .where({{col("can_grant"), 1}})
         .order_by({{"p.code", "p.id"}});
         auto operatable_permissions = co_await query.get<permission_model>();
         std::map<std::uint64_t, permission_model> permissions;
         for (auto model: operatable_permissions.rows())
             permissions.emplace(model.id, model);
+
+        if (request.params().contains("permissions")){
+            for (auto &grant_permission: request.params()["permissions"].items())
+            {
+                auto permission_id = grant_permission.value()["id"].get<int64_t>();
+                if (!permissions.contains(permission_id))
+                    continue;
+                auto &model = permissions[permission_id];
+                auto allow_grant = grant_permission.value().contains("regrant")? grant_permission.value()["regrant"].get<std::int64_t>(): 0ull;
+                auto allow_cascade = grant_permission.value().contains("cascade")&& model.can_cascade? grant_permission.value()["cascade"].get<std::int64_t>(): 0ull;
+                if (!model.already_own)
+                {
+                    co_await db::insert("sys_mid_role_permission").values({
+                        {"fn_role_id", target_id},
+                        {"fn_permission_id", permission_id},
+                        {"grant", allow_grant},
+                        {"cascade", allow_cascade}
+                    }).get();
+                }else
+                {
+                    bool require_execute = false;
+                    auto update = db::update({"sys_mid_role_permission"}).where({
+                    {col("fn_role_id"), target_id},
+                        {col("fn_permission_id"), permission_id}});
+                    if (model.can_cascade && allow_cascade != model.is_cascade)
+                    {
+                        update.set({{"cascade", allow_cascade}});
+                        require_execute = true;
+                    }
+                    if (model.can_grant && allow_grant != model.is_grant)
+                    {
+                        update.set({{"grant", allow_grant}});
+                        require_execute = true;
+                    }
+                    if (require_execute)
+                        co_await update.get();
+                }
+            }
+        }
+        // 取消授权
+        if (request.params().contains("ungrant_permissions"))
+        {
+            std::vector<sql_value> ungrant_permissions;
+            for (auto &ungrant_permission: request.params()["ungrant_permissions"].items())
+            {
+                auto permission_id = ungrant_permission.value().get<std::int64_t>();
+                if (!permissions.contains(permission_id))
+                    continue;
+                ungrant_permissions.emplace_back(permission_id);
+            }
+            if (!ungrant_permissions.empty()){
+                co_await db::delete_from({"sys_mid_role_permission"}).where({
+                    {col("fn_role_id"), target_id},
+                    {col("fn_permission_id"), "IN",  ungrant_permissions}
+                }).get();
+            }
+        }
 
         co_return json_response(nullptr);
     }

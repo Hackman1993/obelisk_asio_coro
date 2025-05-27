@@ -24,6 +24,7 @@ namespace module::default_::migrations
             {
                 blueprint.foreign_id("fn_role_id").references("sys_roles", "id");
                 blueprint.foreign_id("fn_admin_id").references("sys_admins", "id");
+                blueprint.index({"fn_admin_id", "fn_role_id"}, true);
             });
 
             co_await migration::migration::create("sys_mid_role_permission", [](migration::table_blueprint& blueprint)
@@ -32,6 +33,7 @@ namespace module::default_::migrations
                 blueprint.foreign_id("fn_permission_id").references("sys_permissions", "id");
                 blueprint.boolean("cascade");
                 blueprint.boolean("grant");
+                blueprint.index({"fn_permission_id", "fn_role_id"}, true);
             });
             co_await db::insert("sys_roles").values({
                 {"name", "Super Admin"},

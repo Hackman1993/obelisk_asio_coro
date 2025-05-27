@@ -17,14 +17,27 @@ namespace obelisk::http::validator {
         if(request.params()[name].is_string()) {
             try {
                 if(signed_)
-                    strtoll(request.params()[name].get<std::string>().c_str(),nullptr, 10);
+                    request.params()[name] = strtoll(request.params()[name].get<std::string>().c_str(),nullptr, 10);
                 else
-                    strtoull(request.params()[name].get<std::string>().c_str(), nullptr, 10);
+                    request.params()[name] = strtoull(request.params()[name].get<std::string>().c_str(), nullptr, 10);
             }catch (const std::exception& ) {
                 throw http_exception("error.validator." + std::string(signed_? "integer":"unsigned_integer"), EST_UNPROCESSABLE_CONTENT);
             }
-        }else {
-            throw http_exception("error.validator." + std::string(signed_? "integer":"unsigned_integer"), EST_UNPROCESSABLE_CONTENT);
+        }else if (request.params()[name].is_number_integer()) {
+            if (!signed_)
+            {
+                if (request.params()[name].get<std::int64_t>() < 0)
+                    throw http_exception("error.validator.unsigned_integer", EST_UNPROCESSABLE_CONTENT);
+                request.params()[name] = static_cast<std::uint64_t>(request.params()[name].get<std::int64_t>());
+            }
+        }else if (request.params()[name].is_number_unsigned())
+        {
+            if (signed_)
+            {
+                if (request.params()[name].get<std::uint64_t>() > std::numeric_limits<std::int64_t>::max())
+                    throw http_exception("error.validator.integer", EST_UNPROCESSABLE_CONTENT);
+                request.params()[name] = static_cast<std::int64_t>(request.params()[name].get<std::uint64_t>());
+            }
         }
         co_return;
     }

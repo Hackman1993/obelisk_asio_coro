@@ -126,7 +126,7 @@ namespace obelisk::http {
         return registered_value_;
     }
 
-    std::unordered_map<std::string, nlohmann::json>& http_request_wrapper::params() {
+    nlohmann::json::object_t& http_request_wrapper::params() {
         return request_params_;
     }
 

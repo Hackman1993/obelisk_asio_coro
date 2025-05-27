@@ -8,9 +8,8 @@
 #include <fstream>
 #include <filesystem>
 #include <unordered_map>
-#include <boost/json/object.hpp>
 #include <boost/cobalt/task.hpp>
-#include <nlohmann/adl_serializer.hpp>
+#include <nlohmann/json.hpp>
 
 #include "raw.h"
 #include "../validator/validator_base.h"
@@ -109,7 +108,7 @@ namespace obelisk::http {
 
         std::unordered_map<std::string, std::any>& registered_data();
 
-        std::unordered_map<std::string, nlohmann::json>& params();
+        nlohmann::json::object_t& params();
 
         std::unordered_map<std::string, std::shared_ptr<http_file>>& filebag();
 
@@ -127,7 +126,7 @@ namespace obelisk::http {
         std::shared_ptr<std::iostream> raw_body_;
         std::unordered_map<std::string, std::any> registered_value_;
         std::unordered_map<std::string, std::shared_ptr<http_file>> filebag_;
-        std::unordered_map<std::string, nlohmann::json> request_params_;
+        nlohmann::json::object_t request_params_;
         std::unordered_map<std::string, std::any> additional_data_;
 
         friend class parser_v2;

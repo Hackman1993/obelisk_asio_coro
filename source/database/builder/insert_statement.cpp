@@ -9,7 +9,7 @@ namespace obelisk::database::builder
     }
     std::string insert_statement::compile()
     {
-        std::string result = std::format("INSERT INTO {}({}) ", table_.compile(), utils::separate_with(insert_columns_, ","));
+        std::string result = std::format("INSERT {}INTO {}({}) ", ignore_? "IGNORE ":"", table_.compile(), utils::separate_with(insert_columns_, ","));
         if (!insert_values_.empty())
         {
             result.append(std::format("VALUES {} ", utils::separate_with(insert_values_, ",")));

@@ -62,12 +62,12 @@ namespace obelisk::http::client::signer
         static std::string canonical_query_string_(const std::string& query)
         {
             if (query.empty()) return "";
-            std::unordered_map<std::string ,nlohmann::json> params;
+            nlohmann::json::object_t params;
             parser_v3::parse_urlencoded_param(params, query);
 
             std::vector<std::string> sorted;
-            for (const auto& first : params | std::views::keys)
-                sorted.emplace_back(first);
+            for (const auto& item : params)
+                sorted.emplace_back(item.first);
             std::ranges::sort(sorted);
 
             std::string result;

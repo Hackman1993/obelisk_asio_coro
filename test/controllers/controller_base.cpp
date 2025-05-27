@@ -15,13 +15,13 @@
 std::unique_ptr<obelisk::http::http_response> controller_base::json_response(const boost::mysql::results &result,const std::unordered_map<std::string, boost::json::value>& additional_field, obelisk::http::EResponseCode code) {
 
 
-    boost::json::array data = convert_to_json_array(result);
-
-
-    boost::json::object resp_object{{"data", data}};
-    for(auto &item: additional_field) {
-        resp_object.emplace(item.first, item.second);
-    }
+    // boost::json::array data = convert_to_json_array(result);
+    //
+    //
+    // boost::json::object resp_object{{"data", data}};
+    // for(auto &item: additional_field) {
+    //     resp_object.emplace(item.first, item.second);
+    // }
 
     // TODO:// Impl
     return nullptr;
@@ -77,9 +77,9 @@ std::string controller_base::escape_string(const std::string& str) {
 //    throw obelisk::http::http_exception("String Escaping Failed", obelisk::http::EST_UNPROCESSABLE_CONTENT);
 }
 
-std::string controller_base::escape_string(const boost::json::string &str) {
-    return escape_string(std::string(str));
-}
+// std::string controller_base::escape_string(const boost::json::string &str) {
+//     return escape_string(std::string(str));
+// }
 
 std::string controller_base::escape_string(const std::optional<std::string> &str) {
     if(str.has_value())
@@ -101,72 +101,72 @@ obelisk::task<std::unique_ptr<obelisk::http::http_response>> controller_base::ge
     });
 }
 
-boost::json::array controller_base::convert_to_json_array(const boost::mysql::results &result) {
-    if(result.meta().size() <= 0)
-        return boost::json::array{};
-
-    boost::json::array data;
-    std::unordered_map<uint16_t, boost::mysql::string_view> column_names;
-    if(result.meta().size()>1){
-        for(auto &column : result.meta()) {
-            column_names.emplace(column_names.size(),column.column_name());
-        }
-    }
-    auto single_column_mode = result.meta().size()<=1;
-    for(int i =0; i< result.rows().size(); ++i) {
-        boost::json::object obj;
-        for(int j=0; j<result.rows()[i].size(); ++j) {
-            auto val = result.rows()[i][j];
-            if(!single_column_mode) {
-                if(val.is_date())
-                    obj.emplace(column_names[j],std::format("{:%F}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_date().as_time_point()}));
-                else if(val.is_datetime())
-                    obj.emplace(column_names[j],std::format("{:%F %T}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_datetime().as_time_point()}));
-                else if(val.is_time())
-                    obj.emplace(column_names[j], val.as_time().count());
-                else if(val.is_double())
-                    obj.emplace(column_names[j],val.as_double());
-                else if(val.is_float())
-                    obj.emplace(column_names[j], val.as_float());
-                else if(val.is_int64())
-                    obj.emplace(column_names[j], val.as_int64());
-                else if(val.is_uint64())
-                    obj.emplace(column_names[j], val.as_uint64());
-                else if(val.is_null())
-                    obj.emplace(column_names[j], nullptr);
-                else if(val.is_string())
-                    obj.emplace(column_names[j], std::string(val.as_string()));
-                else {
-                    LOG_MODULE_WARN("UserPart", "Unsupported column type(column: {})", std::string(column_names[i]));
-                }
-            }else {
-                if(val.is_date())
-                    data.emplace_back(std::format("{:%F}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_date().as_time_point()}));
-                else if(val.is_datetime())
-                    data.emplace_back(std::format("{:%F %T}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_datetime().as_time_point()}));
-                else if(val.is_time())
-                    data.emplace_back( val.as_time().count());
-                else if(val.is_double())
-                    data.emplace_back(val.as_double());
-                else if(val.is_float())
-                    data.emplace_back( val.as_float());
-                else if(val.is_int64())
-                    data.emplace_back( val.as_int64());
-                else if(val.is_int64())
-                    data.emplace_back( val.as_uint64());
-                else if(val.is_null())
-                    data.emplace_back( nullptr);
-                else if(val.is_string())
-                    data.emplace_back( std::string(val.as_string()));
-                else {
-                    LOG_MODULE_WARN("UserPart", "Unsupported column type(column: {})", std::string(column_names[i]));
-                }
-            }
-
-        }
-        if(!single_column_mode)
-            data.emplace_back(obj);
-    }
-    return data;
-}
+// boost::json::array controller_base::convert_to_json_array(const boost::mysql::results &result) {
+//     if(result.meta().size() <= 0)
+//         return boost::json::array{};
+//
+//     boost::json::array data;
+//     std::unordered_map<uint16_t, boost::mysql::string_view> column_names;
+//     if(result.meta().size()>1){
+//         for(auto &column : result.meta()) {
+//             column_names.emplace(column_names.size(),column.column_name());
+//         }
+//     }
+//     auto single_column_mode = result.meta().size()<=1;
+//     for(int i =0; i< result.rows().size(); ++i) {
+//         boost::json::object obj;
+//         for(int j=0; j<result.rows()[i].size(); ++j) {
+//             auto val = result.rows()[i][j];
+//             if(!single_column_mode) {
+//                 if(val.is_date())
+//                     obj.emplace(column_names[j],std::format("{:%F}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_date().as_time_point()}));
+//                 else if(val.is_datetime())
+//                     obj.emplace(column_names[j],std::format("{:%F %T}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_datetime().as_time_point()}));
+//                 else if(val.is_time())
+//                     obj.emplace(column_names[j], val.as_time().count());
+//                 else if(val.is_double())
+//                     obj.emplace(column_names[j],val.as_double());
+//                 else if(val.is_float())
+//                     obj.emplace(column_names[j], val.as_float());
+//                 else if(val.is_int64())
+//                     obj.emplace(column_names[j], val.as_int64());
+//                 else if(val.is_uint64())
+//                     obj.emplace(column_names[j], val.as_uint64());
+//                 else if(val.is_null())
+//                     obj.emplace(column_names[j], nullptr);
+//                 else if(val.is_string())
+//                     obj.emplace(column_names[j], std::string(val.as_string()));
+//                 else {
+//                     LOG_MODULE_WARN("UserPart", "Unsupported column type(column: {})", std::string(column_names[i]));
+//                 }
+//             }else {
+//                 if(val.is_date())
+//                     data.emplace_back(std::format("{:%F}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_date().as_time_point()}));
+//                 else if(val.is_datetime())
+//                     data.emplace_back(std::format("{:%F %T}", std::chrono::zoned_time{std::chrono::current_zone(), val.as_datetime().as_time_point()}));
+//                 else if(val.is_time())
+//                     data.emplace_back( val.as_time().count());
+//                 else if(val.is_double())
+//                     data.emplace_back(val.as_double());
+//                 else if(val.is_float())
+//                     data.emplace_back( val.as_float());
+//                 else if(val.is_int64())
+//                     data.emplace_back( val.as_int64());
+//                 else if(val.is_int64())
+//                     data.emplace_back( val.as_uint64());
+//                 else if(val.is_null())
+//                     data.emplace_back( nullptr);
+//                 else if(val.is_string())
+//                     data.emplace_back( std::string(val.as_string()));
+//                 else {
+//                     LOG_MODULE_WARN("UserPart", "Unsupported column type(column: {})", std::string(column_names[i]));
+//                 }
+//             }
+//
+//         }
+//         if(!single_column_mode)
+//             data.emplace_back(obj);
+//     }
+//     return data;
+// }
 
