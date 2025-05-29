@@ -104,7 +104,7 @@ namespace module::default_::controllers
         co_await request.validate({
             {"id", {required(), integer(false)}},
        });
-        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        auto target_id =request.params()["id"].get<std::uint64_t>();
         if (!co_await can("permission.sys_role.delete", request, "sys_role", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
         co_await db::update({"sys_roles"}).set({

@@ -66,11 +66,11 @@ namespace module::default_::controllers
             std::uint64_t id{};
             std::string username;
             std::string organization_name;
-            std::uint64_t organization_id{};
+            std::uint64_t fn_organization_id{};
         };
         auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
         const auto result = co_await obelisk::database::db::select({
-            {col("sa.id"), "id"}, {col("sa.username"), "username"}, {col("so.name"), "organization_name"}, {col("sa.fn_organization_id"), "organization_id"}
+            {col("sa.id"), "id"}, {col("sa.username"), "username"}, {col("so.name"), "organization_name"}, {col("sa.fn_organization_id"), "fn_organization_id"}
         }).from({{"sys_admins", "sa"}}).join({table{"sys_organizations"}, "so"},{
             {col{"sa.fn_organization_id"}, col{"so.id"}}, {col{"so.deleted_at"}, nullptr}
         }).where({
