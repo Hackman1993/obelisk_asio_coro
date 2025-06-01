@@ -5,6 +5,7 @@
 #ifndef DB_POOL_H
 #define DB_POOL_H
 
+#include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -39,12 +40,17 @@ namespace obelisk::database
         db_pool& operator=(const db_pool&) = delete;
     protected:
         db_pool() = default;
-        ~db_pool() = default;
+        ~db_pool()
+        {
+            std::cout << "DBPOOL GOES DOWN" << std::endl;
+        };
         static db_pool& self()
         {
-            static db_pool inst;
-            return inst;
+            if (instance_ == nullptr)
+                instance_ = new db_pool();
+            return *instance_;
         }
+        inline static db_pool* instance_ = nullptr;
         std::unordered_map<std::string, std::shared_ptr<connection_pool_base>> connections_;
     };
 } // obelisk::database

@@ -6,17 +6,19 @@
 #define SYS_ORGANIZATION_CONTROLLER_H
 
 
-#include "controller.h"
+#include "controllers/controller.h"
 
 namespace module::default_::controllers
 {
-    class sys_organization_controller : controller{
+    using namespace boost::asio;
+    using namespace obelisk::http;
+    class sys_organization_controller : ::controllers::controller{
     public:
-        static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_view(obelisk::http::http_request_wrapper&request);
+        static awaitable<std::unique_ptr<http_response>> backend_view(http_request_wrapper&request);
 
-        static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_create(obelisk::http::http_request_wrapper&request);
-        static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_update(obelisk::http::http_request_wrapper&request);
-        static awaitable<std::unique_ptr<obelisk::http::http_response>> backend_delete(obelisk::http::http_request_wrapper&request);
+        static awaitable<std::unique_ptr<http_response>> backend_create(http_request_wrapper&request);
+        static awaitable<std::unique_ptr<http_response>> backend_update(http_request_wrapper&request);
+        static awaitable<std::unique_ptr<http_response>> backend_delete(http_request_wrapper&request);
     };
 }
 

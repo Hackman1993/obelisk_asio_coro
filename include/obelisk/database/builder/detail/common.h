@@ -65,18 +65,18 @@ public:
         template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
             std::is_same_v<boost::mysql::results, ResultType>
         >>
-        boost::asio::awaitable<ResultType> get()
+        boost::asio::awaitable<ResultType> get(const std::string& inst = "default")
         {
-            auto connection = co_await db_pool::get_connection<mysql_connection>("default");
+            auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
             auto result = co_await connection->template co_query<ResultType>(this->compile());
             co_return result;
         }
 
         template <typename ResultType>
         requires std::is_same_v<void, ResultType>
-        boost::asio::awaitable<void> get()
+        boost::asio::awaitable<void> get(const std::string& inst = "default")
         {
-            auto connection = co_await db_pool::get_connection<mysql_connection>("default");
+            auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
             co_await connection->co_query<ResultType>(this->compile());
             co_return;
         }
@@ -85,9 +85,9 @@ public:
             !std::is_same_v<boost::mysql::results, ResultType> &&
             boost::pfr::is_implicitly_reflectable_v<ResultType, struct t>
         >>
-        boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get()
+        boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get(const std::string& inst = "default")
         {
-            auto connection = co_await db_pool::get_connection<mysql_connection>("default");
+            auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
             auto result = co_await connection->template co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(this->compile());
             co_return result;
         }

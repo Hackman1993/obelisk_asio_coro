@@ -55,6 +55,20 @@ namespace obelisk::database::migration
         {
             return integer(column, type, false, false);
         }
+        column_blueprint& date(const std::string& column)
+        {
+            return integer(column, "DATE", false, false);
+        }
+
+        column_blueprint& datetime(const std::string& column)
+        {
+            return integer(column, "DATETIME", false, false);
+        }
+
+        column_blueprint& text(const std::string& column)
+        {
+            return *columns_.emplace_back(std::make_shared<column_blueprint>(table_, column, "TEXT"));
+        }
 
         column_blueprint& string(const std::string& column, unsigned int length = 255)
         {

@@ -37,7 +37,7 @@ namespace obelisk::database::migration
         static boost::asio::awaitable<void> drop_if_exists(const std::string&& table);
 
     private:
-        static boost::asio::awaitable<table_blueprint> table_bp(const std::string& table, bool create, const std::function<void (table_blueprint&)>& call);
+        static boost::asio::awaitable<table_blueprint> table_bp(const std::string& table, bool create, const std::function<void (table_blueprint&)>& call, const std::string& inst = "default");
         static migration& self();
         migration();
         ~migration() = default;
@@ -52,7 +52,7 @@ namespace obelisk::database::migration
             co_await migration::create("migrations", [](table_blueprint& blueprint)
             {
                 blueprint.id();
-                blueprint.string("migration", 50).unique().comment("迁移名称");
+                blueprint.string("migration", 500).unique().comment("迁移名称");
                 blueprint.integer("batch").comment("批次");
                 blueprint.timestamps();
             });

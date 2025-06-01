@@ -7,9 +7,9 @@
 #include <boost/lexical_cast.hpp>
 #include <obelisk/http/exception/http_exception.h>
 
-namespace module::default_::controllers
+namespace controllers
 {
-    awaitable<bool> controller::can_cascade(const std::string& code,std::uint64_t sys_admin_id)
+    boost::asio::awaitable<bool> controller::can_cascade(const std::string& code,std::uint64_t sys_admin_id)
     {
         using namespace obelisk::database::builder::detail;
         auto query = db::select({col("sp.id")}).from({{"sys_mid_role_permission", "smrp"}})

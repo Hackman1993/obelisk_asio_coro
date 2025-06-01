@@ -35,9 +35,11 @@
 
 namespace obelisk::http {
     http_server::http_server(boost::asio::io_context&ctx) : acceptor_(ctx), ioctx_(ctx), signals_(ctx, SIGINT, SIGTERM, SIGABRT) {
-        reg_middleware(std::make_unique<middleware::url_params_extract>());
-        reg_middleware(std::make_unique<middleware::multipart_extract>());
-        reg_middleware(std::make_unique<middleware::json_extract>());
+        reg_middlewares({
+            std::make_unique<middleware::url_params_extract>(),
+            std::make_unique<middleware::multipart_extract>(),
+            std::make_unique<middleware::json_extract>()
+        });
     }
 
     std::unique_ptr<route_item>& http_server::route(const std::string& route, const std::function<obelisk::task<std::unique_ptr<http_response>> (http_request_wrapper &)>& handler){
@@ -48,12 +50,12 @@ namespace obelisk::http {
         return routes_.emplace_back(std::make_unique<route_item>(route, handler));
     }
 
-    const std::vector<std::unique_ptr<middleware::base_middleware>>& http_server::middlewares() {
+    const std::vector<std::shared_ptr<middleware::base_middleware>>& http_server::middlewares() {
         return middlewares_;
     }
 
-    void http_server::reg_middleware(std::unique_ptr<middleware::base_middleware> middleware) {
-        middlewares_.push_back(std::move(middleware));
+    void http_server::reg_middlewares(const std::initializer_list<std::shared_ptr<middleware::base_middleware>>& middlewares) {
+        std::ranges::copy(middlewares, std::back_inserter(middlewares_));
     }
 
     void http_server::listen(const std::string&address, unsigned short port) {

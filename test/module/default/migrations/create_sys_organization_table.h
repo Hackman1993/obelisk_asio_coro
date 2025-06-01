@@ -17,6 +17,7 @@ namespace module::default_::migrations
             {
                 blueprint.id();
                 blueprint.string("name").unique();
+                blueprint.string("description").nullable();
                 blueprint.string("director_name").nullable().comment("负责人名称");
                 blueprint.string("director_phone").nullable().comment("负责人电话");
                 blueprint.string("emergency_name").nullable().comment("紧急联系人");

@@ -21,7 +21,11 @@ namespace module::default_::migrations
                 blueprint.string("username", 20).unique();
                 blueprint.string("password", 100).nullable();
                 blueprint.string("real_name", 20).nullable();
-                blueprint.string("phone", 20).unique();
+                blueprint.string("phone", 20).unique().nullable();
+                blueprint.string("passport_no", 50).nullable();
+                blueprint.string("email", 50).nullable();
+                blueprint.boolean("status").default_value(true).comment("0: Disabled 1: Enabled");
+                blueprint.string("avatar_url").nullable();
                 blueprint.foreign_id("fn_organization_id").references("sys_organizations", "id");
                 blueprint.timestamps();
                 blueprint.soft_delete();

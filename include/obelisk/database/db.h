@@ -55,9 +55,9 @@ namespace obelisk::database
             return statement;
         }
 
-        static boost::asio::awaitable<void> transaction(std::function<boost::asio::awaitable<void> (std::shared_ptr<mysql_connection> connection)> func)
+        static boost::asio::awaitable<void> transaction(std::function<boost::asio::awaitable<void> (std::shared_ptr<mysql_connection> connection)> func, const std::string& inst = "default")
         {
-            const auto connection = co_await db_pool::get_connection<mysql_connection>("default");
+            const auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
             co_await connection->co_query<void>("SET AUTOCOMMIT=0;");
             co_await connection->co_query<void>("START TRANSACTION;");
             std::optional<std::string> exceptional;
@@ -77,10 +77,10 @@ namespace obelisk::database
                 throw std::logic_error(exceptional.value());
         }
 
-        static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::base_migration>> migrations)
+        static boost::asio::awaitable<void> run_migration(std::vector<std::shared_ptr<migration::base_migration>> migrations, const std::string& inst = "default")
         {
             const auto prefix = http::config::get<std::string>("database.default.prefix", "");
-            const auto connection = co_await db_pool::get_connection<mysql_connection>("default");
+            const auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
             // Check if migrations table exists
             {
                 auto query = std::format("SHOW TABLES LIKE '{}';", prefix + "migrations");

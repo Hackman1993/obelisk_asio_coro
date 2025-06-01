@@ -16,6 +16,7 @@ namespace module::default_::migrations
             {
                 blueprint.id();
                 blueprint.string("name", 50).unique();
+                blueprint.string("description").nullable();
                 blueprint.foreign_id("fn_organization_id").index().references("sys_organizations", "id");
                 blueprint.timestamps();
                 blueprint.soft_delete();

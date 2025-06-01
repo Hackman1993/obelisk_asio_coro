@@ -8,7 +8,7 @@
 #include <obelisk/http/core/http_response.h>
 #include <obelisk/http/core/http_request.h>
 #include <obelisk/http/response/json_response.h>
-namespace module::default_::controllers
+namespace controllers
 {
     using namespace boost::asio;
     using namespace obelisk::database::builder::detail;

@@ -27,13 +27,13 @@ namespace obelisk::database::migration
         co_return;
     }
 
-    boost::asio::awaitable<table_blueprint> migration::table_bp(const std::string& table, const bool create, const std::function<void (table_blueprint&)>& call)
+    boost::asio::awaitable<table_blueprint> migration::table_bp(const std::string& table, const bool create, const std::function<void (table_blueprint&)>& call, const std::string& inst)
     {
         table_blueprint blueprint(table, create, self().prefix_);
         call(blueprint);
         const auto commands = blueprint.describe();
 
-        const auto connection  = co_await db_pool::get_connection<mysql_connection>("default");
+        const auto connection  = co_await db_pool::get_connection<mysql_connection>(inst);
         for (auto &cmd: commands)
         {
             try{

@@ -1,18 +1,17 @@
 //
 // Created by hackman on 5/19/25.
 //
-#include "sys_admin_controller.h"
+#include "article_category_controller.h"
 
 #include <obelisk/http/exception/http_exception.h>
 #include <obelisk/http/validator/confirmed_validator.h>
 #include <obelisk/http/validator/required_validator.h>
 #include <obelisk/http/validator/integer_validator.h>
 #include <obelisk/http/validator/array_validator.h>
-
-#include "auth_controller.h"
+#include "article_category_controller.h"
 #include "obelisk/http/validator/exists_validator.h"
 
-namespace module::default_::controllers
+namespace module::content::controllers
 {
     using namespace boost::asio;
     using namespace obelisk::database::builder::detail;
@@ -20,7 +19,7 @@ namespace module::default_::controllers
     using namespace obelisk::http;
     using namespace obelisk::http::validator;
 
-    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_view(http_request_wrapper&request)
+    awaitable<std::unique_ptr<http_response>> article_category_controller::backend_view(http_request_wrapper&request)
     {
         struct admin_model
         {
@@ -65,6 +64,7 @@ namespace module::default_::controllers
             query.or_where({{col("sa.real_name"), "like", search + "%"}});
             query.or_where({{col("sa.phone"), "like", search + "%"}});
         }
+        auto result = co_await query.get<admin_model>();
         co_return co_await pagination<admin_model>(query, co_await pagination_uniform(query, request));
     }
 
@@ -72,7 +72,7 @@ namespace module::default_::controllers
 
 
 
-    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_create(http_request_wrapper&request)
+    awaitable<std::unique_ptr<http_response>> article_category_controller::backend_create(http_request_wrapper&request)
     {
         using namespace obelisk::http::validator;
         co_await request.validate({
@@ -91,14 +91,13 @@ namespace module::default_::controllers
         std::vector<std::pair<col, sql_value>> values;
         values.emplace_back("fn_organization_id", fn_organization_id);
         try_emplace<std::string>("username", values, request.params());
-        values.emplace_back("password", sahara::hash::bcrypt::generateHash(request.params()["password"].get<std::string>()));
         try_emplace<std::string>("real_name", values, request.params());
         try_emplace<std::string>("phone", values, request.params());
 
         co_await db::insert("sys_admins").values(values).get();
         co_return json_response(nullptr);
     }
-    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_update(http_request_wrapper&request)
+    awaitable<std::unique_ptr<http_response>> article_category_controller::backend_update(http_request_wrapper&request)
     {
          co_await request.validate({
              {"id", {required(), integer(false), exists("sys_admins")}}
@@ -116,7 +115,7 @@ namespace module::default_::controllers
 
         co_return json_response(nullptr);
     }
-    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_delete(http_request_wrapper&request)
+    awaitable<std::unique_ptr<http_response>> article_category_controller::backend_delete(http_request_wrapper&request)
     {
         co_await request.validate({
             {"id", {required(), integer(false), exists("sys_admins")}},
@@ -129,84 +128,6 @@ namespace module::default_::controllers
         }).where({
             {col("id"), target_id}
         }).get();
-        co_return json_response(nullptr);
-    }
-
-
-    struct role_model
-    {
-        std::uint64_t id{};
-        std::string name;
-        //std::optional<std::string> description;
-        std::uint64_t fn_organization_id{};
-        std::int64_t already_own{};
-    };
-
-    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_assignable_role(http_request_wrapper&request)
-    {
-        co_await request.validate({
-            {"id", {required(), integer(false), exists("sys_admins")}}
-        });
-
-        auto target_org_id = co_await can("permission.sys_admin.assign_roles", request, "sys_admin", request.params()["id"].get<std::uint64_t>());
-        auto query = db::select({
-            {col("r.id"), "id"},
-            {col("r.name"), "name"},
-            {col("r.fn_organization_id"), "fn_organization_id"},
-            {if_format(0,1).where({{col("ar.fn_admin_id"), nullptr}}), "already_own"}
-        }).from({{"sys_roles", "r"}})
-        .join({"sys_organizations", "o"}, {
-            {col("r.fn_organization_id"), col("o.id")},
-            {col("o.deleted_at"), nullptr}
-        }).left_join({"sys_mid_admin_role", "ar"}, {{col("r.id"), col("ar.fn_role_id")},
-        }).where({
-            {col("r.fn_organization_id"), target_org_id},
-            {col("r.deleted_at"), nullptr},
-        }).group_by({"r.id", "r.name", "r.fn_organization_id", "already_own"}).order_by({{"r.id"}});
-
-        auto result_data = co_await query.get<role_model>();
-        co_return json_response(to_json(result_data));
-    }
-
-    awaitable<std::unique_ptr<http_response>> sys_admin_controller::backend_assign_role(http_request_wrapper&request)
-    {
-        co_await request.validate({
-            {"id", {required(), integer(false), exists("sys_admins")}},
-            {"assign_ids", {array()}},
-            {"remove_ids", {array()}}
-        });
-        auto target_id = request.params()["id"].get<std::uint64_t>();
-        auto target_org_id = co_await can("permission.sys_role.assign_permissions", request, "sys_role", target_id);
-
-        if (request.params().contains("assign_ids") && !request.params()["assign_ids"].empty())
-        {
-            std::vector<sql_value> assign_ids;
-            for (const auto &id: request.params()["assign_ids"].get<std::vector<std::int64_t>>())
-                assign_ids.emplace_back(id);
-            co_await db::insert("sys_mid_admin_role").cols({"fn_role_id", "fn_admin_id"}).values({[target_id, target_org_id, assign_ids](auto& builder){
-                builder.select({
-                    col("id"),target_id
-                }).from({{"sys_roles"}}).where({
-                    {col("fn_organization_id"), target_org_id},
-                    {col("id"), "IN", assign_ids}
-                });
-            }}).ignore().get();
-        }
-        if (request.params().contains("remove_ids") && !request.params()["remove_ids"].empty())
-        {
-            std::vector<sql_value> remove_ids;
-            for (const auto &id: request.params()["remove_ids"].get<std::vector<std::int64_t>>())
-                remove_ids.emplace_back(id);
-            co_await db::delete_from({"sys_mid_admin_role"}).where({
-                {col("fn_admin_id"), target_id},
-                {col("fn_role_id"), "IN", sub_query{[target_org_id, remove_ids](auto& builder){
-                    builder.select({col("id")}).from({"sys_roles"}).where({
-                        {col("fn_organization_id"), target_org_id},
-                        {col("id"), "IN", remove_ids}
-                    });
-                }}},
-            }).get();
-        }
         co_return json_response(nullptr);
     }
 

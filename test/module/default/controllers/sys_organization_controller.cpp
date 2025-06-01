@@ -10,6 +10,8 @@
 namespace module::default_::controllers
 {
     using namespace obelisk::database::builder::detail;
+    using namespace obelisk::database;
+    using namespace obelisk::http::validator;
     awaitable<std::unique_ptr<obelisk::http::http_response>> sys_organization_controller::backend_view(obelisk::http::http_request_wrapper&request)
     {
         struct organization_model

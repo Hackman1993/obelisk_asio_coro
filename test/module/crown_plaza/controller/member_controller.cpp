@@ -1,5 +1,8 @@
-#include "member_controller.h"
+//
+// Created by hackman on 5/30/25.
+//
 
+#include "member_controller.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -11,102 +14,83 @@
 #include <obelisk/http/validator/integer_validator.h>
 #include <obelisk/http/validator/required_validator.h>
 
-namespace controller{
+namespace module::crown_plaza::controllers
+{
+
     using namespace obelisk::http::validator;
-    obelisk::task<std::unique_ptr<http_response>> member_controller::view(http_request_wrapper&request) {
-        co_await request.validate({
-            {"page", {integer()}},
-            {"limit", {integer()}}
-        });
+    using namespace obelisk::database::builder::detail;
+    awaitable<std::unique_ptr<http_response>> member_controller::backend_view(http_request_wrapper&request) {
 
-        auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
-        connection->set_meta_mode(boost::mysql::metadata_mode::full);
-        std::uint32_t page = 1;
-        std::uint32_t limit = 10;
-        std::string search;
-        std::uint64_t total = 0;
-
-        if(request.params().contains("page")) {
-            auto val = boost::lexical_cast<std::uint64_t>(request.params()["page"].get<std::string>());
-            page = val > 0? val : page;
-        }
-        if(request.params().contains("limit")) {
-            auto val = boost::lexical_cast<std::uint64_t>(request.params()["limit"].get<std::string>());
-            limit = val > 0? val : limit;
-        }
+        auto query = obelisk::database::db::select({
+            {col("m.member_id"), "member_id"},
+            {col("m.name"), "name"},
+            {col("m.number"), "number"},
+            {col("m.phone_number"), "phone_number"},
+            {col("m.picture_path"), "picture_path"},
+            {col("m.gender"), "gender"},
+            {col("m.birthday"), "birthday"},
+            {col("c.card_no"), "card_no"},
+            {col("m.status"), "status"},
+            {col("m.passport_no"), "passport_no"},
+            {col("m.nationality"), "nationality"},
+            {col("m.visa_issue_at"), "visa_issue_at"},
+            {col("m.visa_expires_at"), "visa_expires_at"},
+            {col("m.passport_issue_at"), "passport_issue_at"},
+            {col("m.passport_expires_at"), "passport_expires_at"},
+            {col("m.passport_sign_location"), "passport_sign_location"},
+            {col("m.passport_picture"), "passport_picture"}
+        }).left_join({"t_card", "c"}, {
+            {col("m.member_id"), col("c.cardable_id")},
+            {col("c.cardable_type"), "member"},
+            {col("c.deleted_at"), nullptr}
+        }).from({"t_member", "m"})
+        .global_where({{col("m.deleted_at"), nullptr}}).order_by({{"m.updated_at"}, "DESC"});
         if(request.params().contains("search")) {
-            search = request.params()["search"].get<std::string>();
-            if(!search.empty() && search[search.size()-1] == '\0')
-                search.resize(search.size()-1);
+            auto search = request.params()["search"].get<std::string>()+"%";
+            query.or_where({{col("m.name"), "LIKE", search}});
+            query.or_where({{col("m.passport_no"), "LIKE", search}});
+            query.or_where({{col("m.card_no"), "LIKE", search}});
         }
 
-        boost::mysql::format_context ctx(connection->format_opts().value());
-
-        ctx.append_raw(R"(SELECT member_id,name, number, phone_number, picture_path, gender, birthday, b.card_no, status)");
-        ctx.append_raw(R"(, passport_no, nationality, a.visa_issue_at, a.visa_expires_at, a.passport_issue_at, a.passport_expires_at, a.passport_sign_location, a.passport_picture )");
-        ctx.append_raw(R"( from t_member a
-        left join t_card b on a.member_id = b.cardable_id and cardable_type = 'mph_member' and b.deleted_at is null
-        where a.deleted_at is null )");
-
-        // Search Filter
-        if(!search.empty())
-            boost::mysql::format_sql_to(ctx, "and (name like {0} or number like {0} or passport_no like {0} or card_no like {0}) ", search+"%");
-
-        ctx.append_raw("order by a.updated_at desc ");
-
-        auto query_sql = std::move(ctx).get().value();
-        auto count_sql = std::format("select count(1) from ({}) as t", query_sql);
-
-        boost::mysql::results result;
-        boost::mysql::diagnostics diagnostics;
-        auto [ec] = co_await connection->async_execute(count_sql, result, boost::asio::as_tuple(obelisk::use_token));
-        boost::mysql::throw_on_error(ec, diagnostics);
-
-        if(result.rows()[0][0].as_int64() == 0) {
-            co_return std::make_unique<obelisk::http::json_response>(nlohmann::json{
-                { "total", 0 },
-                { "page", 1 },
-                { "limit", limit},
-                { "data", nlohmann::json{}}
-            });
-        }
-        total = result.rows()[0][0].as_int64();
-        auto max_page = total/limit + (total%limit>0? 1:0);
-        page = std::clamp<uint64_t>(page, 1, max_page);
-        query_sql.append(boost::mysql::format_sql(connection->format_opts().value()," limit {} offset {}", limit, limit * (page -1)) );
-
-        auto [error_code] = co_await connection->async_execute(query_sql, result, boost::asio::as_tuple(obelisk::use_token));
-        boost::mysql::throw_on_error(error_code, diagnostics);
-
-        co_return json_response(result, {
-            { "total", total},
-            { "page", page},
-            { "limit", limit}
-        });
+        struct member_model
+        {
+            std::uint64_t member_id{};
+            std::string name;
+            std::string number;
+            std::string phone_number;
+            std::string picture_path;
+            std::int64_t gender{};
+            std::string birthday;
+            std::string card_no;
+            std::int64_t status{};
+            std::string passport_no;
+            std::string nationality;
+            std::string visa_issue_at;
+            std::string visa_expires_at;
+            std::string passport_issue_at;
+            std::string passport_expires_at;
+            std::string passport_sign_location;
+            std::string passport_picture;
+        };
+        co_return co_await pagination<member_model>(query, co_await pagination_uniform(query, request));
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::create(obelisk::http::http_request_wrapper &request) {
-        // std::vector<validator_group> validators;
-        // validators.emplace_back(validator_group{"name", {required()}});
-        // validators.emplace_back(validator_group{"number", {required()}});
-        // validators.emplace_back(validator_group{"nationality", {required()}});
-        // validators.emplace_back(validator_group{"birthday", {required()}});
-        // validators.emplace_back(validator_group{"gender", {required(), integer(false)}});
-        // validators.emplace_back(validator_group{"member_pic", {required()}});
-        // validators.emplace_back(validator_group{"visa_issue_at", {required()}});
-        // validators.emplace_back(validator_group{"visa_expires_at", {required()}});
-        // validators.emplace_back(validator_group{"passport_no", {required()}});
-        // validators.emplace_back(validator_group{"passport_sign_location", {required()}});
-        // validators.emplace_back(validator_group{"passport_issue_at", {required()}});
-        // validators.emplace_back(validator_group{"passport_expires_at", {required()}});
-        // co_await request.validate(validators);
-        //
-        // auto connection = co_await obelisk::database::db_pool::get_connection<mysql_connection>("mysql");
-        //
-        // boost::mysql::results results;
-        // boost::mysql::diagnostics diagnostics;
-        // std::optional<std::string> picture_path;
-        // std::optional<std::string> passport_pic_path;
+    awaitable<std::unique_ptr<http_response>> member_controller::backend_create(http_request_wrapper &request) {
+        co_await request.validate({
+            {"name", {required()}},
+            {"number", {required()}},
+            {"nationality", {required()}},
+            {"birthday", {required()}},
+            {"gender", {required(), integer(false)}},
+            {"member_pic", {required()}},
+            {"visa_issue_at", {required()}},
+            {"visa_expires_at", {required()}},
+            {"passport_no", {required()}},
+            {"passport_sign_location", {required()}},
+            {"passport_issue_at", {required()}},
+            {"passport_expires_at", {required()}}
+        });
+        co_return nullptr;
         // if(request.filebag().contains("member_pic")) {
         //     picture_path = co_await save_attachment(*request.filebag()["member_pic"], "storage/images/avatars", connection, std::any_cast<std::uint64_t>(request.additional_data()["__operator_id"]));
         // }
@@ -141,7 +125,7 @@ namespace controller{
         co_return nullptr;
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::update(obelisk::http::http_request_wrapper &request) {
+    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::backend_update(obelisk::http::http_request_wrapper &request) {
         // std::vector<validator_group> validators;
         // validators.emplace_back(validator_group{"member_id", {required(), integer(false)}});
         // validators.emplace_back(validator_group{"gender", {integer(false)}});
@@ -214,7 +198,7 @@ namespace controller{
         co_return nullptr;
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::sign_card(obelisk::http::http_request_wrapper &request) {
+    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::backend_sign_card(obelisk::http::http_request_wrapper &request) {
         // std::vector<validator_group> validators;
         // validators.emplace_back(validator_group{"member_id", {required(), integer(false)}});
         // validators.emplace_back(validator_group{"number", {required()}});
@@ -258,7 +242,7 @@ namespace controller{
         co_return nullptr;
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::soft_delete(obelisk::http::http_request_wrapper &request) {
+    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::backend_delete(obelisk::http::http_request_wrapper &request) {
         // std::vector<validator_group> validators;
         // validators.emplace_back(validator_group{"member_id", {required(), integer(false)}});
         // co_await request.validate(validators);
@@ -275,7 +259,7 @@ namespace controller{
 
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::findByPreciseData(obelisk::http::http_request_wrapper &request) {
+    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::find_by_precise_data(obelisk::http::http_request_wrapper &request) {
         // std::vector<validator_group> validators;
         // validators.emplace_back(validator_group{"search", {required()}});
         // co_await request.validate(validators);
@@ -308,7 +292,7 @@ namespace controller{
         co_return nullptr;
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::getCardOwner(obelisk::http::http_request_wrapper &request) {
+    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::find_by_card(obelisk::http::http_request_wrapper &request) {
         // std::vector<validator_group> validators;
         // validators.emplace_back(validator_group{"card_no", {required()}});
         // co_await request.validate(validators);
@@ -402,7 +386,7 @@ namespace controller{
         co_return nullptr;
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::freeze(obelisk::http::http_request_wrapper &request) {
+    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::backend_freeze(obelisk::http::http_request_wrapper &request) {
         // std::vector<validator_group> validators;
         // validators.emplace_back(validator_group{"member_id", {required(), integer(false)}});
         // validators.emplace_back(validator_group{"status", {required(), integer(false)}});

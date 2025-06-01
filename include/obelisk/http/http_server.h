@@ -34,20 +34,26 @@ namespace obelisk::http {
         std::unique_ptr<route_item>& route(const std::string& route, const std::function<obelisk::task<std::unique_ptr<http_response>> (http_request_wrapper&)>& handler);
         std::unique_ptr<route_item>& route(const std::string& route, const request_handler& handler);
 
-        const std::vector<std::unique_ptr<middleware::base_middleware>>& middlewares();
-        void reg_middleware(std::unique_ptr<middleware::base_middleware> middleware);
-        template<typename T>
-        std::enable_if_t<std::is_base_of_v<module::base_module, T>, boost::asio::awaitable<void>>
-        module(T module)
+        const std::vector<std::shared_ptr<middleware::base_middleware>>& middlewares();
+        void reg_middlewares(const std::initializer_list<std::shared_ptr<middleware::base_middleware>>& middlewares);
+        void module(std::initializer_list<std::unique_ptr<module::base_module>> modules)
         {
-            co_await module.migrate();
-            module.route(*this);
-            co_return;
+            boost::asio::co_spawn(ioctx_, [modules, this]()->boost::asio::awaitable<void>
+            {
+                for (auto& module: modules)
+                {
+                    co_await module->migrate();
+                    module->route(*this);
+                }
+                co_return;
+            },boost::asio::detached);
+            ioctx_.run();
+            ioctx_.restart();
         }
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
         std::vector<std::unique_ptr<route_item>> routes_;
-        std::vector<std::unique_ptr<middleware::base_middleware>> middlewares_;
+        std::vector<std::shared_ptr<middleware::base_middleware>> middlewares_;
 
         task<void> listen_();
         task<void> handle_(boost::asio::ip::tcp::socket socket);
