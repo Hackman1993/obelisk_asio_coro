@@ -25,6 +25,7 @@ namespace module::default_::controllers
             std::optional<std::string> address;
             std::optional<std::uint64_t> path_length;
             std::optional<std::uint64_t> parent_id;
+            std::optional<std::string> parent_name;
         };
 
         auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
@@ -38,6 +39,7 @@ namespace module::default_::controllers
             {col("so.address"), "address"},
             {col("soh.path_length")},
             {col("sop.id"), "parent_id"},
+            {col("sop.name"), "parent_name"},
         }).from({{"sys_organizations", "so"}})
         .join({"sys_organization_hierarchy", "soh"}, {{col("so.id"),col("soh.fn_descendant_id")}})
         .left_join({"sys_organization_hierarchy", "sohp"}, {{col("so.id"), col("sohp.fn_descendant_id")}, {col("sohp.path_length"), 1}})
@@ -60,7 +62,7 @@ namespace module::default_::controllers
             {"parent_id", {required(), integer(false)}},
             {"name", {required()}},
         });
-        std::uint64_t parent_id = boost::lexical_cast<std::uint64_t>(request.params()["parent_id"].get<std::string>());
+        std::uint64_t parent_id = request.params()["parent_id"].get<std::uint64_t>();
         auto admin_id = std::any_cast<std::uint64_t>(request.additional_data()["_sys_admins_id"]);
         if (!co_await utils::can("permission.sys_organization.create", admin_id, parent_id))
             throw obelisk::http::http_exception("server.error.permission_denied", obelisk::http::EST_UNAUTHORIZED);
