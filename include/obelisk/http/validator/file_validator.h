@@ -9,7 +9,7 @@
 namespace obelisk::http::validator {
     class file_validator : public validator_base {
     public:
-        file_validator(std::vector<std::string> acceptable): acceptable_extensions_(std::move(acceptable)) {
+        explicit file_validator(std::vector<std::string> acceptable): acceptable_extensions_(std::move(acceptable)) {
 
         }
         obelisk::task<void> validate(const std::string &name, http_request_wrapper &request) override;
@@ -17,7 +17,7 @@ namespace obelisk::http::validator {
         std::vector<std::string> acceptable_extensions_;
     };
 
-    std::shared_ptr<file_validator> file();
+    std::shared_ptr<validator_base> file(const std::vector<std::string>& acceptable = {});
 } // obelisk
 
 #endif //FILE_H

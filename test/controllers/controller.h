@@ -61,6 +61,17 @@ namespace controllers
                 return value;
         }
 
+        static nlohmann::json to_json_val(const std::optional<boost::mysql::date>& value)
+        {
+            if (value.has_value())
+                return std::format("{:%F}", value.value().as_time_point());
+            return nullptr;
+        }
+        static nlohmann::json to_json_val(const boost::mysql::date& value)
+        {
+            return std::format("{:%F}", value.as_time_point());
+        }
+
         template<typename T, typename = std::enable_if_t<
             boost::pfr::is_implicitly_reflectable_v<T, struct t>
         >>

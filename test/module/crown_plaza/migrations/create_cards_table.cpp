@@ -13,12 +13,12 @@ namespace module::crown_plaza::migrations
                 blueprint.id();
                 blueprint.string("card_no", 100).index();
                 blueprint.string("password", 100).nullable();
-                blueprint.integer("card_type").nullable();
+                blueprint.integer("card_type").nullable().index();
                 blueprint.string("cardable_type", 50).index();
-                blueprint.foreign_id("fn_cardable_id");
+                blueprint.foreign_id("fn_cardable_id").index();
                 blueprint.foreign_id("fn_creator_id").references("sys_admins", "id");
                 blueprint.foreign_id("fn_issuer_id").references("sys_admins", "id");
-                blueprint.integer("status").default_value(1);
+                blueprint.integer("status").default_value(1).index();
                 blueprint.timestamps();
                 blueprint.soft_delete();
             });

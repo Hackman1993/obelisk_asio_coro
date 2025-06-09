@@ -112,7 +112,7 @@ namespace obelisk::database::migration
 
         void soft_delete()
         {
-            timestamp("deleted_at").nullable();
+            timestamp("deleted_at").nullable().index();
         }
 
         std::vector<detail::basic_action> describe()

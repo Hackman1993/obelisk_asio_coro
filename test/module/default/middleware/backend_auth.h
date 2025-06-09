@@ -5,6 +5,7 @@
 #ifndef MIDDLEWARE_BACKEND_AUTH_H
 #define MIDDLEWARE_BACKEND_AUTH_H
 #include <obelisk/http/exception/http_exception.h>
+#include <obelisk/http/middleware/middleware.h>
 #include "module/default/model/backend_user_info.h"
 #include <boost/pfr.hpp>
 #include <boost/mysql/pfr.hpp>

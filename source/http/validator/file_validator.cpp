@@ -4,8 +4,7 @@
 #include "obelisk/http/exception/validation_exception.h"
 
 namespace obelisk::http::validator {
-    std::shared_ptr<file_validator> file(std::vector<std::string> &acceptable) {
-
+    std::shared_ptr<validator_base> file(const std::vector<std::string>& acceptable) {
         return std::make_shared<file_validator>(acceptable);
     }
 
@@ -23,8 +22,7 @@ namespace obelisk::http::validator {
             if(item == extention.value()) {
                 co_return;
             }
-            throw validation_exception("validator.error.unprocessable_extension");
         }
-        co_return;
+        throw validation_exception("validator.error.unprocessable_extension");
     }
 }

@@ -9,9 +9,10 @@
 #include "validator_base.h"
 namespace obelisk::http::validator {
 
+    template <typename T>
     class in_validator final : public validator_base {
     public:
-        explicit in_validator(const std::vector<std::string>& values)
+        explicit in_validator(const std::vector<T>& values)
         {
             for (auto& value: values)
                 values_.emplace(value, true);
@@ -21,23 +22,20 @@ namespace obelisk::http::validator {
             if (request.params().contains(name))
             {
                 auto &params_val = request.params()[name];
-                std::string val;
-                if (params_val.is_string())
-                    val = params_val.get<std::string>();
-                else
-                    val = params_val.dump();
+                const T& val = params_val.get<T>();
                 if (!values_.contains(val))
                     throw http_exception("server.error.value_not_in_set", EST_UNPROCESSABLE_CONTENT);
                 co_return;
             }
         }
     private:
-        std::map<std::string, bool> values_;
+        std::map<T, bool> values_;
     };
 
-    inline std::shared_ptr<in_validator> in(const std::vector<std::string>& values)
+    template <typename T>
+    std::shared_ptr<in_validator<T>> in(const std::vector<T>& values)
     {
-        return std::make_shared<in_validator>(values);
+        return std::make_shared<in_validator<T>>(values);
     }
 }
 

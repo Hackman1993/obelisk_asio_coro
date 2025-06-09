@@ -38,7 +38,7 @@ namespace obelisk::http {
     auto MultipartMetaNameParser_def = (no_case[lit("name")] > attr(std::string("name")) > "=" > '"' > lexeme[*(char_ - '"')] > '"');
     auto MultipartMetaFileNameParser_def = (no_case[lit("filename")] > attr(std::string("filename")) > "=" > '"' > lexeme[*(char_ - '"')] > '"');
     auto MultipartMetaFormDataParser_def = lit("form-data") > attr("form-data") > attr("form-data");
-    auto MultipartMetaParser_def = MultipartMetaNameParser | MultipartMetaFileNameParser | MultipartMetaFormDataParser;
+    auto MultipartMetaParser_def = +(char_-char_(";=")) > ((lit("=")>> (-lit("\"") > +(char_-char_(";\"")) > -lit("\"")))|attr(std::string("")));
 
     BOOST_PARSER_DEFINE_RULES(MultipartMetaNameParser, MultipartMetaFileNameParser, MultipartMetaFormDataParser, MultipartMetaParser)
     auto MultipartBoundaryParser = no_case[lit("multipart/form-data;")] > *ws > no_case[lit("boundary=")] > *ws >> +(char_ - char_("\r\n")) > *ws;

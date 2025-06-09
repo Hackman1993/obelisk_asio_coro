@@ -10,6 +10,7 @@
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 #include "http_server.h"
+#include "obelisk/filesystem/filesystem.h"
 
 namespace obelisk::http
 {
@@ -33,6 +34,11 @@ namespace obelisk::http
         static void middleware(const std::initializer_list<std::shared_ptr<middleware::base_middleware>>& middlewares)
         {
             self().server_.reg_middlewares(middlewares);
+        }
+
+        static void register_fs(const std::string& key, const std::function<std::shared_ptr<fs::detail::base_filesystem>(const nlohmann::json& config)>& maker)
+        {
+            filesystem::register_fs(key, maker);
         }
 
         static void run()
@@ -73,6 +79,7 @@ namespace obelisk::http
                 const auto port = config::get<std::uint16_t>(std::format("database.{}.port",item.first), 3306);
                 database::db_pool::make_pool<mysql_connection>(io_context_, item.first, host, port, username, password, database);
             }
+            filesystem::initialize();
         }
         ~framework()
         {
