@@ -24,7 +24,7 @@ namespace module::crown_plaza::controllers
     awaitable<std::unique_ptr<http_response>> member_controller::backend_view(http_request_wrapper&request) {
 
         auto query = obelisk::database::db::select({
-            {col("m.id"), "member_id"},
+            {col("m.id"), "id"},
             {col("m.name"), "name"},
             {col("m.number"), "number"},
             {col("m.phone"), "phone"},
@@ -51,7 +51,7 @@ namespace module::crown_plaza::controllers
 
         struct member_model
         {
-            std::uint64_t member_id{};
+            std::uint64_t id{};
             std::optional<std::string> name;
             std::optional<std::string> number;
             std::optional<std::string> phone;

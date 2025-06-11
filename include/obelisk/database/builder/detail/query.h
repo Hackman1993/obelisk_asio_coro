@@ -99,6 +99,7 @@ namespace obelisk::database::builder::detail
         {
             query q;
             query cp = *this;
+            cp.order_by_.reset();
             q.select({count_t(1)}).from({{cp.as_sub_query(), "count"}});
             auto result = co_await q.get();
             co_return result.rows()[0][0].as_int64();
