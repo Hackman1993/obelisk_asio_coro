@@ -89,7 +89,9 @@ namespace controllers
     awaitable<pagination_uniformed> controller::pagination_uniform(builder::detail::query statement, obelisk::http::http_request_wrapper& request)
     {
         auto count_query = statement;
+        auto start = std::chrono::system_clock::now();
         auto total = co_await count_query.count();
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start)<< std::endl;
         std::uint64_t limit = 10;
         std::uint64_t page = 1;
         if (request.params().contains("page"))
@@ -112,7 +114,7 @@ namespace controllers
                 std::cout << e.what() << std::endl;
             }
         }
-        const std::uint64_t max_page = std::ceil(total/limit);
+        const std::uint64_t max_page = std::ceil(static_cast<double>(total)/static_cast<double>(limit));
         page = std::min(page, max_page);
         page = std::max<std::uint64_t>(1, page);
         limit = std::max<std::uint64_t>(1, limit);

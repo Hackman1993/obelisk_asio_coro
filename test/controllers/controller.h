@@ -72,6 +72,17 @@ namespace controllers
             return std::format("{:%F}", value.as_time_point());
         }
 
+        static nlohmann::json to_json_val(const std::optional<boost::mysql::datetime>& value)
+        {
+            if (value.has_value())
+                return std::format("{:%F %H:%M:%OS}", value.value().as_time_point());
+            return nullptr;
+        }
+        static nlohmann::json to_json_val(const boost::mysql::datetime& value)
+        {
+            return std::format("{:%F %H:%M:%OS}", value.as_time_point());
+        }
+
         template<typename T, typename = std::enable_if_t<
             boost::pfr::is_implicitly_reflectable_v<T, struct t>
         >>
@@ -98,7 +109,9 @@ namespace controllers
         template<typename T>
         static awaitable<std::unique_ptr<obelisk::http::json_response>> pagination(builder::detail::query statement, pagination_uniformed uniform)
         {
+            auto start = std::chrono::system_clock::now();
             auto result = co_await statement.limit(uniform.limit, (uniform.page-1)*uniform.limit).get<T>();
+            std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start)<< std::endl;
             co_return json_response({
                 {"list", to_json(result)},
                 {"total", uniform.total},

@@ -158,7 +158,9 @@ namespace module::default_::controllers
         .join({"sys_organizations", "o"}, {
             {col("r.fn_organization_id"), col("o.id")},
             {col("o.deleted_at"), nullptr}
-        }).left_join({"sys_mid_admin_role", "ar"}, {{col("r.id"), col("ar.fn_role_id")},
+        }).left_join({"sys_mid_admin_role", "ar"}, {
+            {col("r.id"), col("ar.fn_role_id")},
+            {col("ar.fn_admin_id"), request.params()["id"].get<std::uint64_t>()},
         }).where({
             {col("r.fn_organization_id"), target_org_id},
             {col("r.deleted_at"), nullptr},

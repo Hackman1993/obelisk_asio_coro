@@ -31,7 +31,6 @@ namespace module::crown_plaza::controllers
             {col("m.picture_path"), "picture_path"},
             {col("m.gender"), "gender"},
             {col("m.birthday"), "birthday"},
-            {col("c.card_no"), "card_no"},
             {col("m.passport_no"), "passport_no"},
             {col("m.nationality"), "nationality"},
             {col("m.visa_issue_at"), "visa_issue_at"},
@@ -39,32 +38,28 @@ namespace module::crown_plaza::controllers
             {col("m.passport_issue_at"), "passport_issue_at"},
             {col("m.passport_expires_at"), "passport_expires_at"},
             {col("m.passport_sign_location"), "passport_sign_location"},
-            {col("m.passport_picture"), "passport_picture"}
-        }).left_join({"cards", "c"}, {
-            {col("m.id"), col("c.fn_cardable_id")},
-            {col("c.cardable_type"), "member"},
-            {col("c.deleted_at"), nullptr}
+            {col("m.passport_picture"), "passport_picture"},
+            {col("m.last_entry_at"), "last_entry_at"}
         }).from({{"members", "m"}})
         .global_where({{col("m.deleted_at"), nullptr}}).order_by({{"m.updated_at"}, "DESC"});
         if(request.params().contains("search")) {
             auto search = request.params()["search"].get<std::string>()+"%";
             query.or_where({{col("m.name"), "LIKE", search}});
+            query.or_where({{col("m.number"), "LIKE", search}});
             query.or_where({{col("m.passport_no"), "LIKE", search}});
-            query.or_where({{col("c.card_no"), "LIKE", search}});
         }
 
         struct member_model
         {
             std::uint64_t member_id{};
-            std::string name;
+            std::optional<std::string> name;
             std::optional<std::string> number;
             std::optional<std::string> phone;
             std::optional<std::string> picture_path;
             std::int64_t gender{};
             std::optional<boost::mysql::date> birthday;
-            std::optional<std::string> card_no;
             //std::int64_t status{};
-            std::string passport_no;
+            std::optional<std::string> passport_no;
             std::optional<std::string> nationality;
             std::optional<boost::mysql::date> visa_issue_at;
             std::optional<boost::mysql::date> visa_expires_at;
@@ -72,7 +67,9 @@ namespace module::crown_plaza::controllers
             std::optional<boost::mysql::date> passport_expires_at;
             std::optional<std::string> passport_sign_location;
             std::optional<std::string> passport_picture;
+            std::optional<boost::mysql::datetime> last_entry_at;
         };
+
         co_return co_await pagination<member_model>(query, co_await pagination_uniform(query, request));
     }
 

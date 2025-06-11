@@ -11,15 +11,9 @@
 #include "module/crown_plaza/crown_plaza.h"
 #include <boost/parser/parser.hpp>
 using namespace boost::parser;
-rule<struct MultipartMeta, std::pair<std::string, std::string>> MultipartMetaParser= "MultipartMeta";
-auto MultipartMetaParser_def = +(char_-char_(";=")) > ((lit("=")>> (-lit("\"") > +(char_-char_(";\"")) > -lit("\"")))|attr(std::string("")));
-BOOST_PARSER_DEFINE_RULES(MultipartMetaParser);
 int main(int argc, char* argv[]) {
     try {
         std::unordered_map<std::string, std::string> meta_data;
-
-        std::string content = R"(form-data; name="member_pic"; filename="微信图片_20250521201213.jpg"; filename*=UTF-8''%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250521201213.jpg)";
-        boost::parser::parse(content,MultipartMetaParser % ';', ws,meta_data);
         obelisk::http::framework::register_fs("aliyunoss", [](const auto &config)
         {
             auto ak_id = config["access_key_id"].template get<std::string>();

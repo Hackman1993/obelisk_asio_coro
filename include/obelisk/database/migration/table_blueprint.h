@@ -107,7 +107,7 @@ namespace obelisk::database::migration
         void timestamps()
         {
             timestamp("created_at").use_current();
-            timestamp("updated_at").use_current().use_current_on_update();
+            timestamp("updated_at").use_current().index().use_current_on_update();
         }
 
         void soft_delete()

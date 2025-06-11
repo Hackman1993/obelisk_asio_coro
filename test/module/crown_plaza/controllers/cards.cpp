@@ -51,7 +51,7 @@ namespace module::crown_plaza::controllers
             struct member_info
             {
                 std::uint64_t member_id;
-                std::string name;
+                std::optional<std::string> name;
                 std::optional<std::string> number;
                 std::optional<std::string> nationality;
                 std::optional<std::string> passport_no;

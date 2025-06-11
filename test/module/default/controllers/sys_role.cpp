@@ -10,6 +10,7 @@
 #include <obelisk/http/validator/array_validator.h>
 
 #include "auth_controller.h"
+#include "obelisk/http/validator/exists_validator.h"
 
 namespace module::default_::controllers
 {
@@ -84,10 +85,10 @@ namespace module::default_::controllers
     awaitable<std::unique_ptr<http_response>> sys_role::backend_update(http_request_wrapper&request)
     {
          co_await request.validate({
-             {"id", {required(), integer(false)}},
+             {"id", {required(), integer(false), exists("sys_roles")}},
              {"name", {required()}}
         });
-        auto target_id = boost::lexical_cast<std::uint64_t>(request.params()["id"].get<std::string>());
+        auto target_id = request.params()["id"].get<std::uint64_t>();
         if (!co_await can("permission.sys_role.update", request, "sys_role", target_id))
             throw http_exception("server.error.permission_denied", EST_UNAUTHORIZED);
         std::vector<std::pair<col, sql_value>> values;
