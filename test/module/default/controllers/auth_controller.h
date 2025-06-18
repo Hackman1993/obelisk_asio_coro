@@ -33,7 +33,8 @@ namespace module::default_::controllers
         });
         const auto result = co_await obelisk::database::db::select({col("id"),col("username"), col("password"), col("phone")}).from({"sys_admins"}).where({
             { col("username"), request.params()["login"].get<std::string>()},
-            { col("deleted_at"), nullptr}
+            { col("deleted_at"), nullptr},
+            { col("status"), 1}
         }).get();
         if (result.rows().empty())
             throw obelisk::http::http_exception("server.error.invalid_credential", obelisk::http::EST_UNAUTHORIZED);

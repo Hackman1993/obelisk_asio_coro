@@ -18,6 +18,7 @@ namespace module::crown_plaza::migrations
             co_await default_::utils::register_permission("permission.member.update", false);
             co_await default_::utils::register_permission("permission.member.delete", false);
             co_await default_::utils::register_permission("permission.member.enable", false);
+            co_await default_::utils::register_permission("permission.member.update_certificate_info", false);
             co_await default_::utils::register_permission("permission.member.assign_card", false);
             co_await default_::utils::register_permission("permission.member.freeze_card", false);
             co_await default_::utils::register_permission("permission.member.view_detail", false);

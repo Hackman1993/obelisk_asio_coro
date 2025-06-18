@@ -21,8 +21,10 @@ namespace module::crown_plaza::controllers
         static awaitable<std::unique_ptr<http_response>> backend_update(http_request_wrapper&request);
         static awaitable<std::unique_ptr<http_response>> backend_delete(http_request_wrapper&request);
         static awaitable<std::unique_ptr<http_response>> backend_sign_card(http_request_wrapper&request);
-        static awaitable<std::unique_ptr<http_response>> backend_freeze_card(http_request_wrapper&request);
+        static awaitable<std::unique_ptr<http_response>> backend_update_certificate_info(http_request_wrapper&request);
+        static awaitable<std::unique_ptr<http_response>> backend_freeze(http_request_wrapper&request);
         static awaitable<std::unique_ptr<http_response>> entrance(http_request_wrapper&request);
+        static awaitable<std::unique_ptr<http_response>> region_statistics(http_request_wrapper&request);
     };
 
 }

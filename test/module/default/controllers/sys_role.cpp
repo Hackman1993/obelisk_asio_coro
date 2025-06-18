@@ -156,7 +156,9 @@ namespace module::default_::controllers
             .join({"sys_mid_admin_role", "ar"}, {{col("rp.fn_role_id"), col("ar.fn_role_id")},{col("ar.fn_admin_id"), admin_id}})
             .join({"sys_roles", "r"}, {{col("ar.fn_role_id"), col("r.id")}, {col("r.deleted_at"), nullptr}})
             .where({{col("rp.grant"), 1}});
-        }}, "ap"}, {{col("ap.id"), col("p.id")}}).order_by({{"p.code", "p.id"}});
+        }}, "ap"}, {{col("ap.id"), col("p.id")}})
+        .where({{col("p.visible"), 1}})
+        .order_by({{"p.code", "p.id"}});
         auto resp_data = co_await query.get<permission_model>();
         co_return json_response(to_json(resp_data));
     }

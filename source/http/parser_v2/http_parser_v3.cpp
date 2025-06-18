@@ -15,7 +15,7 @@
 using namespace boost::parser;
 
 namespace obelisk::http {
-    auto ContentTypeParser= no_case[lit("Content-Type")] > ":" > lexeme[*char_-"\r\n"];
+    auto ContentTypeParser= no_case[lit("Content-Type")] >> ":" > +(char_-char_("\r\n"));
     rule<struct MetaParser, core::raw::http_meta_raw> MetaParser= "MetaParser";
     auto MetaParser_def = +(char_ - char_(" \r\n")) > *ws > +(char_ - char_(" \r\n")) > *ws> +(char_ - char_("\r\n")) > *lit(" ") > "\r\n";
     BOOST_PARSER_DEFINE_RULES(MetaParser);
@@ -145,7 +145,7 @@ namespace obelisk::http {
                 std::getline(*data, line_data);
                 if (line_data.empty() || line_data == "\r")
                     THROW(protocol_exception, "Form data was a file but no content type was specified", "Obelisk");
-                parse_result = parse(line_data, ContentTypeParser, content_type);
+                parse_result = parse(line_data, ContentTypeParser, ws, content_type);
                 if (!parse_result) {
                     THROW(protocol_exception, "Multipart form data_ Content-Type parse failed!", "Obelisk");
                 }
@@ -195,6 +195,7 @@ namespace obelisk::http {
                 continue;
             if (is_file && meta_data.contains("filename")) {
                 request.filebag_[meta_data["name"]] = std::make_shared<http_file>(temp_file_path, meta_data["filename"]);
+                request.filebag_[meta_data["name"]]->mime_type_ = content_type;
             } else {
                 auto item_key = boost::algorithm::replace_last_copy(meta_data["name"], "[]", "");
                 bool is_array = request.request_params_.contains(item_key)? request.request_params_[item_key].is_array() : false;

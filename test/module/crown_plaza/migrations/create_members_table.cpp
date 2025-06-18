@@ -19,6 +19,7 @@ namespace module::crown_plaza::migrations
                 blueprint.boolean("gender").default_value(true).index();
                 blueprint.date("birthday").nullable().index();
                 blueprint.string("phone", 100).nullable().index();
+                blueprint.boolean("status").index().default_value(1);
                 blueprint.string("email", 50).nullable();
                 blueprint.string("description").nullable();
                 blueprint.date("passport_issue_at").nullable().index();

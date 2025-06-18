@@ -19,10 +19,13 @@ namespace module
         server.route("/api/backend/member/create", controllers::member_controller::backend_create)->method({"POST"}).middleware(default_::middleware::backend_auth("sys_admins"));
         server.route("/api/backend/member/update", controllers::member_controller::backend_update)->method({"POST"}).middleware(default_::middleware::backend_auth("sys_admins"));
         server.route("/api/backend/member/delete", controllers::member_controller::backend_delete)->method({"DELETE"}).middleware(default_::middleware::backend_auth("sys_admins"));
-        server.route("/api/backend/member/freeze_card", controllers::member_controller::backend_freeze_card)->method({"PUT"}).middleware(default_::middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/member/freeze", controllers::member_controller::backend_freeze)->method({"PUT"}).middleware(default_::middleware::backend_auth("sys_admins"));
         server.route("/api/backend/member/sign_card", controllers::member_controller::backend_sign_card)->method({"POST"}).middleware(default_::middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/member/update_certificate_info", controllers::member_controller::backend_update_certificate_info)->method({"POST"}).middleware(default_::middleware::backend_auth("sys_admins"));
+        server.route("/api/backend/member/region_statistics", controllers::member_controller::region_statistics)->method({"GET"}).middleware(default_::middleware::backend_auth("sys_admins"));
         server.route("/api/member/entrance", controllers::member_controller::entrance)->method({"POST"});
         server.route("/api/member/find_by_card", controllers::cards::find_by_card)->method({"GET"});
+
     }
 
     boost::asio::awaitable<void> crown_plaza_module::migrate()

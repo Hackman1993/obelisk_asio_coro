@@ -18,7 +18,6 @@ namespace module::crown_plaza::migrations
                 blueprint.foreign_id("fn_cardable_id").index();
                 blueprint.foreign_id("fn_creator_id").references("sys_admins", "id");
                 blueprint.foreign_id("fn_issuer_id").references("sys_admins", "id");
-                blueprint.integer("status").default_value(1).index();
                 blueprint.timestamps();
                 blueprint.soft_delete();
             });

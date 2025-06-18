@@ -34,6 +34,7 @@ namespace obelisk::http {
         }
         std::string temp_path_;
         std::string filename_;
+        std::string mime_type_;
         std::optional<std::string> extension_;
         ~http_file() {
             if (std::filesystem::exists(temp_path_))

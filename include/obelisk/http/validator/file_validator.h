@@ -4,20 +4,24 @@
 
 #ifndef FILE_VALIDATOR_H
 #define FILE_VALIDATOR_H
+#include <algorithm>
+#include <map>
 #include "validator_base.h"
 
 namespace obelisk::http::validator {
     class file_validator : public validator_base {
     public:
-        explicit file_validator(std::vector<std::string> acceptable): acceptable_extensions_(std::move(acceptable)) {
-
+        file_validator(const std::initializer_list<std::string>& acceptable){
+            std::ranges::for_each(acceptable, [this](const auto& key) {
+                acceptable_mimes_.emplace(key, true);
+            });
         }
         obelisk::task<void> validate(const std::string &name, http_request_wrapper &request) override;
     private:
-        std::vector<std::string> acceptable_extensions_;
+        std::unordered_map<std::string, bool> acceptable_mimes_;
     };
 
-    std::shared_ptr<validator_base> file(const std::vector<std::string>& acceptable = {});
+    std::shared_ptr<validator_base> file(const std::initializer_list<std::string>& acceptable = {});
 } // obelisk
 
 #endif //FILE_H

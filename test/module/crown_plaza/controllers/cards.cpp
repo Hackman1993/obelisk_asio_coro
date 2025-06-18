@@ -34,8 +34,7 @@ namespace module::crown_plaza::controllers
         };
         auto card_results = co_await obelisk::database::db::select({col("cardable_type"), col("fn_cardable_id")}).from({"cards"}).where({
             {col("card_no"), request.params()["card_no"].get<std::string>()},
-            {col("deleted_at"), nullptr},
-            {col("status"), 1}
+            {col("deleted_at"), nullptr}
         }).get<card_info>();
         if (card_results.rows().empty())
             co_return std::make_unique<obelisk::http::json_response>(nlohmann::json::object_t{
@@ -73,6 +72,7 @@ namespace module::crown_plaza::controllers
             }).from({"members"}).where({
                 {col("id"), card_results.rows()[0].fn_cardable_id},
                 {col("deleted_at"), nullptr},
+                {col("status"), 1},
                 {col("passport_expires_at"), ">=", std::chrono::system_clock::now()},
                 {col("visa_expires_at"), ">=", std::chrono::system_clock::now()}
             });

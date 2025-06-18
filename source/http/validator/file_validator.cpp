@@ -4,25 +4,19 @@
 #include "obelisk/http/exception/validation_exception.h"
 
 namespace obelisk::http::validator {
-    std::shared_ptr<validator_base> file(const std::vector<std::string>& acceptable) {
+    std::shared_ptr<validator_base> file(const std::initializer_list<std::string>& acceptable) {
         return std::make_shared<file_validator>(acceptable);
     }
 
-    obelisk::task<void> file_validator::validate(const std::string &name, http_request_wrapper &request) {
+    boost::asio::awaitable<void> file_validator::validate(const std::string &name, http_request_wrapper &request) {
         if (!request.filebag().contains(name))
             co_return;
-        if(acceptable_extensions_.empty())
+        if(acceptable_mimes_.empty())
             co_return;
-        const auto &extention = request.filebag()[name]->extension_;
-        if(!extention.has_value()) {
-            throw validation_exception("validator.error.unprocessable_extension");
-        }
+        const auto &mime = request.filebag()[name]->mime_type_;
 
-        for(auto &item : acceptable_extensions_) {
-            if(item == extention.value()) {
-                co_return;
-            }
-        }
+        if (acceptable_mimes_.contains(mime))
+            co_return;
         throw validation_exception("validator.error.unprocessable_extension");
     }
 }
