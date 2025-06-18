@@ -1,6 +1,7 @@
 #include "crown_plaza.h"
 
 #include "controllers/cards.h"
+#include "controllers/legacy.h"
 #include "migrations/create_cards_table.h"
 #include "migrations/create_members_table.h"
 #include "migrations/create_member_entrance_records_table.h"
@@ -25,6 +26,7 @@ namespace module
         server.route("/api/backend/member/region_statistics", controllers::member_controller::region_statistics)->method({"GET"}).middleware(default_::middleware::backend_auth("sys_admins"));
         server.route("/api/member/entrance", controllers::member_controller::entrance)->method({"POST"});
         server.route("/api/member/find_by_card", controllers::cards::find_by_card)->method({"GET"});
+        server.route("/api/terminal/get_token", controllers::legacy::get_terminal_token)->method({"POST"});
 
     }
 
