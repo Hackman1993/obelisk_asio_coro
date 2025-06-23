@@ -40,10 +40,7 @@ namespace obelisk::database
         db_pool& operator=(const db_pool&) = delete;
     protected:
         db_pool() = default;
-        ~db_pool()
-        {
-            std::cout << "DBPOOL GOES DOWN" << std::endl;
-        };
+        ~db_pool()= default;
         static db_pool& self()
         {
             if (instance_ == nullptr)

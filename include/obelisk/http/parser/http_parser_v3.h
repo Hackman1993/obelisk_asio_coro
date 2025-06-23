@@ -16,6 +16,7 @@ namespace obelisk::http {
         static bool parse_boundary(std::string_view data, std::string &boundary);
 
         static bool parse_http_header(std::string_view data, core::raw::http_header_raw &request);
+        static bool parse_http_header2(std::string_view data, core::raw::http_header_raw &request);
 
         static bool parse_body(http_request &request);
 

@@ -13,8 +13,9 @@
 using namespace boost::parser;
 int main(int argc, char* argv[]) {
     try {
-        std::unordered_map<std::string, std::string> meta_data;
-        obelisk::http::framework::register_fs("aliyunoss", [](const auto &config)
+        boost::asio::io_context io_context{static_cast<int>(std::thread::hardware_concurrency()+1)};
+        obelisk::http::framework fw(io_context);
+        fw.register_fs("aliyunoss", [](const auto &config)
         {
             auto ak_id = config["access_key_id"].template get<std::string>();
             auto ak_secret = config["access_key_secret"].template get<std::string>();
@@ -22,23 +23,36 @@ int main(int argc, char* argv[]) {
             auto bucket = config["bucket"].template get<std::string>();
             return std::make_shared<aliyun_oss_client>(ak_id, ak_secret,region, bucket);
         });
-        obelisk::http::framework::register_fs("filesystem", [](const auto &config)
+        fw.register_fs("filesystem", [](const auto &config)
         {
             auto access_domain = config["access_domain"].template get<std::string>();
             auto base_dir = config["base_dir"].template get<std::string>();
             return std::make_shared<local_fs>(base_dir, access_domain);
         });
-        obelisk::http::framework::init();
-        obelisk::http::framework::module({
+        fw.module({
             std::make_unique<module::default_module>(),
             std::make_unique<module::crown_plaza_module>()
         });
-        obelisk::http::framework::middleware({
+        fw.middleware({
             std::make_unique<middleware::cors>()
         });
         std::vector<std::shared_ptr<std::thread>> threads;
 
-        obelisk::http::framework::run();
+
+        fw.init();
+        fw.start();
+        for (int i = 0; i < std::thread::hardware_concurrency(); i++)
+        {
+            threads.emplace_back(std::make_shared<std::thread>([&]()
+            {
+
+                io_context.run();
+            }));
+
+        }
+
+
+        io_context.run();
      }
     catch (boost::mysql::error_with_diagnostics & err)
     {

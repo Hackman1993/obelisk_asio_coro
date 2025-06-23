@@ -63,8 +63,13 @@ namespace obelisk::http {
         acceptor_.open(endpoint.protocol());
         acceptor_.bind(endpoint);
         acceptor_.listen();
+    }
+
+    void http_server::start()
+    {
         boost::asio::co_spawn(acceptor_.get_executor(), listen_(), boost::asio::detached);
     }
+
 
     obelisk::task<void> http_server::listen_() {
         signals_.async_wait([&](const boost::system::error_code& ec, int signal_number) {
@@ -154,7 +159,7 @@ namespace obelisk::http {
             catch (const http_exception &e) {
                 response = std::make_unique<json_response>(nlohmann::json{{"message", std::string(e.what())}}, e.code());
             }catch (const std::exception&e) {
-                std::cout << e.what() << std::endl;
+                //std::cout << e.what() << std::endl;
                 response = std::make_unique<json_response>(nlohmann::json{{"message", std::string(e.what())}}, EST_INTERNAL_SERVER_ERROR);
             }
 

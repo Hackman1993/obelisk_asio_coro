@@ -59,8 +59,7 @@ namespace obelisk::http
             std::ifstream fs("./config.json");
             if (fs.fail())
             {
-                std::cout << "Error details: " << strerror(errno)
-                    << std::endl;
+                std::cout << "Error details: " << strerror(errno)<< std::endl;
             }
             config_ = nlohmann::json::parse(fs);
         };

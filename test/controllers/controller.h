@@ -109,15 +109,21 @@ namespace controllers
         template<typename T>
         static awaitable<std::unique_ptr<obelisk::http::json_response>> pagination(builder::detail::query statement, pagination_uniformed uniform)
         {
-            auto start = std::chrono::system_clock::now();
-            auto result = co_await statement.limit(uniform.limit, (uniform.page-1)*uniform.limit).get<T>();
-            std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start)<< std::endl;
-            co_return json_response({
-                {"list", to_json(result)},
-                {"total", uniform.total},
-                {"page", uniform.page},
-                {"limit", uniform.limit}
-            });
+            try
+            {
+                auto result = co_await statement.limit(uniform.limit, (uniform.page-1)*uniform.limit).get<T>();
+                co_return json_response({
+                    {"list", to_json(result)},
+                    {"total", uniform.total},
+                    {"page", uniform.page},
+                    {"limit", uniform.limit}
+                });
+            }catch (std::exception& e)
+            {
+                std::cout <<"BBQ"<< std::endl;
+                std::cout << e.what() << std::endl;
+                co_return nullptr;
+            }
         }
 
         static awaitable<std::uint64_t> can(const std::string& code, obelisk::http::http_request_wrapper& request, const std::string& model, std::uint64_t target_id);

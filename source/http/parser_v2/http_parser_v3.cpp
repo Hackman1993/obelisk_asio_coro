@@ -15,21 +15,7 @@
 using namespace boost::parser;
 
 namespace obelisk::http {
-    auto ContentTypeParser= no_case[lit("Content-Type")] >> ":" > +(char_-char_("\r\n"));
-    rule<struct MetaParser, core::raw::http_meta_raw> MetaParser= "MetaParser";
-    auto MetaParser_def = +(char_ - char_(" \r\n")) > *ws > +(char_ - char_(" \r\n")) > *ws> +(char_ - char_("\r\n")) > *lit(" ") > "\r\n";
-    BOOST_PARSER_DEFINE_RULES(MetaParser);
-    rule<struct HttpHeaderParser, std::pair<std::string, std::string>> HttpHeaderParser= "HttpHeaderParser";
-    auto HttpHeaderParser_def = +(char_ - char_(" :\r\n"))> *lit(" ") > ':' > *ws> +(char_- "\r\n")> "\r\n";
-    BOOST_PARSER_DEFINE_RULES(HttpHeaderParser);
-
-    rule<struct HttpHeadersParser, std::vector<std::pair<std::string, std::string>>> HttpHeadersParser=  "HttpHeadersParser";
-    auto HttpHeadersParser_def = +(HttpHeaderParser);
-    BOOST_PARSER_DEFINE_RULES(HttpHeadersParser);
-
-    rule<struct HttpPackageHeaderParser, core::raw::http_header_raw> HttpPackageHeaderParser=  "HttpPackageHeaderParser";
-    auto HttpPackageHeaderParser_def = MetaParser > HttpHeadersParser > "\r\n";
-    BOOST_PARSER_DEFINE_RULES(HttpPackageHeaderParser);
+    auto ContentTypeParser= no_case[lit("Content-Type")] >> ":" >> +(char_-char_("\r\n"));
 
     rule<struct MultipartMetaName, std::pair<std::string, std::string>> MultipartMetaNameParser= "MultipartMetaName";
     rule<struct MultipartMetaFileName, std::pair<std::string, std::string>> MultipartMetaFileNameParser= "MultipartMetaFileName";
@@ -72,9 +58,31 @@ namespace obelisk::http {
     // RULE(UrlEncodedData, string_pair) = *~char_("=&") >> -lit("=") >> *~char_("&");
     // RULE(UrlPartsData, url_parts) = *((string("https")|string("http")) > lit("://")) > (+~char_("/?")) >> *(+~char_("?")) >> *(lit("?") >> (*char_));
 
-    bool parser_v3::parse_http_header(std::string_view data, obelisk::http::core::raw::http_header_raw &header) {
-        auto result = parse(data, HttpPackageHeaderParser, header);
-        return result;
+    bool parser_v3::parse_http_header2(std::string_view data, obelisk::http::core::raw::http_header_raw &header) {
+        std::stringstream ss(data.data());
+        std::string line_data;
+        line_data.reserve(300);
+        std::getline(ss,line_data);
+        line_data.pop_back();
+        std::vector<std::string> metas_;
+        boost::algorithm::split(metas_, line_data, boost::is_any_of(" "),boost::token_compress_on);
+        if (metas_.size() != 3) return false;
+        header.meta_.p1_ = metas_[0];
+        header.meta_.p2_ = metas_[1];
+        header.meta_.p3_ = metas_[2];
+
+        while (std::getline(ss, line_data))
+        {
+            line_data.pop_back();
+            if (line_data.empty()) break;
+            const auto pos = line_data.find_first_of(':');
+            if (pos == std::string::npos)
+                continue;
+            auto key = line_data.substr(0, pos);
+            auto value = line_data.substr(pos + 1);
+            header.headers_.emplace(key,value);
+        }
+        return true;
     }
 
     bool parser_v3::parse_boundary(std::string_view data, std::string &boundary) {

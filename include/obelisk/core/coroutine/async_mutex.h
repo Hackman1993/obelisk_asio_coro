@@ -38,7 +38,12 @@ namespace obelisk::core::coroutine
             );
 
             waiters_.push_back(promise);
-            co_await promise->async_wait(boost::asio::use_awaitable);
+            try{
+                auto [ec] = co_await promise->async_wait(boost::asio::as_tuple(boost::asio::use_awaitable));
+            }catch (std::exception& e)
+            {
+                std::cout << e.what() << std::endl;
+            }
         }
 
         void unlock()

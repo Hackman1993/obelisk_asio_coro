@@ -37,7 +37,7 @@ namespace obelisk::database::migration
         for (auto &cmd: commands)
         {
             try{
-                std::cout << cmd.sql() << std::endl;
+                //std::cout << cmd.sql() << std::endl;
                 co_await connection->co_query(cmd.sql());
             }catch (std::exception&)
             {

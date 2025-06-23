@@ -42,7 +42,7 @@ public:
     boost::asio::awaitable<ResultType> co_query(const std::string& query)
     {
         std::string sql = query.ends_with(";")? query:query+";";
-        std::cout << sql << std::endl;
+        //std::cout << sql << std::endl;
         ResultType results;
         boost::mysql::diagnostics diagnostics;
         if (auto [ec] = co_await any_connection::async_execute(sql, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
@@ -58,7 +58,7 @@ public:
     boost::asio::awaitable<void> co_query(const std::string& query)
     {
         std::string sql = query.ends_with(";")? query:query+";";
-        std::cout << sql << std::endl;
+        //std::cout << sql << std::endl;
         boost::mysql::results results;
         boost::mysql::diagnostics diagnostics;
         if (auto [ec] = co_await async_execute(sql, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)

@@ -27,6 +27,7 @@ namespace module
         server.route("/api/member/entrance", controllers::member_controller::entrance)->method({"POST"});
         server.route("/api/member/find_by_card", controllers::cards::find_by_card)->method({"GET"});
         server.route("/api/terminal/get_token", controllers::legacy::get_terminal_token)->method({"POST"});
+        server.route("/api/test", controllers::legacy::test)->method({"GET"});
 
     }
 

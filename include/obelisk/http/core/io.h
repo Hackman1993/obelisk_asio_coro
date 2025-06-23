@@ -39,7 +39,7 @@ namespace obelisk::http::core
                 throw protocol_exception("Header Size Exceed, Shutting Down!");
 
             bytes_view = std::string_view(bytes_view.data(), bytes_view.find("\r\n\r\n") + 4);
-            if (!parser_v3::parse_http_header(bytes_view, header))
+            if (!parser_v3::parse_http_header2(bytes_view, header))
                 throw protocol_exception("Header Parse Failed, Shutting Down!");
             buffer.consume(bytes_view.size());
             co_return header;

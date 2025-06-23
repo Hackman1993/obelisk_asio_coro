@@ -71,16 +71,18 @@ namespace obelisk::database
     protected:
         boost::asio::awaitable<std::shared_ptr<db_connection_base>> get_connection_() override
         {
+            co_await mutex_.lock();
+            std::shared_ptr<Connection> conn;
             if (!connections_.empty())
             {
-                co_await mutex_.lock();
-                auto conn = connections_.back();
+                conn = connections_.back();
                 connections_.pop_back();
-                mutex_.unlock();
-                co_return conn;
             }
+            mutex_.unlock();
+            if (conn)
+                co_return conn;
 
-            if (auto conn = connection_maker_(ioctx_); conn) co_return conn;
+            if (conn = connection_maker_(ioctx_); conn) co_return conn;
             co_return nullptr;
         }
 

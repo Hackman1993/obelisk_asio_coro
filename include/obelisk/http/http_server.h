@@ -31,6 +31,7 @@ namespace obelisk::http {
         http_server(boost::asio::io_context& ctx);
 
         void listen(const std::string& address, unsigned short port);
+        void start();
         std::unique_ptr<route_item>& route(const std::string& route, const std::function<obelisk::task<std::unique_ptr<http_response>> (http_request_wrapper&)>& handler);
         std::unique_ptr<route_item>& route(const std::string& route, const request_handler& handler);
 
@@ -50,12 +51,13 @@ namespace obelisk::http {
             ioctx_.run();
             ioctx_.restart();
         }
+        task<void> listen_();
     protected:
         boost::asio::ip::tcp::acceptor acceptor_;
         std::vector<std::unique_ptr<route_item>> routes_;
         std::vector<std::shared_ptr<middleware::base_middleware>> middlewares_;
 
-        task<void> listen_();
+
         task<void> handle_(boost::asio::ip::tcp::socket socket);
         void handle_accept_(const boost::system::error_code& error, boost::asio::ip::tcp::socket socket);
 

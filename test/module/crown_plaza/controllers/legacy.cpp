@@ -17,4 +17,9 @@ namespace module::crown_plaza::controllers
             }}
         });
     }
+
+    boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> legacy::test(obelisk::http::http_request_wrapper& request)
+    {
+        co_return json_response(nullptr);
+    }
 }
