@@ -9,3 +9,4 @@ compile_commands.json
 /.xmake/c_cpp_
 .cache
 cmake-build-debug-coverage
+!/.vscode/launch.json
