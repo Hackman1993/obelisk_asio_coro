@@ -5,6 +5,7 @@
 #ifndef FILESYSTEM_H
 #define FILESYSTEM_H
 #include <boost/asio/awaitable.hpp>
+#include <format>
 #include <obelisk/http/framework/config.h>
 #include <sahara/exception/exception_base.h>
 

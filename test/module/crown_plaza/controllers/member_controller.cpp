@@ -3,8 +3,6 @@
 //
 
 #include "member_controller.h"
-
-#include "obelisk/obelisk.h"
 #include <boost/asio/awaitable.hpp>
 #include <obelisk/database/database.h>
 #include <obelisk/http/validator/integer_validator.h>
@@ -12,10 +10,8 @@
 #include <obelisk/http/validator/exists_validator.h>
 #include "obelisk/filesystem/filesystem.h"
 #include "obelisk/http/validator/file_validator.h"
-#include "module/default/controllers/auth_controller.h"
-#include "obelisk/http/validator/confirmed_validator.h"
 #include "obelisk/http/validator/in_validator.h"
-
+#include <sahara/hash/bcrypt.h>
 namespace module::crown_plaza::controllers
 {
 
@@ -71,7 +67,6 @@ namespace module::crown_plaza::controllers
             std::optional<std::string> passport_picture;
             std::optional<boost::mysql::datetime> last_entry_at;
         };
-
         co_return co_await pagination<member_model>(query, co_await pagination_uniform(query, request));
     }
 

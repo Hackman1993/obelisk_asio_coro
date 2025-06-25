@@ -4,8 +4,9 @@
 
 #ifndef BASE_FILESYSTEM_H
 #define BASE_FILESYSTEM_H
+#include "obelisk/http/core/http_request.h"
+#include <boost/asio/awaitable.hpp>
 #include <string>
-#include <utility>
 
 namespace obelisk::fs::detail
 {
