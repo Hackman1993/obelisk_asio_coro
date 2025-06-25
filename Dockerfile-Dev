@@ -1,0 +1,21 @@
+FROM ubuntu:24.04
+
+RUN sed -i 's|http://archive.ubuntu.com|http://mirrors.aliyun.com|g' /etc/apt/sources.list.d/ubuntu.sources && \
+    sed -i 's|http://security.ubuntu.com|http://mirrors.aliyun.com|g' /etc/apt/sources.list.d/ubuntu.sources && \
+    cat /etc/apt/sources.list.d/ubuntu.sources && \
+    apt-get update
+# 安装基础依赖（可选）
+RUN apt-get update && apt-get install -y \
+    build-essential clang-19 xmake git \
+    && rm -rf /var/lib/apt/lists/*
+
+# 设置环境变量
+#ENV https_proxy=http://19
+# 设置工作目录
+WORKDIR /app
+
+# 复制当前目录内容到容器中
+COPY . /app
+
+# 默认命令
+CMD ["/bin/bash"]
