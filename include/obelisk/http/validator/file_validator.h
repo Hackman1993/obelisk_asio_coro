@@ -16,7 +16,7 @@ namespace obelisk::http::validator {
                 acceptable_mimes_.emplace(key, true);
             });
         }
-        obelisk::task<void> validate(const std::string &name, http_request_wrapper &request) override;
+        boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) override;
     private:
         std::unordered_map<std::string, bool> acceptable_mimes_;
     };

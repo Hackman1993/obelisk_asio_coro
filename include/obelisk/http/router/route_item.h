@@ -17,7 +17,6 @@
 #include <obelisk/http/middleware/middleware.h>
 
 #include "route_param.h"
-#include "../../../../test/middleware/cors.h"
 #include "../core/http_request.h"
 #include "../core/http_response.h"
 
@@ -25,7 +24,7 @@ namespace obelisk::http {
 
     class route_item {
     public:
-        route_item(const std::string &path, const std::function<obelisk::task<std::unique_ptr<http_response>> (http_request_wrapper &)> &handler);
+        route_item(const std::string &path, const std::function<boost::asio::awaitable<std::unique_ptr<http_response>> (http_request_wrapper &)> &handler);
 
         bool match(const std::string &path, std::unordered_map<std::string, std::string> &route_params);
 
@@ -33,7 +32,7 @@ namespace obelisk::http {
         bool method_allowed(std::string_view method);
         route_item &method(const std::vector<std::string>& methods);
         std::string allowed_methods();
-        obelisk::task<std::unique_ptr<http_response>> handle(http_request_wrapper &request);
+        boost::asio::awaitable<std::unique_ptr<http_response>> handle(http_request_wrapper &request);
 
         template<typename T>
         typename std::enable_if_t<std::is_base_of_v<middleware::base_middleware, T>, void>
@@ -49,7 +48,7 @@ namespace obelisk::http {
         std::vector<route_param> pattern_;
         std::vector<std::unique_ptr<middleware::base_middleware>> middlewares_;
         std::unordered_map<std::string, bool> available_method_ = {{"OPTIONS", true}, {"HEAD", true}};
-        std::function<obelisk::task<std::unique_ptr<http_response>>(http_request_wrapper &)> handler_;
+        std::function<boost::asio::awaitable<std::unique_ptr<http_response>>(http_request_wrapper &)> handler_;
     };
 
 } // obelisk

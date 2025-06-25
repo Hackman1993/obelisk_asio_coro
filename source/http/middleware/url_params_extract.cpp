@@ -2,6 +2,7 @@
 // Created by Hackman.Lo on 2023/12/22.
 //
 #include <algorithm>
+#include <boost/asio/awaitable.hpp>
 #include <sahara/string/string_ext.h>
 #include "obelisk/http/middleware/url_params_extract.h"
 
@@ -12,7 +13,7 @@
 #include "obelisk/http/exception/protocol_exception.h"
 
 namespace obelisk::http::middleware {
-    obelisk::task<std::unique_ptr<http_response>> url_params_extract::pre_handle(http_request_wrapper&request) {
+    boost::asio::awaitable<std::unique_ptr<http_response>> url_params_extract::pre_handle(http_request_wrapper&request) {
         const auto query = sahara::string_ext::url_decode(request.query_string());
         if (!query.empty()) {
             if (!parser_v3::parse_urlencoded_param(request.params(), query)) {

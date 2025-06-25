@@ -1,11 +1,10 @@
 #ifndef OBELISK_VALIDATOR_BASE_H
 #define OBELISK_VALIDATOR_BASE_H
 
+#include <boost/asio/awaitable.hpp>
 #include <memory>
 #include <string>
 #include <vector>
-#include <boost/cobalt/task.hpp>
-#include "../../core/coroutine/task.h"
 
 namespace obelisk::http {
     class http_request_wrapper;
@@ -16,7 +15,7 @@ namespace obelisk::http::validator {
         class validator_base {
         public:
             virtual ~validator_base() = default;
-            virtual task<void> validate(const std::string &name, http_request_wrapper &request) = 0;
+            virtual boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) = 0;
         };
 
         struct validator_group {

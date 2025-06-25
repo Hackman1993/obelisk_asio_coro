@@ -4,6 +4,8 @@
 
 #ifndef OBELISK_HTTP_CORE_IO_H
 #define OBELISK_HTTP_CORE_IO_H
+#include <boost/asio/as_tuple.hpp>
+#include <boost/asio/use_awaitable.hpp>
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -71,7 +73,7 @@ namespace obelisk::http::core
             }
             while (total_transferred < content_length) {
                 const auto bytes_wanna_read = std::min<uint32_t>(content_length - total_transferred, 1024 * 10);
-                const auto [ec,transferred] = co_await async_read(socket, buffer.prepare(bytes_wanna_read), boost::asio::as_tuple(use_token));
+                const auto [ec,transferred] = co_await async_read(socket, buffer.prepare(bytes_wanna_read), boost::asio::as_tuple(boost::asio::use_awaitable));
                 buffer.commit(transferred);
                 total_transferred += transferred;
                 ret->write(static_cast<const char *>(buffer.data().data()), transferred);
@@ -91,7 +93,7 @@ namespace obelisk::http::core
                 const auto bytes_read = response->read(buffer, 1024 * 256);
                 std::uint64_t bytes_transferred = 0;
                 while (bytes_transferred< bytes_read){
-                    auto [ec, transferred] =co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), boost::asio::as_tuple(use_token));
+                    auto [ec, transferred] =co_await socket.async_write_some(boost::asio::const_buffer(&buffer[bytes_transferred], bytes_read - bytes_transferred), boost::asio::as_tuple(boost::asio::use_awaitable));
                     if (ec) throw std::runtime_error(ec.message());
                     bytes_transferred += transferred;
                 }
@@ -172,7 +174,7 @@ namespace obelisk::http::core
             std::filesystem::create_directories("./temp");
             auto ret = std::make_unique<http_temp_fstream>("./temp/" + sahara::utils::uuid::generate());
             while (true) {
-                const auto [ec,transferred] = co_await async_read(stream, buffer.prepare(1024 * 10), boost::asio::as_tuple(use_token));
+                const auto [ec,transferred] = co_await async_read(stream, buffer.prepare(1024 * 10), boost::asio::as_tuple(boost::asio::use_awaitable));
                 buffer.commit(transferred);
                 ret->write(static_cast<const char *>(buffer.data().data()), transferred);
                 buffer.consume(transferred);

@@ -13,7 +13,6 @@
 #include "obelisk/http/http_server.h"
 
 #include <obelisk/obelisk.h>
-#include <boost/cobalt/spawn.hpp>
 #include <obelisk/http/parser/http_parser_v3.h>
 #include <sahara/log/log.h>
 #include <nlohmann/json.hpp>

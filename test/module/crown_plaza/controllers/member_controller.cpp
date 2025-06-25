@@ -112,7 +112,7 @@ namespace module::crown_plaza::controllers
         co_return json_response(nullptr);
     }
 
-    obelisk::task<std::unique_ptr<http_response>> member_controller::backend_update(http_request_wrapper &request) {
+    boost::asio::awaitable<std::unique_ptr<http_response>> member_controller::backend_update(http_request_wrapper &request) {
         co_await request.validate({
             {"id", {required(), integer(false), exists("members")}},
             {"birthday", {}},
@@ -151,7 +151,7 @@ namespace module::crown_plaza::controllers
         co_return json_response(nullptr);
     }
 
-    obelisk::task<std::unique_ptr<http_response>> member_controller::backend_delete(http_request_wrapper &request) {
+    boost::asio::awaitable<std::unique_ptr<http_response>> member_controller::backend_delete(http_request_wrapper &request) {
         co_await request.validate({
             {"id", {required(), integer(false)}}
         });
@@ -163,7 +163,7 @@ namespace module::crown_plaza::controllers
 
     }
 
-    obelisk::task<std::unique_ptr<http_response>> member_controller::backend_sign_card(http_request_wrapper &request) {
+    boost::asio::awaitable<std::unique_ptr<http_response>> member_controller::backend_sign_card(http_request_wrapper &request) {
 
         co_await request.validate({
                 {"id", {required(), integer(false), exists("members")}},
@@ -238,7 +238,7 @@ namespace module::crown_plaza::controllers
         co_return json_response(nullptr);
     }
 
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> member_controller::backend_freeze(obelisk::http::http_request_wrapper &request) {
+    awaitable<std::unique_ptr<obelisk::http::http_response>> member_controller::backend_freeze(obelisk::http::http_request_wrapper &request) {
         co_await request.validate({
                 {"id", {required(), integer(false), exists("members")}},
             {"status", {required(), integer(false), in<std::uint64_t>({0,1})}}
@@ -254,7 +254,7 @@ namespace module::crown_plaza::controllers
 
 
 
-    obelisk::task<std::unique_ptr<http_response>> member_controller::entrance(http_request_wrapper &request) {
+    awaitable<std::unique_ptr<http_response>> member_controller::entrance(http_request_wrapper &request) {
         co_await request.validate({
             {"card_no", {required(), exists("cards", "card_no")}},
             {"occur_at", {required()}},

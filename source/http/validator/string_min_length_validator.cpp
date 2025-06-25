@@ -1,7 +1,6 @@
 #include "obelisk/http/validator/string_min_length_validator.h"
 #include "obelisk/http/exception/validation_exception.h"
 #include "obelisk/http/core/http_request.h"
-#include <boost/cobalt.hpp>
 #include <nlohmann/json.hpp>
 
 namespace obelisk::http::validator {

@@ -14,7 +14,7 @@ namespace obelisk::http::validator {
     class exists_validator final : public validator_base{
     public:
         exists_validator(std::string  table, std::string  column, const bool soft_delete): table_(std::move(table)), column_(std::move(column)), soft_delete_(soft_delete){};
-        task<void> validate(const std::string& name, http_request_wrapper& request) override;
+        boost::asio::awaitable<void> validate(const std::string& name, http_request_wrapper& request) override;
 
     private:
         std::string table_;

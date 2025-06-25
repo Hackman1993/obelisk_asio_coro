@@ -41,15 +41,15 @@ int main(int argc, char* argv[]) {
 
         fw.init();
         fw.start();
-        for (int i = 0; i < std::thread::hardware_concurrency(); i++)
-        {
-            threads.emplace_back(std::make_shared<std::thread>([&]()
-            {
-
-                io_context.run();
-            }));
-
-        }
+        // for (int i = 0; i < std::thread::hardware_concurrency(); i++)
+        // {
+        //     threads.emplace_back(std::make_shared<std::thread>([&]()
+        //     {
+        //
+        //         io_context.run();
+        //     }));
+        //
+        // }
 
 
         io_context.run();

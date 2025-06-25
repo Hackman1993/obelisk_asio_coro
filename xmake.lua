@@ -2,7 +2,7 @@ add_rules("mode.debug", "mode.release")
 add_repositories("my https://github.com/Hackman1993/repository.git")
 
 add_requires("sahara", "spdlog", "openssl", "nlohmann_json", "cryptopp", "zlib")
-add_requires("boost >=1.87.0", {configs={json=true,cmake=false, asio = true, thread = true, zlib = true, iostreams = true, mysql=true, charconv=true}})
+add_requires("boost >=1.87.0", {configs={json=true, asio = true, thread = true, zlib = true, iostreams = true, mysql=true, charconv=true}})
 target("obelisk")
     add_packages("sahara", "boost", "spdlog", "openssl", "nlohmann_json", "cryptopp", "zlib")
     set_kind("static")

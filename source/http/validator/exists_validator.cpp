@@ -7,7 +7,7 @@
 namespace obelisk::http::validator
 {
 
-    task<void> exists_validator::validate(const std::string& name, http_request_wrapper& request)
+    boost::asio::awaitable<void> exists_validator::validate(const std::string& name, http_request_wrapper& request)
     {
         using namespace  database::builder::detail;
         if (request.params().contains(name))

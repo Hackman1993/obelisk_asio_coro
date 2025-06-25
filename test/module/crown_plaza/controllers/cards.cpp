@@ -21,7 +21,7 @@ namespace module::crown_plaza::controllers
     {
 
     };
-    obelisk::task<std::unique_ptr<obelisk::http::http_response>> cards::find_by_card(obelisk::http::http_request_wrapper &request) {
+    boost::asio::awaitable<std::unique_ptr<obelisk::http::http_response>> cards::find_by_card(obelisk::http::http_request_wrapper &request) {
 
         co_await request.validate({
             {"card_no", {required()}}

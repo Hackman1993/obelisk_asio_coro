@@ -1,6 +1,7 @@
 #ifndef OBELISK_HTTP_REQUEST_H
 #define OBELISK_HTTP_REQUEST_H
 #include <any>
+#include <boost/asio/awaitable.hpp>
 #include <string>
 #include <memory>
 #include <utility>
@@ -8,7 +9,6 @@
 #include <fstream>
 #include <filesystem>
 #include <unordered_map>
-#include <boost/cobalt/task.hpp>
 #include <nlohmann/json.hpp>
 
 #include "raw.h"
@@ -89,7 +89,7 @@ namespace obelisk::http {
 
         ~http_request_wrapper();
 
-        obelisk::task<void> validate(const std::vector<validator::validator_group>& validators);
+        boost::asio::awaitable<void> validate(const std::vector<validator::validator_group>& validators);
 
         sahara::container::unordered_smap_u<std::string>& headers();
 

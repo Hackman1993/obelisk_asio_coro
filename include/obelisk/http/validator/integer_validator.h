@@ -4,6 +4,7 @@
 
 #ifndef INTEGER_VALIDATOR_H
 #define INTEGER_VALIDATOR_H
+#include <boost/asio/awaitable.hpp>
 #include <memory>
 
 #include "validator_base.h"
@@ -12,7 +13,7 @@ namespace obelisk::http::validator {
     class integer_validator final: public validator_base {
     public:
         integer_validator(bool is_signed) : signed_(is_signed) {}
-        obelisk::task<void> validate(const std::string &name, http_request_wrapper &request) override;
+        boost::asio::awaitable<void> validate(const std::string &name, http_request_wrapper &request) override;
     private:
         bool signed_;
     };

@@ -7,7 +7,7 @@
 #include "obelisk/http/parser/http_parser_v2.h"
 
 namespace obelisk::http::middleware {
-    obelisk::task<std::unique_ptr<http_response>> multipart_extract::pre_handle(http_request_wrapper&request) {
+    boost::asio::awaitable<std::unique_ptr<http_response>> multipart_extract::pre_handle(http_request_wrapper&request) {
         if(!request.headers().contains("content-type"))
             co_return nullptr;
         std::string content_type = std::string(request.headers()["content-type"]);
