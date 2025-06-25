@@ -10,7 +10,6 @@
 #include "module/default/utils/utils.h"
 #include <chrono>
 #include <iostream>
-#include <bits/random.h>
 #include <boost/mysql/pfr.hpp>
 #include <clients/aliyun_sms_client.h>
 #include <module/default/model/backend_user_info.h>

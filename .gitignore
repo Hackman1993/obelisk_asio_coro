@@ -5,5 +5,7 @@ build
 CMakeLists.txt
 .xmake
 compile_commands.json
+/.xmake
+/.xmake/c_cpp_
 .cache
 cmake-build-debug-coverage
