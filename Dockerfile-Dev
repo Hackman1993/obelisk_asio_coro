@@ -16,7 +16,7 @@ WORKDIR /home/devcontainer/workspace/obelisk_coro
 # 复制当前目录内容到容器中
 COPY . /home/devcontainer/workspace/obelisk_coro
 
-
+RUN CHOWN -R devcontainer:devcontainer /home/devcontainer/workspace
 
 # 默认命令
 CMD ["/bin/bash"]
