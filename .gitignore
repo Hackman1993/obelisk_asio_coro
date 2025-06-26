@@ -6,7 +6,7 @@ CMakeLists.txt
 .xmake
 compile_commands.json
 /.xmake
-/.xmake/c_cpp_
+/.xmake/*
 .cache
 cmake-build-debug-coverage
 !/.vscode/launch.json

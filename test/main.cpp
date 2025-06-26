@@ -50,8 +50,6 @@ int main(int argc, char* argv[]) {
         //     }));
         //
         // }
-
-
         io_context.run();
      }
     catch (boost::mysql::error_with_diagnostics & err)
