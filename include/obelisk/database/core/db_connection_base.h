@@ -26,10 +26,11 @@ namespace obelisk::database {
         [[nodiscard]] bool reuse() const { return reuse_; }
         void reuse(const bool r) { reuse_ = r; }
 
+        virtual std::chrono::duration<std::uint32_t> refresh_rate() = 0;
+
         [[nodiscard]] boost::asio::io_context& executor() const { return ctx_; }
     protected:
-        bool reuse_ = false;
-        
+        bool reuse_ = true;
         boost::asio::io_context& ctx_;
     };
 } // obelisk::database

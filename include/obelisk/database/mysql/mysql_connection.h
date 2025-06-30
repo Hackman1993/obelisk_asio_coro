@@ -35,18 +35,28 @@ public:
         boost::mysql::throw_on_error(ec, diagnostics);
         set_character_set(boost::mysql::character_set("utf8mb4"), ec, diagnostics);
         boost::mysql::throw_on_error(ec, diagnostics);
-        keep_alive_timer_.expires_after(std::chrono::seconds(60));
         boost::asio::co_spawn(ioctx, [this]() -> boost::asio::awaitable<void> {
             while (true) {
-                co_await keep_alive_timer_.async_wait(boost::asio::use_awaitable);
-                boost::mysql::diagnostics diagnostics;
-                boost::system::error_code ec;
+                try
+                {
+                    keep_alive_timer_.expires_after(std::chrono::seconds(60));
+                    co_await keep_alive_timer_.async_wait(boost::asio::use_awaitable);
+                }catch (boost::system::error_code& e)
+                {
+                    if (e == boost::asio::error::operation_aborted)
+                        break;
+                }
                 co_await co_query("SELECT 1");
                 keep_alive_timer_.expires_after(std::chrono::seconds(60));
             }
             co_return;
         }, boost::asio::detached);
-    };
+    }
+
+    std::chrono::duration<std::uint32_t> refresh_rate() override
+    {
+        return std::chrono::seconds(60);
+    }
 
     template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
         !std::is_same_v<ResultType, void>

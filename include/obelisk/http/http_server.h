@@ -13,7 +13,7 @@
 #include "middleware/middleware.h"
 #include "../core/coroutine/task.h"
 #include <boost/asio.hpp>
-
+#include "router/route_item.h"
 #include "module/base_module.h"
 
 namespace obelisk::http {
@@ -36,19 +36,13 @@ namespace obelisk::http {
 
         const std::vector<std::shared_ptr<middleware::base_middleware>>& middlewares();
         void reg_middlewares(const std::initializer_list<std::shared_ptr<middleware::base_middleware>>& middlewares);
-        void module(std::initializer_list<std::unique_ptr<module::base_module>> modules)
+        boost::asio::awaitable<void> module(const std::vector<std::shared_ptr<module::base_module>>& modules)
         {
-            boost::asio::co_spawn(ioctx_, [modules, this]()->boost::asio::awaitable<void>
+            for (auto& module: modules)
             {
-                for (auto& module: modules)
-                {
-                    co_await module->migrate();
-                    module->route(*this);
-                }
-                co_return;
-            },boost::asio::detached);
-            ioctx_.run();
-            ioctx_.restart();
+                co_await module->migrate();
+                module->route(*this);
+            }
         }
         task<void> listen_();
     protected:

@@ -25,15 +25,27 @@ namespace obelisk::http
         explicit framework(boost::asio::io_context& ctx): io_context_(ctx), server_(ctx){}
 
         void init(){
-            boost::asio::co_spawn(io_context_, [this]() -> boost::asio::awaitable<void> {
-                co_await init_();
-                co_return;
-            }, boost::asio::detached);
+
         }
 
-        void start()
+        void run()
         {
-            server_.start();
+            initialize_mutex_.lock();
+            auto initializing = false;
+            if (!initialized_)
+            {
+                initializing = true;
+                boost::asio::co_spawn(io_context_, [this]() -> boost::asio::awaitable<void> {
+                    co_await init_();
+                    initialized_ = true;
+                    initialize_mutex_.unlock();
+                    co_return;
+                }, boost::asio::detached);
+                server_.start();
+            }
+            if (!initializing)
+                initialize_mutex_.unlock();
+            io_context_.run();
         }
 
         void module(const std::initializer_list<std::shared_ptr<module::base_module>>& modules)
@@ -48,7 +60,7 @@ namespace obelisk::http
             server_.reg_middlewares(middlewares);
         }
 
-        static void register_fs(const std::string& key, const std::function<std::shared_ptr<fs::detail::base_filesystem>(const nlohmann::json& config)>& maker)
+        void register_fs(const std::string& key, const std::function<std::shared_ptr<fs::detail::base_filesystem>(const nlohmann::json& config)>& maker)
         {
             filesystem::register_fs(key, maker);
         }
@@ -76,8 +88,14 @@ namespace obelisk::http
                     THROW(sahara::exception::exception_base, "Invalid Address!", "Obelisk Framework");
                 server_.listen(match["address"].str(), boost::lexical_cast<std::uint16_t>(match["port"].str()));
             }
+            for (auto &module: registered_modules_)
+            {
+                co_await server_.module(registered_modules_);
+            }
             filesystem::initialize();
         }
+        std::atomic_bool initialized_ = false;
+        std::mutex initialize_mutex_;
         boost::asio::io_context& io_context_;
         http_server server_;
         std::vector<std::shared_ptr<obelisk::http::module::base_module>> registered_modules_;

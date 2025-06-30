@@ -30,30 +30,23 @@ int main(int argc, char* argv[]) {
             auto base_dir = config["base_dir"].template get<std::string>();
             return std::make_shared<local_fs>(base_dir, access_domain);
         });
-        fw.init();
         fw.module({
             std::make_shared<module::default_module>(),
             std::make_shared<module::crown_plaza_module>()
         });
-        
-        fw.middleware({
-            std::make_shared<middleware::cors>()
-        });
+        fw.middleware({std::make_shared<middleware::cors>()});
         std::vector<std::shared_ptr<std::thread>> threads;
 
-
-        
-        fw.start();
         // for (int i = 0; i < std::thread::hardware_concurrency(); i++)
         // {
         //     threads.emplace_back(std::make_shared<std::thread>([&]()
         //     {
+        //         fw.run();
         //
-        //         io_context.run();
         //     }));
         //
         // }
-        io_context.run();
+        fw.run();
      }
     catch (boost::mysql::error_with_diagnostics & err)
     {
