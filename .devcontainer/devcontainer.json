@@ -11,6 +11,10 @@
 	"features": {
 		"ghcr.io/devcontainers/features/sshd:1": {}
 	},
+	"containerEnv": {
+		"SHELL": "/bin/bash"
+	},
+	
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -29,5 +33,15 @@
 	"remoteUser": "devcontainer",
 	"mounts":[
 		"source=${localEnv:HOME}/.ssh,target=/home/devcontainer/.ssh,type=bind,consistency=cached"
-	]
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"llvm-vs-code-extensions.vscode-clangd",
+				"vadimcn.vscode-lldb",
+				"tboox.xmake-vscode"
+			]
+		}
+	},
+	"runArgs": ["--privileged", "--name=ucpp"]
 }

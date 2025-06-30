@@ -5,7 +5,7 @@ RUN sed -i 's|http://archive.ubuntu.com|http://mirrors.aliyun.com|g' /etc/apt/so
     cat /etc/apt/sources.list.d/ubuntu.sources && \
     apt-get update
 # 安装基础依赖（可选）
-RUN apt-get update && apt-get install -y build-essential clang-19 xmake git clangd-19 sudo unzip wget curl cmake lldb
+RUN apt-get update && apt-get install -y build-essential clang xmake git clangd sudo unzip wget curl cmake lldb
 
 # 设置环境变量
 
@@ -16,7 +16,8 @@ WORKDIR /home/devcontainer/workspace/obelisk_coro
 # 复制当前目录内容到容器中
 COPY . /home/devcontainer/workspace/obelisk_coro
 
-RUN CHOWN -R devcontainer:devcontainer /home/devcontainer/workspace
+RUN chown -R devcontainer:devcontainer /home/devcontainer/workspace
+RUN echo "devcontainer:password" | chpasswd
 
 # 默认命令
 CMD ["/bin/bash"]

@@ -19,6 +19,7 @@
 #include "migrations/create_sys_permissions_table.h"
 #include "middleware/backend_auth.h"
 #include "migrations/insert_permissions_data.h"
+#include <obelisk/http/router/route_item.h>
 namespace module {
     void default_module::route(obelisk::http::http_server& server)
     {

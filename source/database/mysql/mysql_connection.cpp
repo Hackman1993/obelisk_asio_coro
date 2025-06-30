@@ -18,4 +18,5 @@ bool mysql_connection::reset() {
 }
 
 mysql_connection::~mysql_connection() {
+    keep_alive_timer_.cancel();
 }

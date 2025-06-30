@@ -4,6 +4,7 @@
 
 #ifndef CONNECTION_POOL_BASE_H
 #define CONNECTION_POOL_BASE_H
+#include <boost/asio/awaitable.hpp>
 #include <obelisk/core/coroutine/async_mutex.h>
 #include <obelisk/database/core/db_connection_base.h>
 #include <sahara/log/log.h>
@@ -35,25 +36,21 @@ namespace obelisk::database
     class connection_pool : public connection_pool_base
     {
     public:
-        explicit connection_pool(boost::asio::io_context& ios): ioctx_(ios), mutex_(ios)
-        {
-        }
+        explicit connection_pool(boost::asio::io_context& ios): ioctx_(ios), mutex_(ios){}
 
         template <typename... Args>
-        void initialize(Args... args)
+        boost::asio::awaitable<void> initialize(Args... args)
         {
-            connection_maker_ = [=,this](boost::asio::io_context& ioctx)
+            connection_maker_ = [=,this](boost::asio::io_context& ioctx) -> boost::asio::awaitable<std::shared_ptr<Connection>>
             {
-                return std::shared_ptr<Connection>(new Connection(ioctx, args...),
-                                                   std::bind(&connection_pool::connection_reset_, this,
-                                                             std::placeholders::_1));
+                co_return std::shared_ptr<Connection>(new Connection(ioctx, args...), std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1));
             };
             std::unique_lock lock(mutex_);
             while (connections_.size() < min_)
             {
                 try
                 {
-                    auto conn = connection_maker_(ioctx_);
+                    auto conn = co_await connection_maker_(ioctx_);
                     if (conn)
                         connections_.push_back(conn);
                 }
@@ -82,7 +79,7 @@ namespace obelisk::database
             if (conn)
                 co_return conn;
 
-            if (conn = connection_maker_(ioctx_); conn) co_return conn;
+            if (conn = co_await connection_maker_(ioctx_); conn) co_return conn;
             co_return nullptr;
         }
 
@@ -104,7 +101,7 @@ namespace obelisk::database
         boost::asio::io_context& ioctx_;
         std::atomic_bool shutdown_ = false;
         std::vector<std::shared_ptr<Connection>> connections_;
-        std::function<std::shared_ptr<Connection>(boost::asio::io_context&)> connection_maker_;
+        std::function<boost::asio::awaitable<std::shared_ptr<Connection>>(boost::asio::io_context&)> connection_maker_;
     };
 }
 

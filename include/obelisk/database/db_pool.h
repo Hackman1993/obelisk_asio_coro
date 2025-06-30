@@ -5,6 +5,7 @@
 #ifndef DB_POOL_H
 #define DB_POOL_H
 
+#include <boost/asio/awaitable.hpp>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -20,13 +21,14 @@ namespace obelisk::database
     {
     public:
         template <typename Connection, typename... Args>
-        static void make_pool(boost::asio::io_context& ios, const std::string& key, Args... args)
+        static boost::asio::awaitable<void> make_pool(boost::asio::io_context& ios, const std::string& key, Args... args)
         {
-            if (self().connections_.contains(key)) return;
+            if (self().connections_.contains(key)) co_return;
             auto ptr = std::make_shared<connection_pool<Connection>>(ios);
-            ptr->initialize(args...);
+            co_await ptr->initialize(args...);
 
             self().connections_.emplace(key, ptr);
+            co_return;
         }
 
         template <typename Connection>

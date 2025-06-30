@@ -1,5 +1,6 @@
 #include <boost/asio.hpp>
 #include <boost/parser/parser.hpp>
+#include <memory>
 #include <middleware/cors.h>
 #include <sahara/log/log.h>
 #include <obelisk/http/framework.h>
@@ -29,17 +30,19 @@ int main(int argc, char* argv[]) {
             auto base_dir = config["base_dir"].template get<std::string>();
             return std::make_shared<local_fs>(base_dir, access_domain);
         });
+        fw.init();
         fw.module({
-            std::make_unique<module::default_module>(),
-            std::make_unique<module::crown_plaza_module>()
+            std::make_shared<module::default_module>(),
+            std::make_shared<module::crown_plaza_module>()
         });
+        
         fw.middleware({
-            std::make_unique<middleware::cors>()
+            std::make_shared<middleware::cors>()
         });
         std::vector<std::shared_ptr<std::thread>> threads;
 
 
-        fw.init();
+        
         fw.start();
         // for (int i = 0; i < std::thread::hardware_concurrency(); i++)
         // {

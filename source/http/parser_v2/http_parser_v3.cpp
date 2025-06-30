@@ -27,7 +27,7 @@ namespace obelisk::http {
     auto MultipartMetaParser_def = +(char_-char_(";=")) > ((lit("=")>> (-lit("\"") > +(char_-char_(";\"")) > -lit("\"")))|attr(std::string("")));
 
     BOOST_PARSER_DEFINE_RULES(MultipartMetaNameParser, MultipartMetaFileNameParser, MultipartMetaFormDataParser, MultipartMetaParser)
-    auto MultipartBoundaryParser = no_case[lit("multipart/form-data;")] > *ws > no_case[lit("boundary=")] > *ws >> +(char_ - char_("\r\n")) > *ws;
+    auto MultipartBoundaryParser = *ws > no_case[lit("multipart/form-data;")] > *ws > no_case[lit("boundary=")] > *ws >> +(char_ - char_("\r\n")) > *ws;
     rule<struct UrlEncodedDataName, std::pair<std::string, std::string>> UrlEncodedDataParser= "UrlEncodedDataName";
     auto UrlEncodedDataParser_def = *(char_ -'&'-'=') >> -lit("=") >> *(char_ -'&');
     BOOST_PARSER_DEFINE_RULES(UrlEncodedDataParser);

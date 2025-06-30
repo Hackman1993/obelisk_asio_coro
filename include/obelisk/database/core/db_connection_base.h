@@ -28,7 +28,8 @@ namespace obelisk::database {
 
         [[nodiscard]] boost::asio::io_context& executor() const { return ctx_; }
     protected:
-        bool reuse_ = true;
+        bool reuse_ = false;
+        
         boost::asio::io_context& ctx_;
     };
 } // obelisk::database

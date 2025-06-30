@@ -158,7 +158,7 @@ namespace obelisk::http {
             catch (const http_exception &e) {
                 response = std::make_unique<json_response>(nlohmann::json{{"message", std::string(e.what())}}, e.code());
             }catch (const std::exception&e) {
-                //std::cout << e.what() << std::endl;
+                std::cout << e.what() << std::endl;
                 response = std::make_unique<json_response>(nlohmann::json{{"message", std::string(e.what())}}, EST_INTERNAL_SERVER_ERROR);
             }
 

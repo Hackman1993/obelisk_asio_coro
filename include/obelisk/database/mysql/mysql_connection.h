@@ -4,11 +4,13 @@
 
 #ifndef MYSQL_CONNECTION_H
 #define MYSQL_CONNECTION_H
-#include <iostream>
+#include <boost/asio/co_spawn.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/mysql.hpp>
 #include <boost/asio/as_tuple.hpp>
 #include <boost/asio/use_awaitable.hpp>
 #include <obelisk/database/core/db_connection_base.h>
+#include <sahara/log/log.h>
 
 namespace obelisk::database::builder::detail
 {
@@ -18,11 +20,10 @@ namespace obelisk::database::builder::detail
 class mysql_connection : public obelisk::database::db_connection_base, public boost::mysql::any_connection{
 public:
     mysql_connection(boost::asio::io_context& ioctx, const std::string& server, const std::uint16_t port, const std::string& username,const std::string& password,const std::string& database):
-        db_connection_base(ioctx), boost::mysql::any_connection(ioctx) {
+        db_connection_base(ioctx), boost::mysql::any_connection(ioctx), keep_alive_timer_(ioctx) {
 
         boost::asio::ip::tcp::resolver resolver(ioctx);
         auto endpoints = resolver.resolve(server, std::to_string(port));
-
         boost::system::error_code ec;
         boost::mysql::diagnostics diagnostics;
         boost::mysql::connect_params connect_params;
@@ -34,6 +35,17 @@ public:
         boost::mysql::throw_on_error(ec, diagnostics);
         set_character_set(boost::mysql::character_set("utf8mb4"), ec, diagnostics);
         boost::mysql::throw_on_error(ec, diagnostics);
+        keep_alive_timer_.expires_after(std::chrono::seconds(60));
+        boost::asio::co_spawn(ioctx, [this]() -> boost::asio::awaitable<void> {
+            while (true) {
+                co_await keep_alive_timer_.async_wait(boost::asio::use_awaitable);
+                boost::mysql::diagnostics diagnostics;
+                boost::system::error_code ec;
+                co_await co_query("SELECT 1");
+                keep_alive_timer_.expires_after(std::chrono::seconds(60));
+            }
+            co_return;
+        }, boost::asio::detached);
     };
 
     template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
@@ -47,7 +59,8 @@ public:
         boost::mysql::diagnostics diagnostics;
         if (auto [ec] = co_await any_connection::async_execute(sql, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
         {
-            const auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
+            LOG_MODULE_CRITICAL("Database", "MySQL Query Error: {}", ec.what());
+            auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
             throw std::logic_error(message);
         }
         co_return results;
@@ -63,6 +76,7 @@ public:
         boost::mysql::diagnostics diagnostics;
         if (auto [ec] = co_await async_execute(sql, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
         {
+            LOG_MODULE_CRITICAL("Database", "MySQL Query Error: {}", ec.what());
             const auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
             throw std::logic_error(message);
         }
@@ -81,6 +95,9 @@ public:
     bool reset() override;
 
     ~mysql_connection() override;
+
+private:
+    boost::asio::steady_timer keep_alive_timer_;
 };
 
 
