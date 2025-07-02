@@ -29,6 +29,8 @@ namespace obelisk::database {
         virtual std::chrono::duration<std::uint32_t> refresh_rate() = 0;
 
         [[nodiscard]] boost::asio::io_context& executor() const { return ctx_; }
+
+        std::atomic_bool inuse_ = false;
     protected:
         bool reuse_ = true;
         boost::asio::io_context& ctx_;

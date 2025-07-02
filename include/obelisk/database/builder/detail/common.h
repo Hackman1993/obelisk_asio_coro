@@ -68,7 +68,11 @@ public:
         boost::asio::awaitable<ResultType> get(const std::string& inst = "default")
         {
             auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
+            if (connection->inuse_)
+                LOG_CRITICAL("{}", this->compile());
+            connection->inuse_ = true;
             auto result = co_await connection->template co_query<ResultType>(this->compile());
+            connection->inuse_ = false;
             co_return result;
         }
 
@@ -77,7 +81,11 @@ public:
         boost::asio::awaitable<void> get(const std::string& inst = "default")
         {
             auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
+            if (connection->inuse_)
+                LOG_CRITICAL("Wired{}", "");
+            connection->inuse_ = true;
             co_await connection->co_query<ResultType>(this->compile());
+            connection->inuse_ = false;
             co_return;
         }
 
@@ -88,14 +96,22 @@ public:
         boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get(const std::string& inst = "default")
         {
             auto connection = co_await db_pool::get_connection<mysql_connection>(inst);
+            if (connection->inuse_)
+                LOG_CRITICAL("Wired{}", "");
+            connection->inuse_ = true;
             auto result = co_await connection->template co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(this->compile());
+            connection->inuse_ = false;
             co_return result;
         }
 
         template <typename ResultType = boost::mysql::results>
         std::enable_if_t<std::is_same_v<boost::mysql::results, ResultType>, boost::asio::awaitable<ResultType>> get(const std::shared_ptr<mysql_connection>& connection)
         {
+            if (connection->inuse_)
+                LOG_CRITICAL("Wired{}", "");
+            connection->inuse_ = true;
             auto result = co_await connection->co_query<ResultType>(this->compile());
+            connection->inuse_ = false;
             co_return result;
         }
 
@@ -103,7 +119,11 @@ public:
         std::enable_if_t<std::is_same_v<ResultType, void>, boost::asio::awaitable<void>> get(const std::shared_ptr<mysql_connection>& connection)
         {
             boost::mysql::results results;
+            if (connection->inuse_)
+                LOG_CRITICAL("Wired{}", "");
+
             auto result = co_await connection->co_query(this->compile());
+            connection->inuse_ = false;
             co_return;
         }
 
@@ -111,7 +131,11 @@ public:
         requires (!std::is_same_v<boost::mysql::results, ResultType> && !std::is_same_v<void, ResultType> && boost::pfr::is_implicitly_reflectable_v<ResultType, t>)
         boost::asio::awaitable<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>> get(const std::shared_ptr<mysql_connection>& connection)
         {
+            if (connection->inuse_)
+                LOG_CRITICAL("Wired{}", "");
+            connection->inuse_ = true;
             auto result = co_await connection->co_query<boost::mysql::static_results<boost::mysql::pfr_by_name<ResultType>>>(this->compile());
+            connection->inuse_ = false;
             co_return result;
         }
     };

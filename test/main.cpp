@@ -37,15 +37,15 @@ int main(int argc, char* argv[]) {
         fw.middleware({std::make_shared<middleware::cors>()});
         std::vector<std::shared_ptr<std::thread>> threads;
 
-        // for (int i = 0; i < std::thread::hardware_concurrency(); i++)
-        // {
-        //     threads.emplace_back(std::make_shared<std::thread>([&]()
-        //     {
-        //         fw.run();
-        //
-        //     }));
-        //
-        // }
+        for (int i = 0; i < std::thread::hardware_concurrency(); i++)
+        {
+            threads.emplace_back(std::make_shared<std::thread>([&]()
+            {
+                fw.run();
+
+            }));
+
+        }
         fw.run();
      }
     catch (boost::mysql::error_with_diagnostics & err)

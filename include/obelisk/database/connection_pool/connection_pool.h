@@ -4,10 +4,13 @@
 
 #ifndef CONNECTION_POOL_BASE_H
 #define CONNECTION_POOL_BASE_H
+#include <queue>
 #include <boost/asio/awaitable.hpp>
 #include <obelisk/core/coroutine/async_mutex.h>
 #include <obelisk/database/core/db_connection_base.h>
 #include <sahara/log/log.h>
+#include <boost/mysql/error_with_diagnostics.hpp>
+#include <concurrentqueue.h>
 
 namespace obelisk::database
 {
@@ -36,23 +39,29 @@ namespace obelisk::database
     class connection_pool : public connection_pool_base
     {
     public:
-        explicit connection_pool(boost::asio::io_context& ios): ioctx_(ios), mutex_(ios){}
+        explicit connection_pool(boost::asio::io_context& ios): ioctx_(ios), strand_(boost::asio::make_strand(ios))
+        {
+        }
 
         template <typename... Args>
         boost::asio::awaitable<void> initialize(Args... args)
         {
-            connection_maker_ = [=,this](boost::asio::io_context& ioctx) -> boost::asio::awaitable<std::shared_ptr<Connection>>
-            {
-                co_return std::shared_ptr<Connection>(new Connection(ioctx, args...), std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1));
-            };
-            std::unique_lock lock(mutex_);
+            connection_maker_ = [=,this](
+                boost::asio::io_context& ioctx) -> boost::asio::awaitable<std::shared_ptr<Connection>>
+                {
+                    co_return std::shared_ptr<Connection>(new Connection(ioctx, args...),
+                                                          std::bind(&connection_pool::connection_reset_, this,
+                                                                    std::placeholders::_1));
+                };
             while (connections_.size() < min_)
             {
                 try
                 {
                     auto conn = co_await connection_maker_(ioctx_);
                     if (conn)
-                        connections_.push_back(conn);
+                        connections_.enqueue(conn);
+                        //connections_.push(conn);
+
                 }
                 catch (const boost::system::error_code& e)
                 {
@@ -68,19 +77,22 @@ namespace obelisk::database
     protected:
         boost::asio::awaitable<std::shared_ptr<db_connection_base>> get_connection_() override
         {
-            co_await mutex_.lock();
+            co_await boost::asio::post(strand_, boost::asio::use_awaitable);
             std::shared_ptr<Connection> conn;
             if (!connections_.empty())
             {
-                conn = connections_.back();
-                connections_.pop_back();
+                conn = connections_.front();
+                connections_.pop();
             }
-            mutex_.unlock();
-            if (conn)
-                co_return conn;
+            // if (connections_.try_dequeue(conn))
+            //     co_return conn;
+            // else co_return co_await connection_maker_(ioctx_);
+            co_await boost::asio::post(boost::asio::use_awaitable);
 
-            if (conn = co_await connection_maker_(ioctx_); conn) co_return conn;
-            co_return nullptr;
+            if (!conn)
+                conn = co_await connection_maker_(ioctx_);
+
+            co_return conn;
         }
 
         void connection_reset_(Connection* connection)
@@ -90,17 +102,30 @@ namespace obelisk::database
                 delete connection;
                 return;
             }
-            std::unique_lock lock(mutex_);
-            connections_.push_back(std::shared_ptr<Connection>(
-                connection, std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1)));
+
+            try
+            {
+                connections_.enqueue(std::shared_ptr<Connection>(connection, std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1)));
+                // boost::asio::post(strand_, [connection, this]()
+                // {
+                //     connections_.push(std::shared_ptr<Connection>(connection, std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1)));
+                // });
+            }
+            catch (boost::mysql::error_with_diagnostics& e)
+            {
+                std::cout << e.what() << std::endl;
+                delete connection;
+            }
+
         }
 
         std::atomic_int16_t min_ = 5;
-        obelisk::core::coroutine::async_mutex mutex_;
         std::atomic_int16_t max_ = 100;
         boost::asio::io_context& ioctx_;
         std::atomic_bool shutdown_ = false;
-        std::vector<std::shared_ptr<Connection>> connections_;
+        boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+        moodycamel::ConcurrentQueue<std::shared_ptr<Connection>> connections_;
+        //std::queue<std::shared_ptr<Connection>> connections_;
         std::function<boost::asio::awaitable<std::shared_ptr<Connection>>(boost::asio::io_context&)> connection_maker_;
     };
 }

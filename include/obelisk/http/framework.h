@@ -45,6 +45,7 @@ namespace obelisk::http
             }
             if (!initializing)
                 initialize_mutex_.unlock();
+            server_.start();
             io_context_.run();
         }
 

@@ -30,6 +30,7 @@ namespace module::default_::middleware{
 				{col("so.id"), "organization_id"},
 				{col("sa.id"), "admin_id"},
                 {col("sat.id"), "token_id"},
+                {col("sat.expires_at"), "expires_at"},
 			}).from({{"sys_access_tokens", "sat"}})
             // Join sys_admins table
             .join({"sys_admins", "sa"}, {
@@ -48,12 +49,16 @@ namespace module::default_::middleware{
             if (results.rows().empty())
                 throw obelisk::http::http_exception("server.error.access_forbidden", obelisk::http::EST_FORBIDDEN);
 
-            co_await obelisk::database::db::update({"sys_access_tokens"}).set({
-                {"expires_at", std::chrono::system_clock::now() + std::chrono::minutes(30)},
-                {"last_used_at", std::chrono::system_clock::now()}
-            }).where({
-                {col{"id"}, results.rows()[0][2].as_uint64()}
-            }).get();
+            std::chrono::system_clock::time_point expires_at = results.rows()[0][3].as_datetime().get_time_point();
+            auto remains = expires_at - std::chrono::system_clock::now();
+            if (remains < std::chrono::seconds(100)){
+                co_await obelisk::database::db::update({"sys_access_tokens"}).set({
+                    {"expires_at", std::chrono::system_clock::now() + std::chrono::minutes(30)},
+                    {"last_used_at", std::chrono::system_clock::now()}
+                }).where({
+                    {col{"id"}, results.rows()[0][2].as_uint64()}
+                }).get();
+            }
             request.additional_data().emplace(std::format("_{}_organization_id", target_key_), results.rows()[0][0].as_uint64());
             request.additional_data().emplace(std::format("_{}_id", target_key_), results.rows()[0][1].as_uint64());
             co_return nullptr;

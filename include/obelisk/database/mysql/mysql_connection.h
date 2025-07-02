@@ -39,15 +39,17 @@ public:
             while (true) {
                 try
                 {
-                    keep_alive_timer_.expires_after(std::chrono::seconds(60));
+                    keep_alive_timer_.expires_after(this->refresh_rate());
                     co_await keep_alive_timer_.async_wait(boost::asio::use_awaitable);
+                    co_await co_query("SELECT 1;");
+                    LOG_MODULE_CRITICAL("Database", "Connection Refresh{}", "");
                 }catch (boost::system::error_code& e)
                 {
                     if (e == boost::asio::error::operation_aborted)
                         break;
                 }
-                co_await co_query("SELECT 1");
-                keep_alive_timer_.expires_after(std::chrono::seconds(60));
+
+                keep_alive_timer_.expires_after(this->refresh_rate());
             }
             co_return;
         }, boost::asio::detached);
@@ -55,7 +57,7 @@ public:
 
     std::chrono::duration<std::uint32_t> refresh_rate() override
     {
-        return std::chrono::seconds(60);
+        return std::chrono::seconds(30);
     }
 
     template <typename ResultType = boost::mysql::results, typename=std::enable_if_t<
@@ -64,6 +66,7 @@ public:
     boost::asio::awaitable<ResultType> co_query(const std::string& query)
     {
         std::string sql = query.ends_with(";")? query:query+";";
+        LOG_MODULE_INFO("Database", "Running SQL: {}", sql);
         //std::cout << sql << std::endl;
         ResultType results;
         boost::mysql::diagnostics diagnostics;
@@ -82,6 +85,7 @@ public:
     {
         std::string sql = query.ends_with(";")? query:query+";";
         //std::cout << sql << std::endl;
+        LOG_MODULE_INFO("Database", "Running SQL: {}", sql);
         boost::mysql::results results;
         boost::mysql::diagnostics diagnostics;
         if (auto [ec] = co_await async_execute(sql, results, diagnostics, boost::asio::as_tuple(boost::asio::use_awaitable)); ec)
