@@ -19,6 +19,7 @@ namespace obelisk::database::builder::detail
 
 class mysql_connection : public obelisk::database::db_connection_base, public boost::mysql::any_connection{
 public:
+
     mysql_connection(boost::asio::io_context& ioctx, const std::string& server, const std::uint16_t port, const std::string& username,const std::string& password,const std::string& database):
         db_connection_base(ioctx), boost::mysql::any_connection(ioctx), keep_alive_timer_(ioctx) {
 
@@ -74,7 +75,7 @@ public:
         {
             LOG_MODULE_CRITICAL("Database", "MySQL Query Error: {}", ec.what());
             auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
-            throw std::logic_error(message);
+            throw std::logic_error(ec.what());
         }
         co_return results;
     }
@@ -83,6 +84,7 @@ public:
     requires std::is_same_v<ResultType, void>
     boost::asio::awaitable<void> co_query(const std::string& query)
     {
+
         std::string sql = query.ends_with(";")? query:query+";";
         //std::cout << sql << std::endl;
         LOG_MODULE_INFO("Database", "Running SQL: {}", sql);
@@ -92,7 +94,7 @@ public:
         {
             LOG_MODULE_CRITICAL("Database", "MySQL Query Error: {}", ec.what());
             const auto message = !diagnostics.client_message().empty()? diagnostics.client_message():diagnostics.server_message();
-            throw std::logic_error(message);
+            throw std::logic_error(ec.what());
         }
         co_return;
     }

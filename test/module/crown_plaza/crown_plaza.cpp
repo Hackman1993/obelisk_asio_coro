@@ -6,6 +6,7 @@
 #include "migrations/create_members_table.h"
 #include "migrations/create_member_entrance_records_table.h"
 #include "migrations/insert_crown_plaza_permissions_data.h"
+#include "migrations/add_card_no_to_sys_admins.h"
 #include "obelisk/database/db.h"
 #include "module/crown_plaza/controllers/member_controller.h"
 #include "module/default/middleware/backend_auth.h"
@@ -25,7 +26,7 @@ namespace module
         server.route("/api/backend/member/update_certificate_info", controllers::member_controller::backend_update_certificate_info)->method({"POST"}).middleware(default_::middleware::backend_auth("sys_admins"));
         server.route("/api/backend/member/region_statistics", controllers::member_controller::region_statistics)->method({"GET"}).middleware(default_::middleware::backend_auth("sys_admins"));
         server.route("/api/member/entrance", controllers::member_controller::entrance)->method({"POST"});
-        server.route("/api/member/find_by_card", controllers::cards::find_by_card)->method({"GET"});
+        server.route("/api/member/findby_card", controllers::cards::find_by_card)->method({"GET"});
         server.route("/api/terminal/get_token", controllers::legacy::get_terminal_token)->method({"POST"});
         server.route("/api/test", controllers::legacy::test)->method({"GET"});
 
@@ -37,7 +38,8 @@ namespace module
             std::make_unique<migrations::create_cards_table>(),
             std::make_unique<migrations::create_members_table>(),
             std::make_unique<migrations::create_member_entrance_records_table>(),
-            std::make_unique<migrations::insert_crown_plaza_permissions_data>()
+            std::make_unique<migrations::insert_crown_plaza_permissions_data>(),
+            std::make_unique<migrations::add_card_no_to_sys_admins>()
         });
 
         co_return;

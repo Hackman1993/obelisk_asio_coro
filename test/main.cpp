@@ -11,10 +11,19 @@
 #include "module/content/content.h"
 #include "module/crown_plaza/crown_plaza.h"
 #include <boost/parser/parser.hpp>
+#include <boost/mysql/connection_pool.hpp>
+#include "obelisk/database/mysql/mysql_connection_new.h"
 using namespace boost::parser;
 int main(int argc, char* argv[]) {
     try {
         boost::asio::io_context io_context{static_cast<int>(std::thread::hardware_concurrency()+1)};
+        obelisk::database::experimental::any_pool_params<mysql_construct_params, boost::mysql::connect_params> params;
+        params.connection_params.database = "obelisk1";
+        params.connection_params.password = "hl97005497--";
+        params.connection_params.server_address.emplace_host_and_port("127.0.0.1", 3306);
+        params.connection_params.username = "root";
+        obelisk::database::experimental::connection_pool<mysql_connection_new, mysql_construct_params,boost::mysql::connect_params> pool(io_context, params);
+        pool.initialize();
         obelisk::http::framework fw(io_context);
         fw.register_fs("aliyunoss", [](const auto &config)
         {
@@ -42,7 +51,6 @@ int main(int argc, char* argv[]) {
             threads.emplace_back(std::make_shared<std::thread>([&]()
             {
                 fw.run();
-
             }));
 
         }

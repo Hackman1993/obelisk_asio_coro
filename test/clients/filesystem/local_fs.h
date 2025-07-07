@@ -40,7 +40,7 @@ public:
         const std::filesystem::path fs_path(local_path);
         if (!std::filesystem::exists(fs_path.parent_path()))
             std::filesystem::create_directories(fs_path.parent_path());
-        std::filesystem::rename(file.temp_path_, fs_path);
+        std::filesystem::copy_file(file.temp_path_, fs_path);
         co_return std::format("{}{}",access_url_, secure_path);
     }
 

@@ -18,6 +18,7 @@ namespace module::crown_plaza::migrations
                 blueprint.string("picture_path").nullable();
                 blueprint.boolean("gender").default_value(true).index();
                 blueprint.date("birthday").nullable().index();
+                blueprint.string("card_no", 100).index().nullable();
                 blueprint.string("phone", 100).nullable().index();
                 blueprint.boolean("status").index().default_value(1);
                 blueprint.string("email", 50).nullable();

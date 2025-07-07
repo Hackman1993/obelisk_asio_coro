@@ -14,6 +14,113 @@
 
 namespace obelisk::database
 {
+    namespace experimental
+    {
+        template <typename ConstructParams, typename ConnectionParams>
+        struct any_pool_params
+        {
+            std::chrono::seconds refresh_interval = std::chrono::seconds(30);
+            std::uint16_t min = 1;
+            std::uint16_t max = 65535;
+            ConnectionParams connection_params;
+            ConstructParams construct_params;
+        };
+
+        template<class ConnectionType>
+        class connection_wrapper{
+        };
+
+        template<class ConnectionType, typename ConstructParams>
+        struct connection_node
+        {
+            boost::asio::io_context& ioctx_;
+            ConnectionType connection;
+            boost::asio::steady_timer ping_timer_;
+            boost::asio::any_io_executor& io_executor_;
+            connection_node(boost::asio::io_context& ioctx, boost::asio::any_io_executor& strand, const ConstructParams& params)
+                :ioctx_(ioctx),connection(ioctx_, params), ping_timer_(ioctx_), io_executor_(strand)
+            {}
+
+            ConnectionType* operator->() {
+                return &connection;
+            }
+
+            const ConnectionType* operator->() const {
+                return &connection;
+            }
+
+            ConnectionType& operator*() {
+                return connection;
+            }
+
+            const ConnectionType& operator*() const {
+                return connection;
+            }
+        };
+
+        template <class ConnectionType, typename ConstructParams, typename ConnectionParams>
+        class connection_pool
+        {
+            std::atomic_int16_t current_ = 0;
+            boost::asio::any_io_executor strand_;
+            boost::asio::io_context& ioctx_;
+            any_pool_params<ConstructParams, ConnectionParams> pool_params_;
+
+            std::vector<std::weak_ptr<connection_node<ConnectionType, ConstructParams>>> idle_list_;
+            std::vector<std::shared_ptr<connection_node<ConnectionType, ConstructParams>>> connections_;
+
+            struct pool_op
+            {
+                explicit pool_op(connection_pool& pool): pool_(pool){}
+                connection_pool& pool_;
+                boost::system::error_code error_;
+
+                template <typename Self>
+                void operator()(Self& self, boost::system::error_code ec)
+                {
+                    std::cout << "hee" << std::endl;
+                }
+            };
+            friend struct pool_op;
+
+            void on_pooled_connection_connected_(boost::system::error_code ec, std::shared_ptr<connection_node<ConnectionType, ConstructParams>> node)
+            {
+
+                if (!ec)
+                    boost::asio::dispatch(strand_,[node, this]()
+                    {
+                        idle_list_.push_back(node);
+                    });
+                else{
+                    LOG_CRITICAL("{}", ec.what());
+                    (*node)->async_pool_connect(pool_params_.connection_params, [this, node](boost::system::error_code ec)
+                    {
+                        on_pooled_connection_connected_(ec, node);
+                    });
+                }
+            }
+        public:
+            explicit connection_pool(boost::asio::io_context& ios, any_pool_params<ConstructParams, ConnectionParams> params): strand_(boost::asio::make_strand(ios)), ioctx_(ios), pool_params_(params)
+            {
+            }
+
+            void initialize()
+            {
+                while (current_.fetch_add(1) < pool_params_.min)
+                {
+                    auto node = std::make_shared<connection_node<ConnectionType, ConstructParams>>(ioctx_, strand_, pool_params_.construct_params);
+                    connections_.push_back(node);
+                    node->connection.async_pool_connect(pool_params_.connection_params, [this, node](boost::system::error_code ec)
+                    {
+                        on_pooled_connection_connected_(ec, node);
+                    });
+                }
+            }
+
+
+
+        };
+    }
     class connection_pool_base
     {
     public:
@@ -59,8 +166,8 @@ namespace obelisk::database
                 {
                     auto conn = co_await connection_maker_(ioctx_);
                     if (conn)
-                        connections_.enqueue(conn);
-                        //connections_.push(conn);
+                        //connections_.enqueue(conn);
+                        connections_.push(conn);
 
                 }
                 catch (const boost::system::error_code& e)
@@ -105,11 +212,11 @@ namespace obelisk::database
 
             try
             {
-                connections_.enqueue(std::shared_ptr<Connection>(connection, std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1)));
-                // boost::asio::post(strand_, [connection, this]()
-                // {
-                //     connections_.push(std::shared_ptr<Connection>(connection, std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1)));
-                // });
+                //connections_.enqueue(std::shared_ptr<Connection>(connection, std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1)));
+                boost::asio::post(strand_, [connection, this]()
+                {
+                    connections_.push(std::shared_ptr<Connection>(connection, std::bind(&connection_pool::connection_reset_, this, std::placeholders::_1)));
+                });
             }
             catch (boost::mysql::error_with_diagnostics& e)
             {
@@ -124,8 +231,8 @@ namespace obelisk::database
         boost::asio::io_context& ioctx_;
         std::atomic_bool shutdown_ = false;
         boost::asio::strand<boost::asio::io_context::executor_type> strand_;
-        moodycamel::ConcurrentQueue<std::shared_ptr<Connection>> connections_;
-        //std::queue<std::shared_ptr<Connection>> connections_;
+        //moodycamel::ConcurrentQueue<std::shared_ptr<Connection>> connections_;
+        std::queue<std::shared_ptr<Connection>> connections_;
         std::function<boost::asio::awaitable<std::shared_ptr<Connection>>(boost::asio::io_context&)> connection_maker_;
     };
 }

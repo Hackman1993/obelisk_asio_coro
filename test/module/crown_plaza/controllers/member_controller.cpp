@@ -38,12 +38,18 @@ namespace module::crown_plaza::controllers
             {col("m.passport_picture"), "passport_picture"},
             {col("m.last_entry_at"), "last_entry_at"}
         }).from({{"members", "m"}})
+        .left_join({"cards", "c"}, {
+            {col("c.deleted_at"), nullptr},
+            {col("c.cardable_type"), "member"},
+            {col("c.fn_cardable_id"), col("m.id")}
+        })
         .global_where({{col("m.deleted_at"), nullptr}}).order_by({{"m.updated_at"}, "DESC"});
         if(request.params().contains("search")) {
             auto search = request.params()["search"].get<std::string>()+"%";
             query.or_where({{col("m.name"), "LIKE", search}});
             query.or_where({{col("m.number"), "LIKE", search}});
             query.or_where({{col("m.passport_no"), "LIKE", search}});
+            query.or_where({{col("c.card_no"), "LIKE", search}});
         }
 
         struct member_model
@@ -191,7 +197,7 @@ namespace module::crown_plaza::controllers
         values.emplace_back("fn_issuer_id", admin_id);
 
         std::string number = request.params()["number"].get<std::string>();
-        co_await obelisk::database::db::transaction([values, target_id, number](auto connection)->awaitable<void>
+        co_await obelisk::database::db::transaction([values, target_id, number, &request](auto connection)->awaitable<void>
         {
             co_await obelisk::database::db::update({"cards"}).set({
                 {"deleted_at", std::chrono::system_clock::now()}
@@ -201,7 +207,8 @@ namespace module::crown_plaza::controllers
             }).get(connection);
             co_await obelisk::database::db::insert("cards").values(values).get(connection);
             co_await obelisk::database::db::update({"members"}).set({
-                {"number", number}
+                {"number", number},
+                {"card_no", request.params()["card_no"].get<std::string>()}
             }).where({
                 {col("id"), target_id}
             }).get(connection);
